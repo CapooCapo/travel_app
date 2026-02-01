@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả kích hoạt</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        /* Icon tròn tròn */
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #28a745;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #dc3545;
+        }
+
+        h2 {
+            margin: 10px 0;
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        /* Nút bấm */
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <div th:if="${success}">
+            <div class="icon-box success">✓</div>
+            <h2>Thành công!</h2>
+            <p th:text="${message}">Tài khoản của bạn đã được kích hoạt.</p>
+        </div>
+
+        <div th:unless="${success}">
+            <div class="icon-box error">✕</div>
+            <h2>Kích hoạt lỗi</h2>
+            <p th:text="${message}">Link không hợp lệ hoặc đã hết hạn.</p>
+            <p style="font-size: 13px; color: #999;">Vui lòng thử đăng ký lại.</p>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kích hoạt tài khoản</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+        style="background-color: #f4f6f8;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"
+                    style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); overflow: hidden;">
+
+                    <tr>
+                        <td align="center"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 0;">
+                            <h1
+                                style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">
+                                ExploreEase 🌏</h1>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 40px 30px; text-align: center;">
+                            <h2 style="color: #333333; font-size: 22px; margin-top: 0;">Xác thực tài khoản</h2>
+
+                            <p style="color: #666666; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                                Xin chào <b style="color: #764ba2;" th:text="${name}">User</b>,<br>
+                                Cảm ơn bạn đã tham gia. Vui lòng nhấn vào nút bên dưới để hoàn tất đăng ký.
+                            </p>
+
+                            <a th:href="${link}" style="display: inline-block; 
+                                      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); 
+                                      color: #ffffff; 
+                                      text-decoration: none; 
+                                      padding: 14px 35px; 
+                                      font-size: 16px; 
+                                      font-weight: bold; 
+                                      border-radius: 50px; 
+                                      box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+                                      transition: all 0.3s ease;">
+                                KÍCH HOẠT TÀI KHOẢN
+                            </a>
+
+                            <p style="margin-top: 30px; font-size: 14px; color: #999;">
+                                (Link này sẽ hết hạn sau 24 giờ)
+                            </p>
+
+                            <div style="margin-top: 30px; border-top: 1px solid #eeeeee; padding-top: 20px;">
+                                <p style="font-size: 12px; color: #999; margin-bottom: 10px;">Nếu nút trên không hoạt
+                                    động, hãy copy link này:</p>
+                                <a th:href="${link}" style="color: #667eea; font-size: 12px; word-break: break-all;"
+                                    th:text="${link}">http://...</a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td
+                            style="background-color: #f9f9f9; padding: 20px; text-align: center; color: #888888; font-size: 12px;">
+                            <p style="margin: 0;">&copy; 2026 ExploreEase Team.</p>
+                            <p style="margin: 5px 0 0;">Ho Chi Minh City, Vietnam.</p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>
