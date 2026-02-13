@@ -1,31 +1,29 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from '../screens/Auth/LoginScreen';
+import LoginScreen from '../screens/Auth/login/Login.Screen';
+import RegisterScreen from '../screens/Auth/register/Register.Screen';
+import ForgotPasswordScreen from '../screens/Auth/forgotPassword/ForgotPassword.Screen';
+
 
 export type RootStackParamList = {
-  Login: undefined;
+  SignIn: undefined;
   ForgotPassword: undefined;
-  Register: undefined;
+  SignUp: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const EmptyScreen = () => null;
 
-const AppNavigator = () => {
+export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Login"
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="ForgotPassword" component={EmptyScreen} />
-        <Stack.Screen name="Register" component={EmptyScreen} />
+      <Stack.Navigator initialRouteName="SignIn" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="SignIn" component={LoginScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="SignUp" component={RegisterScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
-};
-
-export default AppNavigator;
+}
 
