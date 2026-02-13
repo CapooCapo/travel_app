@@ -10,7 +10,7 @@ public class UserMapper {
     public User toUser(RegisterRequest request){
         User user = new User();
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+        user.setPassword(request.getConfirmPassword());
         user.setFullName(request.getFullName());
         return user;
     }

@@ -87,15 +87,15 @@
     <div class="card">
         <div th:if="${success}">
             <div class="icon-box success">✓</div>
-            <h2>Thành công!</h2>
-            <p th:text="${message}">Tài khoản của bạn đã được kích hoạt.</p>
+            <h2>Success!</h2>
+            <p th:text="${message}">Your account has been successfully activated.</p>
         </div>
 
         <div th:unless="${success}">
             <div class="icon-box error">✕</div>
-            <h2>Kích hoạt lỗi</h2>
-            <p th:text="${message}">Link không hợp lệ hoặc đã hết hạn.</p>
-            <p style="font-size: 13px; color: #999;">Vui lòng thử đăng ký lại.</p>
+            <h2>Activation failed</h2>
+            <p th:text="${message}">Link is invalid or has expired.</p>
+            <p style="font-size: 13px; color: #999;">Please try registering again.</p>
         </div>
     </div>
 

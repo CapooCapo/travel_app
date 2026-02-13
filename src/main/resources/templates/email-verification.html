@@ -29,11 +29,12 @@
 
                     <tr>
                         <td style="padding: 40px 30px; text-align: center;">
-                            <h2 style="color: #333333; font-size: 22px; margin-top: 0;">Xác thực tài khoản</h2>
+                            <h2 style="color: #333333; font-size: 22px; margin-top: 0;">Verify your account</h2>
 
                             <p style="color: #666666; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-                                Xin chào <b style="color: #764ba2;" th:text="${name}">User</b>,<br>
-                                Cảm ơn bạn đã tham gia. Vui lòng nhấn vào nút bên dưới để hoàn tất đăng ký.
+                                Hello <b style="color: #764ba2;" th:text="${name}">User</b>,<br>
+                                Thank you for registering with ExploreEase! Please click the button below to
+                                activate your account:
                             </p>
 
                             <a th:href="${link}" style="display: inline-block; 
@@ -46,16 +47,15 @@
                                       border-radius: 50px; 
                                       box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
                                       transition: all 0.3s ease;">
-                                KÍCH HOẠT TÀI KHOẢN
+                                activated Account
                             </a>
 
                             <p style="margin-top: 30px; font-size: 14px; color: #999;">
-                                (Link này sẽ hết hạn sau 24 giờ)
+                                (this link is valid for 24 hours)
                             </p>
 
                             <div style="margin-top: 30px; border-top: 1px solid #eeeeee; padding-top: 20px;">
-                                <p style="font-size: 12px; color: #999; margin-bottom: 10px;">Nếu nút trên không hoạt
-                                    động, hãy copy link này:</p>
+                                <p style="font-size: 12px; color: #999; margin-bottom: 10px;">If the button above does not work, please copy link this:</p>
                                 <a th:href="${link}" style="color: #667eea; font-size: 12px; word-break: break-all;"
                                     th:text="${link}">http://...</a>
                             </div>
