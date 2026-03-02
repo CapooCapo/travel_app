@@ -10,13 +10,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.example.mobileApp.dto.request.ForgotPasswordRequest;
+import com.example.mobileApp.dto.request.GoogleLoginRequest;
 import com.example.mobileApp.dto.request.LoginRequest;
 import com.example.mobileApp.dto.request.RegisterRequest;
 import com.example.mobileApp.dto.request.ResetPasswordRequest;
 import com.example.mobileApp.dto.response.AuthResponse;
 import com.example.mobileApp.dto.response.LoginResponse;
 import com.example.mobileApp.service.AuthService;
+import com.example.mobileApp.service.GoogleAuthService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -25,14 +28,16 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
-    
+    private final GoogleAuthService googleAuthService;
+
 
     // #region (register)
     @PostMapping("/register")
-    public AuthResponse<String> register(@RequestBody RegisterRequest request) {
+    public AuthResponse<String> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
 
-        return new AuthResponse<>(200, "registered successfully! Please check your email to verify your account.", null);
+        return new AuthResponse<>(200, "registered successfully! Please check your email to verify your account.",
+                null);
     }
     // #endregion
 
@@ -46,6 +51,7 @@ public class AuthController {
     // #region (verify account)
     @GetMapping("/verify")
     public ModelAndView verify(@RequestParam String token) {
+
         ModelAndView mav = new ModelAndView("verify-result");
 
         try {
@@ -63,12 +69,6 @@ public class AuthController {
     }
     // #endregion
 
-    @GetMapping("/verify-json")
-    public ResponseEntity<AuthResponse<Void>> verifyJson(@RequestParam String token) {
-        authService.verifyAccount(token);
-        return ResponseEntity.ok(new AuthResponse<>(200, "Account verified", null));
-    }
-
     // #region (Forgot Password)
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
@@ -77,9 +77,24 @@ public class AuthController {
     }
     // #endregion
 
+    // #region login with google
+    @PostMapping("/google")
+    public AuthResponse<LoginResponse> loginWithGoogle(@RequestBody GoogleLoginRequest request) {
+        return googleAuthService.loginWithGoogle(request.getIdToken());
+    }
+    // #endregion
+
+    // #region verify account for json response
+    @GetMapping("/verify-json")
+    public ResponseEntity<AuthResponse<Void>> verifyJson(@RequestParam String token) {
+        authService.verifyAccount(token);
+        return ResponseEntity.ok(new AuthResponse<>(200, "Account verified", null));
+    }
+    // #region
+
     // #region (Reset Password)
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.ok("Password has been reset successfully! Please log in with your new password.");
     }

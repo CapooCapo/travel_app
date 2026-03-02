@@ -25,12 +25,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         User u = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Email is not registered: " + email));
 
-        String role = (u.getRole() == null || u.getRole().isBlank()) ? "USER" : u.getRole().trim().toUpperCase();
-        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        List<SimpleGrantedAuthority> authorities =
+        List.of(new SimpleGrantedAuthority("ROLE_" + u.getRole().name()));
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(u.getEmail())
-                .password(u.getPassword()) 
+                .password(u.getPassword())
+                .disabled(!u.getVerified())
                 .authorities(authorities)
                 .build();
     }

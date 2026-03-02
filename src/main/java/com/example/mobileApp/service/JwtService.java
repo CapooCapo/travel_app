@@ -13,6 +13,7 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
+
     private final Key key;
     private final long accessTokenMillis;
 
@@ -24,18 +25,19 @@ public class JwtService {
         this.accessTokenMillis = accessTokenMinutes * 60 * 1000;
     }
 
-    public String generateToken(String subject) {
+    public String generateToken(Long userId) {
         long now = System.currentTimeMillis();
+
         return Jwts.builder()
-                .setSubject(subject)
+                .setSubject(String.valueOf(userId))   // subject = userId
                 .setIssuedAt(new java.util.Date(now))
                 .setExpiration(new java.util.Date(now + accessTokenMillis))
                 .signWith(key)
                 .compact();
     }
 
-    public String extractUsername(String token) {
-        return parseClaims(token).getSubject();
+    public Long extractUserId(String token) {
+        return Long.parseLong(parseClaims(token).getSubject());
     }
 
     public boolean isTokenValid(String token) {
@@ -47,12 +49,6 @@ public class JwtService {
         }
     }
 
-    public boolean isTokenValid(String token, String username) {
-        if (!isTokenValid(token)) return false;
-        String extracted = extractUsername(token);
-        return extracted != null && extracted.equals(username);
-    }
-
     private Claims parseClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -61,3 +57,4 @@ public class JwtService {
                 .getBody();
     }
 }
+

@@ -1,15 +1,23 @@
 package com.example.mobileApp.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -25,38 +33,79 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password_hash") 
+    @Column(name = "password_hash", nullable = false)
     private String password;
 
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender")
+    private Gender gender;
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role = "USER"; 
+    private Role role = Role.USER;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "travel_style")
-    private String travelStyle;
-
-    @Column(columnDefinition = "jsonb")
-    @ColumnTransformer(write = "?::jsonb")
-    private String preferences;
+    private TravelStyle travelStyle;
 
     @Column(name = "google_id", unique = true)
-    private String googleId; 
+    private String googleId;
 
-    @Column(name = "is_verified")
-    private boolean isVerified = false;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider provider = AuthProvider.LOCAL;
+
+    @Column(name = "is_verified", nullable = false)
+    private Boolean verified = false;
 
     @Column(name = "verification_token")
     private String verificationToken;
 
-    @Column(name = "token_expiry")
-    private LocalDateTime tokenExpiry;
+    @Column(name = "verification_expiry")
+    private LocalDateTime verificationExpiry;
 
+    @Column(name = "reset_password_token")
+    private String resetPasswordToken;
+
+    @Column(name = "reset_password_expiry")
+    private LocalDateTime resetPasswordExpiry;
+
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    @CreationTimestamp 
     private LocalDateTime createdAt;
+
+    public enum Gender {
+        MALE,
+        FEMALE,
+        OTHER
+    }
+
+    public enum TravelStyle {
+        SOLO,
+        FAMILY,
+        GROUP
+    }
+
+    public enum Role {
+        USER,
+        ADMIN
+    }
+
+    public enum AuthProvider {
+        LOCAL,
+        GOOGLE
+    }
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_interests", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "interest_id"))
+    private Set<Interest> interests = new HashSet<>();
 }

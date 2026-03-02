@@ -1,17 +1,24 @@
 package com.example.mobileApp.controller;
 
-import java.util.Arrays;
-import java.util.List;
-
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
-public class UserController {
+import com.example.mobileApp.dto.response.UserResponse;
+import com.example.mobileApp.service.UserService;
 
-    @GetMapping("/api/users")
-    public List<String> getAllUsers() {
-        System.out.println("Đã gọi vào API Users!");
-        return Arrays.asList("User A", "User B", "User C");
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    @GetMapping("/me")
+    public UserResponse getUserProfile(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        return userService.getUserProfile(userId);
     }
 }
