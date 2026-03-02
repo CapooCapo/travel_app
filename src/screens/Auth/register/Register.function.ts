@@ -48,7 +48,8 @@ export function RegisterFunction(navigation: any) {
       const res = await authService.Register(
         fullName.trim(),
         email.trim(),
-        confirmPassword,
+        password.trim(),
+        confirmPassword.trim(),
       );
       setIsLoading(false);
       Alert.alert("Successt", res.data.message);

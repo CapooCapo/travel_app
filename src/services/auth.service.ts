@@ -14,8 +14,8 @@ export const authService = {
 
     return token;
   },
-  async Register(fullName: string, email: string, confirmPassword: string) {
-    const rq: RegisterRequest = { fullName, email, confirmPassword };
+  async Register(fullName: string, email: string, password ,  confirmPassword: string) {
+    const rq: RegisterRequest = { fullName, email,password, confirmPassword };
     const res = await apiRequest.Register(rq);
     if (res.status != 200)
       throw new Error(res.data.message || "Register failed");
