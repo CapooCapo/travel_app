@@ -8,7 +8,6 @@ export const palette = {
   vividTangerine: "#FF7D00",
   brandy: "#78290F",
   white: "#FFFFFF",
-
 };
 
 // 2. Theme chính
@@ -24,12 +23,12 @@ export const theme = {
     border: "rgba(255, 236, 209, 0.14)",
     inputBg: "rgba(255, 236, 209, 0.06)",
     danger: palette.brandy,
-    textLight: palette.papayaWhip,
+    textLight: palette.white,
     glassBG: "rgba(255, 255, 255, 0.15)",
     glassBorder: "rgba(255, 255, 255, 0.3)",
     overlayDark: "rgba(0, 0, 0, 0.4)",
     borderColor: "rgba(255, 236, 209, 0.14)",
-    gray: "#CCC5B9"
+    gray: "#DDD",
   },
   radius: { xl: 22, lg: 18, md: 14, sm: 12 },
   spacing: { xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 },

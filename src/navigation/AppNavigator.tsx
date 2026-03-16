@@ -6,9 +6,11 @@ import ForgotPasswordScreen from '../screens/Auth/forgotPassword/ForgotPassword.
 
 
 export type RootStackParamList = {
-  SignIn: undefined;
-  ForgotPassword: undefined;
-  SignUp: undefined;
+    SignIn: undefined;
+    ForgotPassword: undefined;
+    SignUp: undefined;
+
+    Home: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -16,14 +18,16 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const EmptyScreen = () => null;
 
 export default function AppNavigator() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignIn" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="SignIn" component={LoginScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        <Stack.Screen name="SignUp" component={RegisterScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+    return (
+        <NavigationContainer>
+            <Stack.Navigator initialRouteName="SignIn" screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="SignIn" component={LoginScreen} />
+                <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+                <Stack.Screen name="SignUp" component={RegisterScreen} />
+
+                <Stack.Screen name="Home" component={EmptyScreen} />
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
 }
 

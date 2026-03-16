@@ -1,4 +1,3 @@
-import React from "react";
 import {
   View, Text, TouchableOpacity, Image,
   StatusBar, KeyboardAvoidingView,
@@ -87,7 +86,7 @@ export default function RegisterScreen({ navigation }: any) {
 
             <View style={styles.footerContainer}>
               <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+              <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
                 <Text style={styles.signInText}>Sign In</Text>
               </TouchableOpacity>
             </View>

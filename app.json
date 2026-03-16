@@ -1,35 +1,40 @@
 {
   "expo": {
-    "name": "mobileUI",
-    "slug": "mobileUI",
+    "name": "mobileApp",
+    "owner": "hoangmobiledev",
+    "slug": "mobileApp",
+    "scheme": "mobileapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "bundleIdentifier": "com.giahoang.mobileui",
       "supportsTablet": true
     },
     "android": {
       "package": "com.giahoang.mobileui",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "90fb26f5-2ed4-41fb-8ad0-22f2398f9130"
+        "projectId": "2ac2054d-c570-4456-97bd-d478841d378a"
       }
-    }
+    },
+    "plugins": [
+    ]
   }
 }
