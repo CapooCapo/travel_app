@@ -1,8 +1,10 @@
 package com.example.mobileApp.config;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -50,15 +52,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 Long userId = jwtService.extractUserId(token);
+                String role = jwtService.extractRole(token);
+
+                List<SimpleGrantedAuthority> authorities =
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userId,  
+                                userId,
                                 null,
-                                null
+                                authorities
                         );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
             }
 
         } catch (Exception ex) {
@@ -68,4 +75,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

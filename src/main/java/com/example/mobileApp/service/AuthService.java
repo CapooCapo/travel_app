@@ -14,7 +14,6 @@ import com.example.mobileApp.dto.request.ForgotPasswordRequest;
 import com.example.mobileApp.dto.request.LoginRequest;
 import com.example.mobileApp.dto.request.RegisterRequest;
 import com.example.mobileApp.dto.request.ResetPasswordRequest;
-import com.example.mobileApp.dto.response.AuthResponse;
 import com.example.mobileApp.dto.response.LoginResponse;
 import com.example.mobileApp.entity.User;
 import com.example.mobileApp.mapper.UserMapper;
@@ -32,38 +31,36 @@ public class AuthService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+
     @Value("${app.google.web-client-id}")
     private String googleClientId;
 
-    // #region (register)
+    // register
     public void register(RegisterRequest request) {
-        // checking email
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already registered!");
         }
-        // get data from mapper
-        User user = userMapper.toUser(request);
+
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new RuntimeException("Passwords do not match!");
         }
+
+        User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // create verification token
         String token = UUID.randomUUID().toString();
         user.setVerificationToken(token);
         user.setVerificationExpiry(LocalDateTime.now().plusHours(24));
         user.setVerified(false);
-        System.out.println("Token from request: " + token);
 
         userRepository.save(user);
 
-        // send verification email
         emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), token);
     }
-    // #endregion
 
-    // #region(Login)
-    public AuthResponse<LoginResponse> login(LoginRequest request) {
+    // login
+    public LoginResponse login(LoginRequest request) {
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -77,44 +74,43 @@ public class AuthService {
             throw new RuntimeException("Account is not verified");
         }
 
-        String token = jwtService.generateToken(user.getId());
+        String token = jwtService.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name());
 
-        return new AuthResponse<>(
-                200,
-                "Login successful!",
-                new LoginResponse(token));
+        return new LoginResponse(token);
     }
 
-    // #endregion
+    // verify account
+    public void verifyAccount(String token) {
 
-    // #region (verify account)
-    public String verifyAccount(String token) {
         User user = userRepository.findByVerificationToken(token)
                 .orElse(null);
 
         if (user == null) {
-            return "Invalid verification token";
+            throw new RuntimeException("Invalid verification token");
         }
-        if (user.getVerificationExpiry() == null || user.getVerificationExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Link activation has expired. Please request a new activation link.");
+
+        if (user.getVerificationExpiry() == null ||
+                user.getVerificationExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Link activation has expired.");
         }
 
         user.setVerified(true);
         user.setVerificationToken(null);
         user.setVerificationExpiry(null);
+
         userRepository.save(user);
-
-        return "Account has been successfully activated! You can now log in.";
     }
-    // #endregion
 
-    // #region (forgot Password)
+    // forgot password
     public void forgotPassword(ForgotPasswordRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
         if (user == null) {
-            return;
+            return; // tránh leak thông tin email tồn tại hay không
         }
 
         SecureRandom random = new SecureRandom();
@@ -128,27 +124,26 @@ public class AuthService {
         emailService.sendResetEmail(user.getEmail(), user.getFullName(), pin);
     }
 
-    // #endregion
-
-    // #region (Reset password)
+    // reset password
     public void resetPassword(ResetPasswordRequest request) {
+
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
 
         if (user.getResetPasswordToken() == null ||
                 !passwordEncoder.matches(request.getPin(), user.getResetPasswordToken())) {
-            throw new RuntimeException("Verification code is incorrect or invalid");
+            throw new RuntimeException("Verification code is incorrect");
         }
 
         if (user.getResetPasswordExpiry() == null ||
                 user.getResetPasswordExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Verification code has expired. Please request a new code.");
+            throw new RuntimeException("Verification code has expired");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setResetPasswordToken(null);
         user.setResetPasswordExpiry(null);
+
         userRepository.save(user);
     }
-    // #endregion
 }

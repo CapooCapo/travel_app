@@ -1,6 +1,5 @@
 package com.example.mobileApp.controller;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +13,7 @@ import com.example.mobileApp.dto.request.GoogleLoginRequest;
 import com.example.mobileApp.dto.request.LoginRequest;
 import com.example.mobileApp.dto.request.RegisterRequest;
 import com.example.mobileApp.dto.request.ResetPasswordRequest;
-import com.example.mobileApp.dto.response.AuthResponse;
+import com.example.mobileApp.dto.response.ApiResponse;
 import com.example.mobileApp.dto.response.LoginResponse;
 import com.example.mobileApp.service.AuthService;
 import com.example.mobileApp.service.GoogleAuthService;
@@ -30,25 +29,28 @@ public class AuthController {
     private final AuthService authService;
     private final GoogleAuthService googleAuthService;
 
+    private <T> ApiResponse<T> ok(T data, String message) {
+        return new ApiResponse<>(
+                200,
+                message,
+                data,
+                System.currentTimeMillis());
+    }
 
-    // #region (register)
+    // register
     @PostMapping("/register")
-    public AuthResponse<String> register(@Valid @RequestBody RegisterRequest request) {
+    public ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
-
-        return new AuthResponse<>(200, "registered successfully! Please check your email to verify your account.",
-                null);
+        return ok(null, "Registered successfully. Check email to verify.");
     }
-    // #endregion
 
-    // #region (login)
+    // login
     @PostMapping("/login")
-    public AuthResponse<LoginResponse> login(@RequestBody LoginRequest request) {
-        return authService.login(request);
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
+        return ok(authService.login(request), "Login successful");
     }
-    // #endregion
 
-    // #region (verify account)
+    // verify account (HTML)
     @GetMapping("/verify")
     public ModelAndView verify(@RequestParam String token) {
 
@@ -56,10 +58,8 @@ public class AuthController {
 
         try {
             authService.verifyAccount(token);
-
             mav.addObject("success", true);
-            mav.addObject("message", "Account has been successfully activated! You can now log in.");
-
+            mav.addObject("message", "Account activated. You can log in.");
         } catch (RuntimeException e) {
             mav.addObject("success", false);
             mav.addObject("message", e.getMessage());
@@ -67,36 +67,33 @@ public class AuthController {
 
         return mav;
     }
-    // #endregion
 
-    // #region (Forgot Password)
-    @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        authService.forgotPassword(request);
-        return ResponseEntity.ok("Verification code has been sent to your email.");
-    }
-    // #endregion
-
-    // #region login with google
-    @PostMapping("/google")
-    public AuthResponse<LoginResponse> loginWithGoogle(@RequestBody GoogleLoginRequest request) {
-        return googleAuthService.loginWithGoogle(request.getIdToken());
-    }
-    // #endregion
-
-    // #region verify account for json response
+    // verify account (JSON)
     @GetMapping("/verify-json")
-    public ResponseEntity<AuthResponse<Void>> verifyJson(@RequestParam String token) {
+    public ApiResponse<Void> verifyJson(@RequestParam String token) {
         authService.verifyAccount(token);
-        return ResponseEntity.ok(new AuthResponse<>(200, "Account verified", null));
+        return ok(null, "Account verified");
     }
-    // #region
 
-    // #region (Reset Password)
-    @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        authService.resetPassword(request);
-        return ResponseEntity.ok("Password has been reset successfully! Please log in with your new password.");
+    // forgot password
+    @PostMapping("/forgot-password")
+    public ApiResponse<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ok(null, "Verification code sent to email");
     }
-    // #endregion
+
+    // reset password
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ok(null, "Password reset successful");
+    }
+
+    // login google
+    @PostMapping("/google")
+    public ApiResponse<LoginResponse> loginWithGoogle(@RequestBody GoogleLoginRequest request) {
+        return ok(
+                googleAuthService.loginWithGoogle(request.getIdToken()),
+                "Login successful");
+    }
 }

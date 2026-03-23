@@ -42,7 +42,8 @@ public class EmailService {
             mailSender.send(message);
 
         } catch (MessagingException e) {
-            System.err.println("sending email failed: " + e.getMessage());
+            throw new RuntimeException("Failed to send email");
+            //System.err.println("sending email failed: " + e.getMessage());
         }
     }
     // #endregion

@@ -1,6 +1,7 @@
 package com.example.mobileApp.service;
 
 import java.security.Key;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,21 +26,33 @@ public class JwtService {
         this.accessTokenMillis = accessTokenMinutes * 60 * 1000;
     }
 
-    public String generateToken(Long userId) {
+    public String generateToken(Long userId, String email, String role) {
         long now = System.currentTimeMillis();
 
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))   // subject = userId
-                .setIssuedAt(new java.util.Date(now))
-                .setExpiration(new java.util.Date(now + accessTokenMillis))
+                .setSubject(email)                       
+                .claim("userId", userId)            
+                .claim("role", role)               
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(now + accessTokenMillis))
                 .signWith(key)
                 .compact();
     }
 
-    public Long extractUserId(String token) {
-        return Long.parseLong(parseClaims(token).getSubject());
+    // ===== EXTRACT DATA =====
+    public String extractEmail(String token) {
+        return parseClaims(token).getSubject();
     }
 
+    public Long extractUserId(String token) {
+        return parseClaims(token).get("userId", Long.class);
+    }
+
+    public String extractRole(String token) {
+        return parseClaims(token).get("role", String.class);
+    }
+
+    // ===== VALIDATE =====
     public boolean isTokenValid(String token) {
         try {
             parseClaims(token);
@@ -57,4 +70,3 @@ public class JwtService {
                 .getBody();
     }
 }
-

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.mobileApp.dto.response.AuthResponse;
 import com.example.mobileApp.dto.response.LoginResponse;
 import com.example.mobileApp.entity.User;
 import com.example.mobileApp.repository.UserRepository;
@@ -28,7 +27,7 @@ public class GoogleAuthService {
     @Value("${app.google.web-client-id}")
     private String googleClientId;
 
-    public AuthResponse<LoginResponse> loginWithGoogle(String idTokenString) {
+    public LoginResponse loginWithGoogle(String idTokenString) {
 
         GoogleIdToken.Payload payload = verifyGoogleToken(idTokenString);
 
@@ -52,14 +51,12 @@ public class GoogleAuthService {
             user.setAvatarUrl(pictureUrl);
             user.setGoogleId(googleId);
             user.setProvider(User.AuthProvider.GOOGLE);
+            user.setRole(User.Role.USER);
             user.setVerified(true);
             userRepository.save(user);
-
         } else {
-
             if (user.getProvider() == User.AuthProvider.LOCAL) {
-                throw new RuntimeException(
-                        "Email already registered with password. Please login normally.");
+                throw new RuntimeException("Email already registered with password");
             }
 
             if (user.getGoogleId() != null &&
@@ -70,16 +67,16 @@ public class GoogleAuthService {
             user.setFullName(fullName);
             user.setAvatarUrl(pictureUrl);
             user.setVerified(true);
-
             userRepository.save(user);
         }
 
-        String token = jwtService.generateToken(user.getId());
+        String token = jwtService.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name());
 
-        LoginResponse loginResponse = new LoginResponse(token);
-        return new AuthResponse<>(200, "Login successful!", loginResponse);
+        return new LoginResponse(token);
     }
-
 
     private GoogleIdToken.Payload verifyGoogleToken(String idTokenString) {
 
@@ -106,4 +103,3 @@ public class GoogleAuthService {
         }
     }
 }
-
