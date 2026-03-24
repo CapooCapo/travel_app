@@ -40,24 +40,12 @@ export const validatePassword = (value: string): string | null => {
     return "Password must be at least 8 characters";
   }
 
-  if (!/[A-Z]/.test(value)) {
-    return "Password must contain at least one uppercase letter";
-  }
-
-  if (!/[a-z]/.test(value)) {
-    return "Password must contain at least one lowercase letter";
-  }
-
-  if (!/[0-9]/.test(value)) {
-    return "Password must contain at least one number";
-  }
-
   return null;
 };
 
 export const validateConfirmPassword = (
   password: string,
-  confirmPassword: string
+  confirmPassword: string,
 ): string | null => {
   if (!confirmPassword) return "Please confirm your password";
 
@@ -67,4 +55,3 @@ export const validateConfirmPassword = (
 
   return null;
 };
-

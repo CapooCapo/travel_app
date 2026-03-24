@@ -10,7 +10,8 @@ export function LoginFunction(navigation: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const canSumbit = !isEmail(email) && !validatePassword(password);
+  const canSubmit =
+    isEmail(email) === null && validatePassword(password) === null;
   const BG_SOURCE = {
     uri: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070",
   };
@@ -75,7 +76,7 @@ export function LoginFunction(navigation: any) {
     password,
     setPassword,
     isLoading,
-    canSumbit,
+    canSubmit,
     validateForm,
     handleLogin,
     handleGoogleLogin,

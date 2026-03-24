@@ -19,7 +19,7 @@ const LoginScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
     const {
         email, setEmail, password, setPassword,
-        isLoading, validateForm, handleLogin, handleGoogleLogin, canSumbit,BG_SOURCE
+        isLoading, validateForm, handleLogin, handleGoogleLogin, canSubmit,BG_SOURCE
     } = LoginFunction(navigation);
 
     return (
@@ -76,7 +76,7 @@ const LoginScreen = ({ navigation }: any) => {
                             title="SIGN IN"
                             onPress={handleLogin}
                             isLoading={isLoading}
-                            disabled={!canSumbit}
+                            disabled={!canSubmit}
                         />
 
                         <View style={styles.dividerContainer}>
