@@ -21,29 +21,28 @@ export function RegisterFunction(navigation: any) {
     confirm: "",
   });
 
-  const validateForm = () => {
-    const fullNameError = isRequired(fullName);
-    const emailError = isEmail(email);
-    const passwordError = validatePassword(password);
-    const confirmError = validateConfirmPassword(password, confirmPassword);
+  // Returns true when the form is VALID (no errors)
+  const validateForm = (): boolean => {
+    const fullNameError    = isRequired(fullName);
+    const emailError       = isEmail(email);
+    const passwordError    = validatePassword(password);
+    const confirmError     = validateConfirmPassword(password, confirmPassword);
 
     setErrors({
-      fullName: fullNameError || "",
-      email: emailError || "",
-      password: passwordError || "",
-      confirm: confirmError || "",
+      fullName: fullNameError ?? "",
+      email:    emailError    ?? "",
+      password: passwordError ?? "",
+      confirm:  confirmError  ?? "",
     });
 
-    return !(fullNameError || emailError || passwordError || confirmError);
+    return !fullNameError && !emailError && !passwordError && !confirmError;
   };
 
   const handleRegister = async () => {
+    const isValid = validateForm();
+    if (!isValid) return;          // stop if any field has an error
+
     setIsLoading(true);
-    const error = validateForm();
-    if (error) {
-      alert(error);
-      return;
-    }
     try {
       const res = await authService.Register(
         fullName.trim(),
@@ -51,23 +50,20 @@ export function RegisterFunction(navigation: any) {
         password.trim(),
         confirmPassword.trim(),
       );
-      setIsLoading(false);
-      Alert.alert("Successt", res.data.message);
+      Alert.alert("Success", res.data.message ?? "Account created!");
       navigation.navigate("SignIn");
     } catch (err: any) {
-      alert(err.message || "Register failed");
+      Alert.alert("Register Failed", err?.message ?? "Something went wrong");
+    } finally {
       setIsLoading(false);
     }
   };
+
   return {
-    fullName,
-    setFullName,
-    email,
-    setEmail,
-    password,
-    setPassword,
-    confirmPassword,
-    setConfirmPassword,
+    fullName,    setFullName,
+    email,       setEmail,
+    password,    setPassword,
+    confirmPassword, setConfirmPassword,
     handleRegister,
     isLoading,
     errors,

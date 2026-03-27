@@ -1,67 +1,44 @@
-import { LoginRequest, RegisterRequest } from "../dto/auth/user.DTO";
+import { LoginRequest, RegisterRequest, UpdateUserRequest } from "../dto/auth/user.DTO";
 import { apiRequest } from "../api/client";
 import { authStorage } from "../storage/auth.storage";
 
 export const authService = {
-  async Login(email: string, password: string) {
-    const rq: LoginRequest = { email, password };
-    const res = await apiRequest.login(rq);
-    if (res.status != 200) {
-      throw new Error(res.data.message || "Login failed");
-    }
-    const { token, user } = res.data.data;
-    await authStorage.setToken(token);
 
+  async login(email: string, password: string): Promise<string> {
+    const req: LoginRequest = { email, password };
+    const res = await apiRequest.login(req);
+    // BE ApiResponse: { status, message, data: { token } }
+    const token = res.data?.data?.token;
+    if (!token) throw new Error(res.data?.message || "Login failed");
+    await authStorage.setToken(token);
     return token;
   },
-  async Register(
+
+  async register(
     fullName: string,
     email: string,
-    password,
+    password: string,
     confirmPassword: string,
-  ) {
-    const rq: RegisterRequest = { fullName, email, password, confirmPassword };
-    const res = await apiRequest.register(rq);
-    if (res.status != 200)
-      throw new Error(res.data.message || "Register failed");
-    return res;
+  ): Promise<string> {
+    const req: RegisterRequest = { fullName, email, password, confirmPassword };
+    const res = await apiRequest.register(req);
+    return res.data?.message ?? "Registered successfully. Check email to verify.";
   },
 
-  async googleLogin(idToken: string) {
-    if (!idToken) {
-      throw new Error("Google token missing");
-    }
-
-    try {
-      const res = await apiRequest.googleLogin(idToken);
-
-      const token = res?.data?.data?.token;
-
-      if (!token) {
-        throw new Error("Invalid server response");
-      }
-
-      return token;
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message || error?.message || "Network error";
-
-      throw new Error(message);
-    }
+  async googleLogin(idToken: string): Promise<string> {
+    if (!idToken) throw new Error("Google token missing");
+    const res = await apiRequest.googleLogin(idToken);
+    const token = res.data?.data?.token;
+    if (!token) throw new Error("Invalid server response");
+    await authStorage.setToken(token);
+    return token;
   },
-  async forgotPassword(email: string) {
-    const response = await fetch("http://localhost:8080/api/auth/forgot-password", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
 
-    if (!response.ok) {
-      throw new Error("Forgot password failed");
-    }
+  async forgotPassword(email: string): Promise<void> {
+    await apiRequest.forgotPassword(email);
+  },
 
-    return response.json();
+  async signOut(): Promise<void> {
+    await authStorage.clear();
   },
 };

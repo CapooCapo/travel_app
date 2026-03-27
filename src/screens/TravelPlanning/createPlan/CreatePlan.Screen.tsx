@@ -1,0 +1,93 @@
+import React from "react";
+import {
+  View, Text, TextInput, TouchableOpacity,
+  ScrollView, ActivityIndicator, StatusBar,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { CreatePlanFunction } from "./CreatePlan.Function";
+import { COLORS, SIZES, FONTS } from "../../../constants/theme";
+import { StyleSheet } from "react-native";
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: SIZES.padding, paddingVertical: 12 },
+  headerTitle: { ...FONTS.h2, color: COLORS.text },
+  content: { padding: SIZES.padding },
+  label: { ...FONTS.body2, color: COLORS.muted, fontWeight: "600", textTransform: "uppercase", marginBottom: 6 },
+  input: {
+    backgroundColor: COLORS.surface, borderRadius: SIZES.radius,
+    paddingHorizontal: 14, paddingVertical: 12,
+    ...FONTS.body1, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, marginBottom: 16,
+  },
+  textArea: { height: 90, textAlignVertical: "top" },
+  row: { flexDirection: "row", gap: 10 },
+  halfInput: {
+    flex: 1, backgroundColor: COLORS.surface, borderRadius: SIZES.radius,
+    paddingHorizontal: 14, paddingVertical: 12,
+    ...FONTS.body1, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, marginBottom: 16,
+  },
+  hint: { ...FONTS.body2, color: COLORS.muted, marginBottom: 24, lineHeight: 18 },
+  submitBtn: {
+    backgroundColor: COLORS.primary, borderRadius: SIZES.radius,
+    paddingVertical: 14, alignItems: "center",
+  },
+  submitBtnDisabled: { opacity: 0.5 },
+  submitBtnText: { ...FONTS.body1, color: "#fff", fontWeight: "700" },
+});
+
+const CreatePlanScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const {
+    title, setTitle, description, setDescription,
+    startDate, setStartDate, endDate, setEndDate,
+    isLoading, canSubmit, handleCreate, goBack,
+  } = CreatePlanFunction(navigation);
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={goBack}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>New Itinerary</Text>
+      </View>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.label}>Title *</Text>
+        <TextInput style={styles.input} value={title} onChangeText={setTitle}
+          placeholder="Trip name" placeholderTextColor={COLORS.muted} />
+
+        <Text style={styles.label}>Description</Text>
+        <TextInput style={[styles.input, styles.textArea]} value={description}
+          onChangeText={setDescription} placeholder="What's this trip about?"
+          placeholderTextColor={COLORS.muted} multiline numberOfLines={3} />
+
+        <Text style={styles.label}>Dates *</Text>
+        <View style={styles.row}>
+          <TextInput style={styles.halfInput} value={startDate} onChangeText={setStartDate}
+            placeholder="Start (YYYY-MM-DD)" placeholderTextColor={COLORS.muted} />
+          <TextInput style={styles.halfInput} value={endDate} onChangeText={setEndDate}
+            placeholder="End (YYYY-MM-DD)" placeholderTextColor={COLORS.muted} />
+        </View>
+
+        <Text style={styles.hint}>
+          After creating your itinerary, you can add places and events day by day.
+        </Text>
+
+        <TouchableOpacity
+          style={[styles.submitBtn, (!canSubmit || isLoading) && styles.submitBtnDisabled]}
+          onPress={handleCreate}
+          disabled={!canSubmit || isLoading}
+        >
+          {isLoading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.submitBtnText}>Create Itinerary</Text>
+          }
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+};
+
+export default CreatePlanScreen;

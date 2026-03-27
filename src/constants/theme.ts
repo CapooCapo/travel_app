@@ -14,6 +14,7 @@ export const palette = {
 export const theme = {
   colors: {
     bg: palette.inkBlack,
+    backgroundDark: palette.inkBlack,
     card: palette.stormyTeal,
     surface: "rgba(255, 236, 209, 0.08)",
     text: palette.papayaWhip,
@@ -57,8 +58,8 @@ export const SIZES = {
 };
 
 export const FONTS = {
-  h1: { fontSize: theme.font.h1, fontWeight: "800" },
-  h2: { fontSize: theme.font.h2, fontWeight: "700" },
+  h1: { fontSize: theme.font.h1, fontWeight: "800" as const },
+  h2: { fontSize: theme.font.h2, fontWeight: "700" as const },
   body1: { fontSize: theme.font.base },
   body2: { fontSize: theme.font.small },
 };

@@ -1,16 +1,20 @@
 import axios from "axios";
 import { authStorage } from "../storage/auth.storage";
 
+// Đổi IP trong .env: EXPO_PUBLIC_API_URL=http://<your-local-ip>:8080
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.11:8080";
+
 const http = axios.create({
-  baseURL: "http://192.168.1.11:8080",
-  timeout: 10000,
+  baseURL: BASE_URL,
+  timeout: 15000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Optional: interceptor
-http.interceptors.request.use(async config => {
+// Đính token JWT vào mọi request có sẵn
+http.interceptors.request.use(async (config) => {
   const token = await authStorage.getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -18,5 +22,16 @@ http.interceptors.request.use(async config => {
   return config;
 });
 
+// Bắt lỗi HTTP chung, lấy message từ BE ApiResponse
+http.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message =
+      error?.response?.data?.message ||
+      error?.message ||
+      "Network error";
+    return Promise.reject(new Error(message));
+  }
+);
 
 export default http;
