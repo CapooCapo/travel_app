@@ -1,10 +1,19 @@
 import { apiRequest } from "../api/client";
-import { PlaceDTO, mapAttraction, AttractionListRequest } from "../dto/discovery/place.DTO";
+import {
+  PlaceDTO,
+  mapAttraction,
+  AttractionListRequest,
+} from "../dto/discovery/place.DTO";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
+const CACHE_KEY = 'offline_ai_recommendations';
 
 export const discoveryService = {
-
   /** GET /api/attractions — search/filter danh sách */
-  async getAttractions(params: AttractionListRequest): Promise<{ places: PlaceDTO[]; totalPages: number }> {
+  async getAttractions(
+    params: AttractionListRequest,
+  ): Promise<{ places: PlaceDTO[]; totalPages: number }> {
     const res = await apiRequest.getAttractions(params);
     const page = res.data?.data;
     const places = (page?.content ?? []).map((a) => mapAttraction(a));
@@ -38,9 +47,17 @@ export const discoveryService = {
   },
 
   /** GET /api/attractions/nearby */
-  async getNearbyAttractions(lat: number, lng: number, page = 0, size = 10): Promise<PlaceDTO[]> {
-    const res = await apiRequest.getNearbyAttractions(lat, lng, page, size);
-    return (res.data?.data?.content ?? []).map((a) => mapAttraction(a));
+  getNearby: async (lat: number, lng: number) => {
+    try {
+      // Gọi hàm wrapper bạn vừa tạo trong api/client.ts
+      const res = await apiRequest.getNearbyAttractions(lat, lng);
+
+      // Bóc tách theo cấu trúc ApiResponse -> Page -> content
+      return res.data.data.content || [];
+    } catch (error) {
+      console.error("Discovery Service Error:", error);
+      return [];
+    }
   },
 
   /** GET /api/attraction-images/{id}/images */
@@ -68,13 +85,44 @@ export const discoveryService = {
   },
 
   /** Toggle helper — gọi add hoặc remove tuỳ trạng thái */
-  async toggleBookmark(attractionId: number, currentlyBookmarked: boolean): Promise<boolean> {
+  async toggleBookmark(
+    attractionId: number,
+    currentlyBookmarked: boolean,
+  ): Promise<boolean> {
     if (currentlyBookmarked) {
       await apiRequest.removeBookmark(attractionId);
       return false;
     } else {
       await apiRequest.addBookmark(attractionId);
       return true;
+    }
+  },
+  getAiRecommendations: async (lat: number, lng: number) => {
+    const netInfo = await NetInfo.fetch();
+
+    // NẾU MẤT MẠNG -> Lấy dữ liệu từ Cache (Offline Mode)
+    if (!netInfo.isConnected) {
+      console.log("Offline mode: Loading from cache...");
+      const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+      return cachedData ? JSON.parse(cachedData) : [];
+    }
+
+    // NẾU CÓ MẠNG -> Gọi API như bình thường
+    try {
+      const res = await apiRequest.getAiRecommendations(lat, lng);
+      const data = res.data?.data || [];
+
+      // LƯU VÀO CACHE cho lần sau (Sync)
+      if (data.length > 0) {
+        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Lỗi gọi AI Recommend API:", error);
+      // Fallback: Lỗi API thì vẫn thử lấy cache cũ
+      const cachedData = await AsyncStorage.getItem(CACHE_KEY);
+      return cachedData ? JSON.parse(cachedData) : [];
     }
   },
 };

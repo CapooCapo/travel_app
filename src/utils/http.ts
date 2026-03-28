@@ -1,9 +1,8 @@
 import axios from "axios";
 import { authStorage } from "../storage/auth.storage";
 
-// Đổi IP trong .env: EXPO_PUBLIC_API_URL=http://<your-local-ip>:8080
 const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.11:8080";
+  process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
 
 const http = axios.create({
   baseURL: BASE_URL,

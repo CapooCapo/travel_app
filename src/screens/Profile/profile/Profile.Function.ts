@@ -4,23 +4,26 @@ import { useAuth, useUser } from "@clerk/clerk-expo";
 import { apiRequest } from "../../../api/client";
 import { authStorage } from "../../../storage/auth.storage";
 import { UserDTO } from "../../../dto/auth/user.DTO";
+import { useAppAuth } from "../../../context/AuthContext";
 
 const TRAVEL_STYLES = ["SOLO", "FAMILY", "GROUP"] as const;
-const GENDERS       = ["MALE", "FEMALE", "OTHER"] as const;
+const GENDERS = ["MALE", "FEMALE", "OTHER"] as const;
 
 export function ProfileFunction(navigation: any) {
-  const { signOut }  = useAuth();
-  const { user }     = useUser();
+  const { signOut } = useAuth();
+  const { setHasCustomToken } = useAppAuth();
+  const { user } = useUser();
 
-  const [beUser,      setBeUser]      = useState<UserDTO | null>(null);
-  const [isEditing,   setIsEditing]   = useState(false);
-  const [isSaving,    setIsSaving]    = useState(false);
+  const [beUser, setBeUser] = useState<UserDTO | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isLoadingBe, setIsLoadingBe] = useState(true);
 
   // Editable fields (synced from beUser)
-  const [fullName,    setFullName]    = useState("");
-  const [travelStyle, setTravelStyle] = useState<typeof TRAVEL_STYLES[number]>("SOLO");
-  const [gender,      setGender]      = useState<typeof GENDERS[number]>("OTHER");
+  const [fullName, setFullName] = useState("");
+  const [travelStyle, setTravelStyle] =
+    useState<(typeof TRAVEL_STYLES)[number]>("SOLO");
+  const [gender, setGender] = useState<(typeof GENDERS)[number]>("OTHER");
 
   // Load BE user profile on mount
   useEffect(() => {
@@ -35,9 +38,11 @@ export function ProfileFunction(navigation: any) {
       // UserController returns UserResponse directly (not ApiResponse)
       const userData = res.data as unknown as UserDTO;
       setBeUser(userData);
-      setFullName(userData.fullName ?? "");
-      setTravelStyle((userData.travelStyle as typeof TRAVEL_STYLES[number]) ?? "SOLO");
-      setGender((userData.gender as typeof GENDERS[number]) ?? "OTHER");
+      setFullName(userData.fullName || user?.fullName || "");
+      setTravelStyle(
+        (userData.travelStyle as (typeof TRAVEL_STYLES)[number]) ?? "SOLO",
+      );
+      setGender((userData.gender as (typeof GENDERS)[number]) ?? "OTHER");
     } catch {
       // Fallback to Clerk data — backend may not have the user yet
     } finally {
@@ -53,7 +58,11 @@ export function ProfileFunction(navigation: any) {
     setIsSaving(true);
     try {
       // PUT /api/users/updateProfile
-      await apiRequest.updateProfile({ fullName: fullName.trim(), travelStyle, gender });
+      await apiRequest.updateProfile({
+        fullName: fullName.trim(),
+        travelStyle,
+        gender,
+      });
       await loadBeProfile();
       setIsEditing(false);
       Alert.alert("Saved ✅", "Profile updated successfully");
@@ -72,8 +81,9 @@ export function ProfileFunction(navigation: any) {
         style: "destructive",
         onPress: async () => {
           try {
-            await authStorage.clear();
             await signOut();
+            await authStorage.clear();
+            setHasCustomToken(false);
           } catch (e: any) {
             Alert.alert("Error", e?.message || "Sign out failed");
           }
@@ -83,32 +93,40 @@ export function ProfileFunction(navigation: any) {
   };
 
   // Display info — prefer BE data, fallback to Clerk
-  const displayName  = beUser?.fullName  ?? user?.fullName  ?? "Traveler";
-  const displayEmail = beUser?.email     ?? user?.primaryEmailAddress?.emailAddress ?? "";
+  const displayName = beUser?.fullName ?? user?.fullName ?? "Traveler";
+  const displayEmail =
+    beUser?.email ?? user?.primaryEmailAddress?.emailAddress ?? "";
   const displayAvatar = beUser?.avatarUrl ?? user?.imageUrl;
 
   return {
     // Display
-    displayName, displayEmail, displayAvatar,
+    displayName,
+    displayEmail,
+    displayAvatar,
     beUser,
 
     // Edit state
-    isEditing, setIsEditing,
-    isSaving, isLoadingBe,
+    isEditing,
+    setIsEditing,
+    isSaving,
+    isLoadingBe,
 
     // Editable fields
-    fullName, setFullName,
-    travelStyle, setTravelStyle,
-    gender, setGender,
+    fullName,
+    setFullName,
+    travelStyle,
+    setTravelStyle,
+    gender,
+    setGender,
 
     // Constants
     travelStyles: TRAVEL_STYLES,
-    genders:      GENDERS,
+    genders: GENDERS,
 
     // Actions
     handleSave,
     handleSignOut,
     navigateToItineraries: () => navigation.navigate("Itinerary"),
-    navigateToBookmarks:   () => navigation.navigate("Explore"),
+    navigateToBookmarks: () => navigation.navigate("Explore"),
   };
 }

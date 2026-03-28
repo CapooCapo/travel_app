@@ -1,4 +1,5 @@
 import React from "react";
+import { useAppAuth } from "../context/AuthContext";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -177,16 +178,16 @@ function MainTabs() {
 //  Root Navigator
 // ────────────────────────────────────────────────────────────────────────────
 export default function AppNavigator() {
-  const { isSignedIn, isLoaded } = useAuth();
-  if (!isLoaded) return null;
+    const { isAuthenticated, isLoading } = useAppAuth();
+  if (isLoading) return null;
 
   return (
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName={isSignedIn ? "MainTabs" : "SignIn"}
+        initialRouteName={isAuthenticated ? "MainTabs" : "SignIn"}
       >
-        {!isSignedIn ? (
+        {!isAuthenticated ? (
           <>
             <Stack.Screen name="SignIn"          component={LoginScreen}          />
             <Stack.Screen name="SignUp"           component={RegisterScreen}       />

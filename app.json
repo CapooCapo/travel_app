@@ -35,6 +35,12 @@
       }
     },
     "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Cho phép ExploreEase sử dụng vị trí của bạn để đề xuất địa điểm."
+        }
+      ]
     ]
   }
 }

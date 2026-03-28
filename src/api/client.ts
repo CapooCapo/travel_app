@@ -14,14 +14,24 @@
 
 import http from "../utils/http";
 import { Res, PageRes } from "../dto/format";
-import { LoginRequest, LoginResponse, RegisterRequest, UpdateUserRequest, UserDTO } from "../dto/auth/user.DTO";
-import { AttractionResponse, AttractionImageResponse, AttractionListRequest, CreateAttractionRequest } from "../dto/discovery/place.DTO";
+import {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  UpdateUserRequest,
+  UserDTO,
+} from "../dto/auth/user.DTO";
+import {
+  AttractionResponse,
+  AttractionImageResponse,
+  AttractionListRequest,
+  CreateAttractionRequest,
+} from "../dto/discovery/place.DTO";
 import { EventResponse } from "../dto/event/event.DTO";
 import { ReviewResponse } from "../dto/review/review.DTO";
 import { NotificationResponse } from "../dto/notification/notification.DTO";
 
 export const apiRequest = {
-
   // ─── AUTH ────────────────────────────────────────────────────────────────
   // POST /api/auth/login  → ApiResponse<LoginResponse{ token }>
   login(req: LoginRequest) {
@@ -55,7 +65,9 @@ export const apiRequest = {
   // ─── ATTRACTIONS ──────────────────────────────────────────────────────────
   // GET /api/attractions?keyword=&rating=&page=&size=  → ApiResponse<Page<AttractionResponse>>
   getAttractions(params: AttractionListRequest) {
-    return http.get<Res<PageRes<AttractionResponse>>>("/api/attractions", { params });
+    return http.get<Res<PageRes<AttractionResponse>>>("/api/attractions", {
+      params,
+    });
   },
 
   // GET /api/attractions/{id}  → ApiResponse<AttractionResponse>
@@ -65,16 +77,22 @@ export const apiRequest = {
 
   // GET /api/attractions/nearby?lat=&lng=&page=&size=  → ApiResponse<Page<AttractionResponse>>
   getNearbyAttractions(lat: number, lng: number, page = 0, size = 10) {
-    return http.get<Res<PageRes<AttractionResponse>>>("/api/attractions/nearby", {
-      params: { lat, lng, page, size },
-    });
+    return http.get<Res<PageRes<AttractionResponse>>>(
+      "/api/attractions/nearby",
+      {
+        params: { lat, lng, page, size },
+      },
+    );
   },
 
   // GET /api/attractions/popular?page=&size=  → ApiResponse<Page<AttractionResponse>>
   getPopularAttractions(page = 0, size = 10) {
-    return http.get<Res<PageRes<AttractionResponse>>>("/api/attractions/popular", {
-      params: { page, size },
-    });
+    return http.get<Res<PageRes<AttractionResponse>>>(
+      "/api/attractions/popular",
+      {
+        params: { page, size },
+      },
+    );
   },
 
   // POST /api/attractions  → ApiResponse<AttractionResponse>
@@ -86,7 +104,7 @@ export const apiRequest = {
   getAttractionsByInterests(interestIds: number[], page = 0, size = 10) {
     return http.post<Res<PageRes<AttractionResponse>>>(
       `/api/attractions/by-interests?page=${page}&size=${size}`,
-      interestIds
+      interestIds,
     );
   },
 
@@ -94,7 +112,7 @@ export const apiRequest = {
   // GET /api/attraction-images/{id}/images  → ApiResponse<List<AttractionImageResponse>>
   getAttractionImages(attractionId: number) {
     return http.get<Res<AttractionImageResponse[]>>(
-      `/api/attraction-images/${attractionId}/images`
+      `/api/attraction-images/${attractionId}/images`,
     );
   },
 
@@ -116,7 +134,12 @@ export const apiRequest = {
 
   // ─── REVIEWS ─────────────────────────────────────────────────────────────
   // POST /api/attractions/{id}/reviews  body: { rating, content, imageUrl }  → ApiResponse<Void>
-  createReview(attractionId: number, rating: number, content: string, imageUrl?: string) {
+  createReview(
+    attractionId: number,
+    rating: number,
+    content: string,
+    imageUrl?: string,
+  ) {
     return http.post<Res<null>>(`/api/attractions/${attractionId}/reviews`, {
       rating,
       content,
@@ -128,7 +151,7 @@ export const apiRequest = {
   getReviews(attractionId: number, page = 0, size = 10) {
     return http.get<Res<PageRes<ReviewResponse>>>(
       `/api/attractions/${attractionId}/reviews`,
-      { params: { page, size } }
+      { params: { page, size } },
     );
   },
 
@@ -137,7 +160,7 @@ export const apiRequest = {
   getEventsByAttraction(attractionId: number, page = 0, size = 10) {
     return http.get<Res<PageRes<EventResponse>>>(
       `/api/events/attraction/${attractionId}`,
-      { params: { page, size } }
+      { params: { page, size } },
     );
   },
 
@@ -166,5 +189,10 @@ export const apiRequest = {
   // GET /api/users/me/data  → UserDataResponse
   exportUserData() {
     return http.get("/api/users/me/data");
+  },
+  getAiRecommendations(lat: number, lng: number) {
+    return http.get<Res<any>>("/api/attractions/ai-recommend", {
+      params: { lat, lng },
+    });
   },
 };

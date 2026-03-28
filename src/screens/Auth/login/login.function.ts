@@ -3,9 +3,11 @@ import { Alert } from "react-native";
 import { isEmail, validatePassword } from "../../../services/validator";
 import { authService } from "../../../services/auth.service";
 import { useOAuth } from "@clerk/clerk-expo";
+import { useAppAuth } from "../../../context/AuthContext";
 
 export function LoginFunction(navigation: any) {
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const { setHasCustomToken } = useAppAuth();
 
   const [email,     setEmail]     = useState("");
   const [password,  setPassword]  = useState("");
@@ -33,6 +35,7 @@ export function LoginFunction(navigation: any) {
     try {
       // authService.login (lowercase) — trả token, tự lưu vào storage
       await authService.login(email.trim(), password);
+      setHasCustomToken(true);
       // Navigation điều hướng tự động qua useAuth().isSignedIn trong AppNavigator
     } catch (e: any) {
       Alert.alert("Login Failed", e?.message || "Something went wrong");
@@ -47,7 +50,6 @@ export function LoginFunction(navigation: any) {
     setOauthLoading(true);
     try {
       const { createdSessionId, setActive } = await startOAuthFlow({
-        additionalParameters: { prompt: "select_account" },
       });
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
