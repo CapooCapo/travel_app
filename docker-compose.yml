@@ -40,8 +40,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/app_db
       MAIL_USER: ${MAIL_USER}
       MAIL_PASS: ${MAIL_PASS}
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: spingboot123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     volumes:
        - .:/app

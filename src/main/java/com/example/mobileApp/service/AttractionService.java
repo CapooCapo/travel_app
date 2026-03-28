@@ -1,12 +1,15 @@
 package com.example.mobileApp.service;
 
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.mobileApp.dto.request.CreateAttractionRequest;
 import com.example.mobileApp.dto.response.AttractionResponse;
@@ -39,7 +42,8 @@ public class AttractionService {
 
                 Attraction attraction = attractionRepository
                                 .findById(id)
-                                .orElseThrow();
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Attraction not found with id: " + id));
 
                 return mapper.toDetailResponse(attraction);
         }
@@ -76,14 +80,18 @@ public class AttractionService {
         public Page<AttractionResponse> search(
                         String keyword,
                         Double rating,
-                        int page,
-                        int size) {
+                        Pageable pageable) {
+                Page<Attraction> result;
 
-                Pageable pageable = PageRequest.of(page, size);
+                if (keyword != null) {
+                        result = attractionRepository.findByNameContainingIgnoreCase(keyword, pageable);
+                } else if (rating != null) {
+                        result = attractionRepository.findByRatingAverageGreaterThanEqual(rating, pageable);
+                } else {
+                        result = attractionRepository.findAll(pageable);
+                }
 
-                return attractionRepository
-                                .searchAttractions(keyword, rating, pageable)
-                                .map(mapper::toResponse);
+                return result.map(mapper::toResponse);
         }
 
         public Page<AttractionResponse> getAttractionsByInterest(
@@ -105,4 +113,12 @@ public class AttractionService {
                                 .map(mapper::toResponse);
         }
 
+        public List<AttractionResponse> getNearbyRaw(Double lat, Double lng) {
+                // Lấy tối đa 10 địa điểm gần nhất để gửi cho AI phân tích
+                Pageable topTen = PageRequest.of(0, 10);
+                return attractionRepository
+                                .findNearby(lat, lng, topTen)
+                                .map(mapper::toResponse)
+                                .getContent();
+        }
 }

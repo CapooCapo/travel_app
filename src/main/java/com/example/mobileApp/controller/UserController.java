@@ -3,6 +3,7 @@ package com.example.mobileApp.controller;
 import java.util.Set;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/users")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class UserController {
 

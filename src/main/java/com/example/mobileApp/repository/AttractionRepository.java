@@ -37,16 +37,9 @@ public interface AttractionRepository extends JpaRepository<Attraction, Long> {
                         """)
         Page<Attraction> findByInterests(Set<Long> interestIds, Pageable pageable);
 
-        @Query("""
-                        SELECT a
-                        FROM Attraction a
-                        WHERE (:keyword IS NULL OR LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-                        AND (:rating IS NULL OR a.ratingAverage >= :rating)
-                        """)
-        Page<Attraction> searchAttractions(
-                        String keyword,
-                        Double rating,
-                        Pageable pageable);
-
         Page<Attraction> findAllByOrderByRatingAverageDesc(Pageable pageable);
+
+        Page<Attraction> findByRatingAverageGreaterThanEqual(Double rating, Pageable pageable);
+
+        boolean existsByName(String name);
 }

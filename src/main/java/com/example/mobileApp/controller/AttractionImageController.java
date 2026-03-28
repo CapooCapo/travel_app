@@ -2,6 +2,7 @@ package com.example.mobileApp.controller;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/attraction-images")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class AttractionImageController {
 
