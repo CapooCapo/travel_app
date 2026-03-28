@@ -9,13 +9,18 @@ import { styles } from "./PlaceDetail.Style";
 import { PlaceDetailFunction } from "./PlaceDetail.Function";
 import { COLORS } from "../../../constants/theme";
 import { ReviewDTO } from "../../../dto/review/review.DTO";
+import { EventDTO } from "../../../dto/event/event.DTO";
+
+const TABS = ["info", "reviews", "events"] as const;
 
 const PlaceDetailScreen = ({ navigation, route }: any) => {
   const { placeId } = route.params;
   const insets = useSafeAreaInsets();
   const {
-    place, reviews, isLoading, isBookmarked, activeTab, setActiveTab,
-    handleToggleBookmark, handleShare, navigateToWriteReview, goBack,
+    place, reviews, events, isLoading,
+    isBookmarked, activeTab, setActiveTab,
+    handleToggleBookmark, handleShare,
+    navigateToWriteReview, navigateToEventDetail, goBack,
   } = PlaceDetailFunction(navigation, placeId);
 
   if (isLoading) {
@@ -25,7 +30,6 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
       </View>
     );
   }
-
   if (!place) return null;
 
   const openDirections = () => {
@@ -51,22 +55,71 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
       <View style={styles.reviewHeader}>
         <Text style={styles.reviewerName}>{item.userName}</Text>
         <Text style={styles.reviewDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
+          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
         </Text>
       </View>
       {renderStars(item.rating)}
+      {/* BE trả "comment" (mapped từ content) */}
       <Text style={styles.reviewText}>{item.comment}</Text>
+      {item.imageUrl ? (
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={{ width: "100%", height: 120, borderRadius: 8, marginTop: 8 }}
+          resizeMode="cover"
+        />
+      ) : null}
     </View>
+  );
+
+  const renderEvent = (item: EventDTO) => (
+    <TouchableOpacity
+      key={item.id}
+      onPress={() => navigateToEventDetail(item)}
+      style={{
+        backgroundColor: COLORS.card,
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+      }}
+      activeOpacity={0.8}
+    >
+      <View style={{
+        width: 44, height: 44, borderRadius: 10,
+        backgroundColor: COLORS.primary + "22",
+        alignItems: "center", justifyContent: "center",
+      }}>
+        <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: COLORS.text, fontWeight: "700", marginBottom: 2 }}
+          numberOfLines={1}>{item.title}</Text>
+        <Text style={{ color: COLORS.muted, fontSize: 12 }}>
+          {new Date(item.startDate).toLocaleDateString()} ·{" "}
+          <Text style={{
+            color: item.status === "incoming" ? COLORS.primary :
+              item.status === "ongoing" ? "#00c864" : COLORS.muted,
+            fontWeight: "600", textTransform: "capitalize",
+          }}>{item.status}</Text>
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <ScrollView showsVerticalScrollIndicator={false}>
+
         {/* Hero */}
         <View>
           <Image
-            source={{ uri: place.imageUrls?.[0] ?? "https://via.placeholder.com/400x260" }}
+            source={{ uri: place.imageUrls?.[0] ?? "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800" }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -100,52 +153,43 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
 
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={16} color={COLORS.primary} />
-            <Text style={styles.ratingText}>{place.rating?.toFixed(1)}</Text>
-            <Text style={styles.reviewCount}>({place.reviewCount} reviews)</Text>
-          </View>
-
-          <View style={styles.badgeRow}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{place.category}</Text>
-            </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{place.priceRange}</Text>
-            </View>
+            <Text style={styles.ratingText}>
+              {place.rating > 0 ? place.rating.toFixed(1) : "New"}
+            </Text>
+            {reviews.length > 0 && (
+              <Text style={styles.reviewCount}>({reviews.length} reviews)</Text>
+            )}
           </View>
 
           {/* Tabs */}
           <View style={styles.tabRow}>
-            {["info", "reviews"].map((tab) => (
+            {TABS.map((tab) => (
               <TouchableOpacity
                 key={tab}
                 style={[styles.tab, activeTab === tab && styles.tabActive]}
-                onPress={() => setActiveTab(tab as "info" | "reviews")}
+                onPress={() => setActiveTab(tab)}
               >
                 <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === "events" && events.length > 0 ? ` (${events.length})` : ""}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Tab Content */}
-          {activeTab === "info" ? (
+          {/* Info tab */}
+          {activeTab === "info" && (
             <>
               <Text style={styles.description}>{place.description}</Text>
-
-              {place.openingHours && (
-                <>
-                  <Text style={styles.sectionLabel}>Opening Hours</Text>
-                  <Text style={styles.hoursText}>{place.openingHours}</Text>
-                </>
-              )}
-
               <TouchableOpacity style={styles.directionsBtn} onPress={openDirections}>
                 <Ionicons name="navigate-outline" size={18} color={COLORS.text} />
                 <Text style={styles.directionsBtnText}>Get Directions</Text>
               </TouchableOpacity>
             </>
-          ) : (
+          )}
+
+          {/* Reviews tab */}
+          {activeTab === "reviews" && (
             <>
               {reviews.length === 0 ? (
                 <Text style={{ color: COLORS.muted, textAlign: "center", marginVertical: 20 }}>
@@ -158,6 +202,19 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
                 <Ionicons name="create-outline" size={18} color="#fff" />
                 <Text style={styles.addReviewText}>Write a Review</Text>
               </TouchableOpacity>
+            </>
+          )}
+
+          {/* Events tab */}
+          {activeTab === "events" && (
+            <>
+              {events.length === 0 ? (
+                <Text style={{ color: COLORS.muted, textAlign: "center", marginVertical: 20 }}>
+                  No upcoming events at this location.
+                </Text>
+              ) : (
+                events.map(renderEvent)
+              )}
             </>
           )}
         </View>

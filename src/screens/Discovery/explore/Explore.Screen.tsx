@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  Image, ActivityIndicator, StatusBar,
+  ActivityIndicator, StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,8 +14,7 @@ const ExploreScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const {
     places, isLoading, keyword, setKeyword,
-    selectedCategory, categories, recentSearches,
-    handleSearch, handleCategoryChange, handleLoadMore,
+    recentSearches, handleSearch, handleLoadMore,
     navigateToDetail, loadRecentSearches, fetchPlaces,
   } = ExploreFunction(navigation);
 
@@ -25,25 +24,34 @@ const ExploreScreen = ({ navigation }: any) => {
   }, []);
 
   const renderCard = ({ item }: { item: PlaceDTO }) => (
-    <TouchableOpacity style={styles.card} onPress={() => navigateToDetail(item.id)} activeOpacity={0.8}>
-      <Image
-        source={{ uri: item.imageUrls?.[0] ?? "https://via.placeholder.com/90" }}
-        style={styles.cardImage}
-        resizeMode="cover"
-      />
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigateToDetail(item.id)}
+      activeOpacity={0.8}
+    >
+      {/* Attraction không có image từ list endpoint — dùng placeholder */}
+      <View style={[styles.cardImage, {
+        backgroundColor: COLORS.card,
+        alignItems: "center",
+        justifyContent: "center",
+      }]}>
+        <Ionicons name="image-outline" size={28} color={COLORS.muted} />
+      </View>
+
       <View style={styles.cardInfo}>
         <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.cardAddress} numberOfLines={1}>{item.address}</Text>
+
         <View style={styles.cardFooter}>
           <View style={styles.cardRating}>
             <Ionicons name="star" size={12} color={COLORS.primary} />
-            <Text style={styles.cardRatingText}>{item.rating?.toFixed(1)}</Text>
-            <Text style={styles.cardRatingText}> ({item.reviewCount})</Text>
-          </View>
-          <View style={styles.cardPriceTag}>
-            <Text style={styles.cardPriceText}>
-              {item.priceRange === "free" ? "Free" : item.priceRange}
+            <Text style={styles.cardRatingText}>
+              {item.rating > 0 ? item.rating.toFixed(1) : "New"}
             </Text>
+          </View>
+          {/* Xem events button */}
+          <View style={styles.cardPriceTag}>
+            <Text style={styles.cardPriceText}>See events</Text>
           </View>
         </View>
       </View>
@@ -61,7 +69,7 @@ const ExploreScreen = ({ navigation }: any) => {
         <Ionicons name="search-outline" size={18} color={COLORS.muted} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search places, cuisines…"
+          placeholder="Search attractions…"
           placeholderTextColor={COLORS.muted}
           value={keyword}
           onChangeText={setKeyword}
@@ -75,25 +83,6 @@ const ExploreScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Category Chips */}
-      <FlatList
-        data={categories}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item}
-        contentContainerStyle={styles.categoryRow}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.categoryChip, selectedCategory === item && styles.categoryChipActive]}
-            onPress={() => handleCategoryChange(item)}
-          >
-            <Text style={[styles.categoryChipText, selectedCategory === item && styles.categoryChipTextActive]}>
-              {item}
-            </Text>
-          </TouchableOpacity>
-        )}
-      />
 
       {/* Recent Searches */}
       {showRecent && (
@@ -126,7 +115,7 @@ const ExploreScreen = ({ navigation }: any) => {
           !isLoading ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="search-outline" size={48} color={COLORS.muted} />
-              <Text style={styles.emptyText}>No places found</Text>
+              <Text style={styles.emptyText}>No attractions found</Text>
             </View>
           ) : null
         }

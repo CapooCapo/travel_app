@@ -1,17 +1,30 @@
 import { apiRequest } from "../api/client";
+import { NotificationDTO, mapNotification } from "../dto/notification/notification.DTO";
 
+/**
+ * QUAN TRỌNG: GET /api/notifications
+ * BE trả thẳng List<NotificationResponse> — KHÔNG có ApiResponse wrapper.
+ * Axios sẽ wrap vào response.data trực tiếp → mảng.
+ */
 export const notificationService = {
-  async getNotifications() {
+
+  async getNotifications(): Promise<NotificationDTO[]> {
     const res = await apiRequest.getNotifications();
-    if (res.status !== 200) throw new Error(res.data.message || "Failed to fetch notifications");
-    return res.data.data;
+    // res.data là List<NotificationResponse> trực tiếp (mảng)
+    const list = Array.isArray(res.data) ? res.data : [];
+    return list.map(mapNotification);
   },
 
-  async markRead(id: number) {
-    await apiRequest.markNotificationRead(id);
-  },
+  // BE hiện chưa có endpoint markRead / markAllRead
+  // → Implement phía FE bằng cách cập nhật state local
+  markReadLocally: (
+    notifications: NotificationDTO[],
+    id: number
+  ): NotificationDTO[] =>
+    notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
 
-  async markAllRead() {
-    await apiRequest.markAllNotificationsRead();
-  },
+  markAllReadLocally: (
+    notifications: NotificationDTO[]
+  ): NotificationDTO[] =>
+    notifications.map((n) => ({ ...n, isRead: true })),
 };

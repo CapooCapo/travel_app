@@ -9,12 +9,12 @@ import { reviewService } from "../../../services/review.service";
 import { COLORS, SIZES, FONTS } from "../../../constants/theme";
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: SIZES.padding, paddingVertical: 12 },
-  headerTitle: { ...FONTS.h2, color: COLORS.text },
-  content: { padding: SIZES.padding },
-  label: { ...FONTS.body2, color: COLORS.muted, fontWeight: "600", textTransform: "uppercase", marginBottom: 10 },
-  starsRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
+  container:       { flex: 1, backgroundColor: COLORS.bg },
+  header:          { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: SIZES.padding, paddingVertical: 12 },
+  headerTitle:     { ...FONTS.h2, color: COLORS.text },
+  content:         { padding: SIZES.padding },
+  label:           { ...FONTS.body2, color: COLORS.muted, fontWeight: "600", textTransform: "uppercase", marginBottom: 10 },
+  starsRow:        { flexDirection: "row", gap: 10, marginBottom: 24 },
   commentInput: {
     backgroundColor: COLORS.surface, borderRadius: SIZES.radius,
     paddingHorizontal: 14, paddingVertical: 12,
@@ -22,32 +22,32 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
     height: 130, textAlignVertical: "top", marginBottom: 24,
   },
-  submitBtn: {
-    backgroundColor: COLORS.primary, borderRadius: SIZES.radius,
-    paddingVertical: 14, alignItems: "center",
-  },
+  submitBtn:         { backgroundColor: COLORS.primary, borderRadius: SIZES.radius, paddingVertical: 14, alignItems: "center" },
   submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { ...FONTS.body1, color: "#fff", fontWeight: "700" },
-  ratingHint: { ...FONTS.body2, color: COLORS.muted, marginBottom: 20 },
+  submitBtnText:     { ...FONTS.body1, color: "#fff", fontWeight: "700" },
+  ratingHint:        { ...FONTS.body2, color: COLORS.muted, marginBottom: 20 },
 });
 
 const RATING_LABELS = ["", "Poor", "Fair", "Good", "Very Good", "Excellent"];
 
 const WriteReviewScreen = ({ navigation, route }: any) => {
-  const { targetId, targetType } = route.params;
+  // attractionId từ PlaceDetail.Function: navigateToWriteReview()
+  const { attractionId } = route.params;
   const insets = useSafeAreaInsets();
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
+
+  const [rating,    setRating]    = useState(0);
+  const [content,   setContent]   = useState("");   // BE dùng "content"
   const [isLoading, setIsLoading] = useState(false);
 
-  const canSubmit = rating > 0 && comment.trim().length >= 10;
+  const canSubmit = rating > 0 && content.trim().length >= 10;
 
   const handleSubmit = async () => {
     if (!canSubmit || isLoading) return;
     setIsLoading(true);
     try {
-      await reviewService.createReview({ targetId, targetType, rating, comment: comment.trim() });
-      Alert.alert("Review Submitted", "Thank you for your feedback!", [
+      // reviewService.createReview(attractionId, rating, content, imageUrl?)
+      await reviewService.createReview(attractionId, rating, content.trim());
+      Alert.alert("Review Submitted ✅", "Thank you for your feedback!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {
@@ -60,6 +60,7 @@ const WriteReviewScreen = ({ navigation, route }: any) => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={COLORS.text} />
@@ -80,6 +81,7 @@ const WriteReviewScreen = ({ navigation, route }: any) => {
             </TouchableOpacity>
           ))}
         </View>
+
         {rating > 0 && (
           <Text style={styles.ratingHint}>{RATING_LABELS[rating]}</Text>
         )}
@@ -87,9 +89,9 @@ const WriteReviewScreen = ({ navigation, route }: any) => {
         <Text style={styles.label}>Your Review</Text>
         <TextInput
           style={styles.commentInput}
-          value={comment}
-          onChangeText={setComment}
-          placeholder="Share your experience (minimum 10 characters)…"
+          value={content}
+          onChangeText={setContent}
+          placeholder="Share your experience (min. 10 characters)…"
           placeholderTextColor={COLORS.muted}
           multiline
           numberOfLines={5}

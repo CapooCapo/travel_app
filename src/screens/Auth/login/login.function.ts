@@ -1,42 +1,39 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert } from "react-native";
 import { isEmail, validatePassword } from "../../../services/validator";
 import { authService } from "../../../services/auth.service";
-import { useOAuth, useAuth } from "@clerk/clerk-expo";
+import { useOAuth } from "@clerk/clerk-expo";
 
 export function LoginFunction(navigation: any) {
-  const [loading, setLoading] = useState(false);
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  const [email,     setEmail]     = useState("");
+  const [password,  setPassword]  = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const canSubmit =
-    isEmail(email) === null && validatePassword(password) === null;
+  const [oauthLoading, setOauthLoading] = useState(false);
+
   const BG_SOURCE = {
     uri: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070",
   };
-  const { isSignedIn } = useAuth();
+
+  const canSubmit = isEmail(email) === null && validatePassword(password) === null;
 
   const validateForm = () => {
-    const emailError = isEmail(email);
+    const emailError    = isEmail(email);
     const passwordError = validatePassword(password);
-
-    return {
-      emailError,
-      passwordError,
-      isValid: !emailError && !passwordError,
-    };
+    return { emailError, passwordError, isValid: !emailError && !passwordError };
   };
 
+  // ── Email / Password login ──────────────────────────────────────────────
   const handleLogin = async () => {
-    const form = validateForm();
-
-    if (!form.isValid || isLoading) return;
+    const { isValid } = validateForm();
+    if (!isValid || isLoading) return;
 
     setIsLoading(true);
     try {
-      await authService.Login(email.trim(), password);
-      console.log("success");
+      // authService.login (lowercase) — trả token, tự lưu vào storage
+      await authService.login(email.trim(), password);
+      // Navigation điều hướng tự động qua useAuth().isSignedIn trong AppNavigator
     } catch (e: any) {
       Alert.alert("Login Failed", e?.message || "Something went wrong");
     } finally {
@@ -44,38 +41,29 @@ export function LoginFunction(navigation: any) {
     }
   };
 
+  // ── Google OAuth (Clerk) ────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
-    if (loading) return;
-
-    setLoading(true);
-
+    if (oauthLoading) return;
+    setOauthLoading(true);
     try {
       const { createdSessionId, setActive } = await startOAuthFlow({
-        additionalParameters: {
-          prompt: "select_account",
-        },
+        additionalParameters: { prompt: "select_account" },
       });
-
-      if (createdSessionId) {
+      if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
-        navigation.navigate("Home");
+        // AppNavigator sẽ tự redirect vì isSignedIn thay đổi
       }
     } catch (err: any) {
-      Alert.alert(
-        "Login failed",
-        err?.errors?.[0]?.message || "Google login failed",
-      );
+      Alert.alert("Login Failed", err?.errors?.[0]?.message || "Google login failed");
     } finally {
-      setLoading(false);
+      setOauthLoading(false);
     }
   };
 
   return {
-    email,
-    setEmail,
-    password,
-    setPassword,
-    isLoading,
+    email, setEmail,
+    password, setPassword,
+    isLoading: isLoading || oauthLoading,
     canSubmit,
     validateForm,
     handleLogin,

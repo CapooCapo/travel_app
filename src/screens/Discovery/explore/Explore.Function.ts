@@ -4,66 +4,60 @@ import { discoveryService } from "../../../services/discovery.service";
 import { offlineStorage } from "../../../storage/offline.storage";
 import { PlaceDTO } from "../../../dto/discovery/place.DTO";
 
-const CATEGORIES = ["all", "attraction", "cuisine", "activity"];
-const SORT_OPTIONS = ["relevance", "top-rated", "name"] as const;
+const PAGE_SIZE = 10;
 
 export function ExploreFunction(navigation: any) {
-  const [places, setPlaces] = useState<PlaceDTO[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [keyword, setKeyword] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState<typeof SORT_OPTIONS[number]>("relevance");
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [places,          setPlaces]          = useState<PlaceDTO[]>([]);
+  const [isLoading,       setIsLoading]       = useState(false);
+  const [keyword,         setKeyword]         = useState("");
+  const [page,            setPage]            = useState(0);   // BE 0-indexed
+  const [totalPages,      setTotalPages]      = useState(1);
+  const [recentSearches,  setRecentSearches]  = useState<string[]>([]);
+
+  const hasMore = page < totalPages - 1;
 
   const loadRecentSearches = async () => {
     const searches = await offlineStorage.getRecentSearches();
     setRecentSearches(searches);
   };
 
+  // BE params: { keyword?, rating?, page, size }
+  // Không có sortBy / category / priceRange / limit
   const fetchPlaces = useCallback(
     async (reset = false) => {
       if (isLoading) return;
       setIsLoading(true);
       try {
-        const currentPage = reset ? 1 : page;
-        const res = await discoveryService.getPlaces({
+        const currentPage = reset ? 0 : page;
+        const res = await discoveryService.getAttractions({
           keyword: keyword.trim() || undefined,
-          category: selectedCategory === "all" ? undefined : selectedCategory,
-          sortBy,
-          page: currentPage,
-          limit: 10,
+          page:    currentPage,
+          size:    PAGE_SIZE,
         });
-        const newPlaces = res?.places ?? [];
+        const newPlaces = res.places ?? [];
         setPlaces(reset ? newPlaces : (prev) => [...prev, ...newPlaces]);
-        setPage(currentPage + 1);
-        setHasMore(newPlaces.length === 10);
+        setPage(reset ? 1 : currentPage + 1);
+        setTotalPages(res.totalPages);
       } catch (e: any) {
         Alert.alert("Error", e?.message || "Failed to load places");
       } finally {
         setIsLoading(false);
       }
     },
-    [keyword, selectedCategory, sortBy, page, isLoading]
+    [keyword, page, isLoading]
   );
 
   const handleSearch = async () => {
     if (keyword.trim()) {
       await offlineStorage.saveRecentSearch(keyword.trim());
     }
-    setPage(1);
+    setPage(0);
+    setPlaces([]);
     fetchPlaces(true);
   };
 
-  const handleCategoryChange = (cat: string) => {
-    setSelectedCategory(cat);
-    setPage(1);
-    setPlaces([]);
-  };
-
   const handleLoadMore = () => {
-    if (hasMore && !isLoading) fetchPlaces();
+    if (hasMore && !isLoading) fetchPlaces(false);
   };
 
   const navigateToDetail = (placeId: number) =>
@@ -74,14 +68,9 @@ export function ExploreFunction(navigation: any) {
     isLoading,
     keyword,
     setKeyword,
-    selectedCategory,
-    sortBy,
-    setSortBy,
-    categories: CATEGORIES,
-    sortOptions: SORT_OPTIONS,
     recentSearches,
+    hasMore,
     handleSearch,
-    handleCategoryChange,
     handleLoadMore,
     navigateToDetail,
     loadRecentSearches,

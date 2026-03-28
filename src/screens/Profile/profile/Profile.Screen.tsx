@@ -12,10 +12,15 @@ import { COLORS } from "../../../constants/theme";
 const ProfileScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const {
-    user, isEditing, setIsEditing, fullName, setFullName,
-    travelStyle, setTravelStyle, interests, toggleInterest,
-    isSaving, handleSave, handleSignOut, navigateToItineraries,
-    navigateToBookmarks, interestOptions, travelStyles,
+    displayName, displayEmail, displayAvatar,
+    beUser, isEditing, setIsEditing,
+    isSaving, isLoadingBe,
+    fullName, setFullName,
+    travelStyle, setTravelStyle,
+    gender, setGender,
+    travelStyles, genders,
+    handleSave, handleSignOut,
+    navigateToItineraries, navigateToBookmarks,
   } = ProfileFunction(navigation);
 
   return (
@@ -23,7 +28,7 @@ const ProfileScreen = ({ navigation }: any) => {
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* ── Header ── */}
         <View style={styles.headerBg}>
           {!isEditing && (
             <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditing(true)}>
@@ -31,19 +36,20 @@ const ProfileScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           )}
           <View style={styles.avatar}>
-            {user?.imageUrl ? (
-              <Image source={{ uri: user.imageUrl }} style={styles.avatarImage} />
+            {displayAvatar ? (
+              <Image source={{ uri: displayAvatar }} style={styles.avatarImage} />
             ) : (
               <Ionicons name="person" size={36} color={COLORS.muted} />
             )}
           </View>
-          <Text style={styles.displayName}>{user?.fullName ?? "Traveler"}</Text>
-          <Text style={styles.emailText}>
-            {user?.primaryEmailAddress?.emailAddress ?? ""}
-          </Text>
+          <Text style={styles.displayName}>{displayName}</Text>
+          <Text style={styles.emailText}>{displayEmail}</Text>
+          {isLoadingBe && (
+            <ActivityIndicator size="small" color={COLORS.primary} style={{ marginTop: 6 }} />
+          )}
         </View>
 
-        {/* Travel Style */}
+        {/* ── Travel Style ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Travel Style</Text>
           <View style={styles.styleRow}>
@@ -62,26 +68,40 @@ const ProfileScreen = ({ navigation }: any) => {
           </View>
         </View>
 
-        {/* Interests */}
+        {/* ── Gender ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Interests</Text>
-          <View style={styles.interestRow}>
-            {interestOptions.map((interest) => (
+          <Text style={styles.sectionTitle}>Gender</Text>
+          <View style={styles.styleRow}>
+            {genders.map((g) => (
               <TouchableOpacity
-                key={interest}
-                style={[styles.interestChip, interests.includes(interest) && styles.interestChipActive]}
-                onPress={() => isEditing && toggleInterest(interest)}
+                key={g}
+                style={[styles.styleChip, gender === g && styles.styleChipActive]}
+                onPress={() => isEditing && setGender(g)}
                 disabled={!isEditing}
               >
-                <Text style={[styles.interestChipText, interests.includes(interest) && styles.interestChipTextActive]}>
-                  {interest}
+                <Text style={[styles.styleChipText, gender === g && styles.styleChipTextActive]}>
+                  {g}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Name (edit mode) */}
+        {/* ── Interests from BE ── */}
+        {beUser?.interests && beUser.interests.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Interests</Text>
+            <View style={styles.interestRow}>
+              {beUser.interests.map((interest) => (
+                <View key={interest} style={styles.interestChipActive}>
+                  <Text style={styles.interestChipTextActive}>{interest}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* ── Edit name ── */}
         {isEditing && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Display Name</Text>
@@ -97,13 +117,13 @@ const ProfileScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Quick actions */}
+        {/* ── Quick actions ── */}
         {!isEditing && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>My Travel</Text>
             {[
-              { icon: "map-outline", label: "My Itineraries", onPress: navigateToItineraries },
-              { icon: "bookmark-outline", label: "Saved Places", onPress: navigateToBookmarks },
+              { icon: "map-outline",      label: "My Itineraries",  onPress: navigateToItineraries },
+              { icon: "bookmark-outline", label: "Saved Places",    onPress: navigateToBookmarks  },
             ].map(({ icon, label, onPress }) => (
               <TouchableOpacity key={label} style={styles.menuItem} onPress={onPress}>
                 <Ionicons name={icon as any} size={20} color={COLORS.primary} />
@@ -114,7 +134,7 @@ const ProfileScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Save / Cancel buttons (edit mode) */}
+        {/* ── Save / Cancel ── */}
         {isEditing ? (
           <>
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
