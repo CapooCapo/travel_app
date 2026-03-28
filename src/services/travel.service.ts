@@ -1,42 +1,45 @@
-import { apiRequest } from "../api/client";
-import { CreateItineraryRequest, AddPlanItemRequest } from "../dto/travel/travel.DTO";
+import api from "../api/client";
+import { saveOffline, getOffline, OfflineAttraction } from "../storage/offline.storage";
 
-export const travelService = {
-  async getItineraries() {
-    const res = await apiRequest.getItineraries();
-    if (res.status !== 200) throw new Error(res.data.message || "Failed to fetch itineraries");
-    return res.data.data;
-  },
+export interface Attraction {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  description: string;
+  images: string[];
+}
 
-  async getItineraryById(id: number) {
-    const res = await apiRequest.getItineraryById(id);
-    if (res.status !== 200) throw new Error(res.data.message || "Itinerary not found");
-    return res.data.data;
-  },
+export type AttractionSource = "online" | "offline" | "empty";
 
-  async createItinerary(req: CreateItineraryRequest) {
-    if (!req.title.trim()) throw new Error("Title is required");
-    if (new Date(req.endDate) < new Date(req.startDate))
-      throw new Error("End date must be after start date");
-    const res = await apiRequest.createItinerary(req);
-    if (res.status !== 200) throw new Error(res.data.message || "Failed to create itinerary");
-    return res.data.data;
-  },
+export interface AttractionsResult {
+  data: Attraction[];
+  source: AttractionSource;
+}
 
-  async addPlanItem(req: AddPlanItemRequest) {
-    const res = await apiRequest.addPlanItem(req);
-    if (res.status !== 200) throw new Error(res.data.message || "Failed to add item");
-    return res.data.data;
-  },
+const DEFAULT_LOCATION = { lat: 10.7769, lon: 106.7009 }; // Ho Chi Minh City
 
-  async removePlanItem(itemId: number) {
-    const res = await apiRequest.removePlanItem(itemId);
-    if (res.status !== 200) throw new Error(res.data.message || "Failed to remove item");
-  },
+export async function getNearbyAttractions(
+  lat: number | null,
+  lon: number | null
+): Promise<AttractionsResult> {
+  const resolvedLat = lat ?? DEFAULT_LOCATION.lat;
+  const resolvedLon = lon ?? DEFAULT_LOCATION.lon;
 
-  async shareItinerary(id: number) {
-    const res = await apiRequest.shareItinerary(id);
-    if (res.status !== 200) throw new Error(res.data.message || "Failed to share");
-    return res.data.data?.shareUrl;
-  },
-};
+  try {
+    const res = await api.get<Attraction[]>("/attractions/nearby", {
+      params: { lat: resolvedLat, lon: resolvedLon },
+    });
+
+    const attractions = res.data;
+    await saveOffline(attractions as OfflineAttraction[]);
+
+    return { data: attractions, source: "online" };
+  } catch (e) {
+    const cached = await getOffline();
+    if (cached.length > 0) {
+      return { data: cached, source: "offline" };
+    }
+    return { data: [], source: "empty" };
+  }
+}

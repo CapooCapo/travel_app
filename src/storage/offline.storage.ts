@@ -1,48 +1,49 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { PlaceDTO } from "../dto/discovery/place.DTO";
-import { EventDTO } from "../dto/event/event.DTO";
 
-const KEYS = {
-  BOOKMARKED_PLACES: "OFFLINE_BOOKMARKED_PLACES",
-  BOOKMARKED_EVENTS: "OFFLINE_BOOKMARKED_EVENTS",
-  RECENT_SEARCHES: "OFFLINE_RECENT_SEARCHES",
-};
+const OFFLINE_KEY = "OFFLINE_ATTRACTIONS";
+const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-export const offlineStorage = {
-  async savePlaces(places: PlaceDTO[]): Promise<void> {
-    await AsyncStorage.setItem(KEYS.BOOKMARKED_PLACES, JSON.stringify(places));
-  },
+export interface OfflineAttraction {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  description: string;
+  images: string[];
+  updatedAt: string;
+}
 
-  async getPlaces(): Promise<PlaceDTO[]> {
-    const raw = await AsyncStorage.getItem(KEYS.BOOKMARKED_PLACES);
-    return raw ? JSON.parse(raw) : [];
-  },
+interface OfflineCacheEntry {
+  data: OfflineAttraction[];
+  savedAt: number;
+}
 
-  async saveEvents(events: EventDTO[]): Promise<void> {
-    await AsyncStorage.setItem(KEYS.BOOKMARKED_EVENTS, JSON.stringify(events));
-  },
+export async function saveOffline(attractions: OfflineAttraction[]): Promise<void> {
+  const entry: OfflineCacheEntry = {
+    data: attractions.map((a) => ({
+      ...a,
+      updatedAt: new Date().toISOString(),
+    })),
+    savedAt: Date.now(),
+  };
+  await AsyncStorage.setItem(OFFLINE_KEY, JSON.stringify(entry));
+}
 
-  async getEvents(): Promise<EventDTO[]> {
-    const raw = await AsyncStorage.getItem(KEYS.BOOKMARKED_EVENTS);
-    return raw ? JSON.parse(raw) : [];
-  },
+export async function getOffline(): Promise<OfflineAttraction[]> {
+  const raw = await AsyncStorage.getItem(OFFLINE_KEY);
+  if (!raw) return [];
 
-  async saveRecentSearch(keyword: string): Promise<void> {
-    const existing = await offlineStorage.getRecentSearches();
-    const updated = [keyword, ...existing.filter((k) => k !== keyword)].slice(0, 10);
-    await AsyncStorage.setItem(KEYS.RECENT_SEARCHES, JSON.stringify(updated));
-  },
+  const entry: OfflineCacheEntry = JSON.parse(raw);
+  const isExpired = Date.now() - entry.savedAt > TTL_MS;
 
-  async getRecentSearches(): Promise<string[]> {
-    const raw = await AsyncStorage.getItem(KEYS.RECENT_SEARCHES);
-    return raw ? JSON.parse(raw) : [];
-  },
+  if (isExpired) {
+    await AsyncStorage.removeItem(OFFLINE_KEY);
+    return [];
+  }
 
-  async clearRecentSearches(): Promise<void> {
-    await AsyncStorage.removeItem(KEYS.RECENT_SEARCHES);
-  },
+  return entry.data;
+}
 
-  async clearAll(): Promise<void> {
-    await AsyncStorage.multiRemove(Object.values(KEYS));
-  },
-};
+export async function clearOffline(): Promise<void> {
+  await AsyncStorage.removeItem(OFFLINE_KEY);
+}
