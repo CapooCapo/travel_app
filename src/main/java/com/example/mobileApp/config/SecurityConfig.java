@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/attractions/ai-recommend").authenticated()
                         .requestMatchers("/api/attractions/**").permitAll()
                         .requestMatchers("/api/attraction-images/**").permitAll()
                         .requestMatchers("/api/events/**").permitAll()

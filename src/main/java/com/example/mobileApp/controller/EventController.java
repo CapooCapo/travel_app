@@ -19,13 +19,10 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/events")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-public class EventController {
+public class EventController extends BaseController {
 
     private final EventService eventService;
 
-    private <T> ApiResponse<T> ok(T data, String message) {
-        return new ApiResponse<>(200, message, data, System.currentTimeMillis());
-    }
 
     @GetMapping("/attraction/{attractionId}")
     public ApiResponse<PageResponse<EventResponse>> getEventsByAttraction(

@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.mobileApp.entity.User;
@@ -22,9 +24,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     void deleteByVerifiedFalseAndVerificationExpiryBefore(LocalDateTime now);
 
-    @EntityGraph(attributePaths = "interests")
-    Optional<User> findWithInterestsByEmail(String email);
-
-    @EntityGraph(attributePaths = "interests")
-    Optional<User> findWithInterestsById(Long id);
+        @Query("""
+        SELECT u FROM User u
+        LEFT JOIN FETCH u.interests
+        WHERE u.id = :id
+    """)
+    Optional<User> findByIdWithInterests(@Param("id") Long id);
 }

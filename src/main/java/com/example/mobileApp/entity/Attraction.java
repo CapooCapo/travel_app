@@ -1,14 +1,31 @@
 package com.example.mobileApp.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.hibernate.annotations.BatchSize;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
-@Table(name = "locations") // Ưu tiên tên bảng từ bản remote (thường đồng bộ với DB hiện tại)
+@Table(name = "locations")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -40,15 +57,19 @@ public class Attraction {
     @Column(name = "review_count")
     private Integer reviewCount;
 
+    @Column(name = "source")
+    private String source;
+
+    @Column(name = "external_id")
+    private String externalId;
+
     @ManyToMany
-    @JoinTable(
-        name = "attraction_interests",
-        joinColumns = @JoinColumn(name = "attraction_id"),
-        inverseJoinColumns = @JoinColumn(name = "interest_id")
-    )
+    @JoinTable(name = "attraction_interests", joinColumns = @JoinColumn(name = "attraction_id"), inverseJoinColumns = @JoinColumn(name = "interest_id"))
+    @BatchSize(size = 20)
     private Set<Interest> interests;
 
     @OneToMany(mappedBy = "attraction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
+    @BatchSize(size = 20)
     private List<AttractionImage> images = new ArrayList<>();
 }

@@ -14,5 +14,5 @@ public class AiRecommendationResponse {
     private AttractionResponse attraction; 
     
     // Lý do AI chọn địa điểm này (Ví dụ: "Phù hợp với sở thích leo núi của bạn")
-    private String aiReason; 
+    private String reason;
 }

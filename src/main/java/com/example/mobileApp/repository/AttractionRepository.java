@@ -1,123 +1,106 @@
-package com.example.mobileApp.service;
+package com.example.mobileApp.repository;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-import com.example.mobileApp.dto.request.CreateAttractionRequest;
-import com.example.mobileApp.dto.response.AttractionResponse;
 import com.example.mobileApp.entity.Attraction;
-import com.example.mobileApp.mapper.AttractionMapper;
-import com.example.mobileApp.repository.AttractionRepository;
 
-import lombok.RequiredArgsConstructor;
+@Repository
+public interface AttractionRepository extends JpaRepository<Attraction, Long> {
 
-@Service
-@RequiredArgsConstructor
-public class AttractionService {
+    // ─────────────────────────────────────────────
+    // Basic lookups
+    // ─────────────────────────────────────────────
 
-    private final AttractionRepository attractionRepository;
-    private final AttractionMapper mapper;
+    boolean existsByName(String name);
 
-    // Hỗ trợ hằng số bán kính từ bản local nếu cần dùng cho logic cũ
-    private static final double RADIUS_METERS = 10_000.0; 
+    Optional<Attraction> findByName(String name);
 
-    public Page<AttractionResponse> getAttractions(int page, int size) {
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by("ratingAverage").descending());
+    // ─────────────────────────────────────────────
+    // Search — dùng bởi AttractionService.search()
+    // ─────────────────────────────────────────────
 
-        return attractionRepository
-                .findAll(pageable)
-                .map(mapper::toResponse);
-    }
+    Page<Attraction> findByNameContainingIgnoreCase(String keyword, Pageable pageable);
 
-    public AttractionResponse getAttraction(Long id) {
-        Attraction attraction = attractionRepository
-                .findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Attraction not found with id: " + id));
+    Page<Attraction> findByRatingAverageGreaterThanEqual(Double rating, Pageable pageable);
 
-        return mapper.toDetailResponse(attraction);
-    }
+    // ─────────────────────────────────────────────
+    // Popular — dùng bởi getPopularAttractions()
+    // ─────────────────────────────────────────────
 
-    public Page<AttractionResponse> getNearbyAttractions(
-            Double lat,
-            Double lng,
-            int page,
-            int size) {
+    Page<Attraction> findAllByOrderByRatingAverageDesc(Pageable pageable);
 
-        Pageable pageable = PageRequest.of(page, size);
+    // ─────────────────────────────────────────────
+    // Interest filter — dùng bởi getAttractionsByInterest()
+    // ─────────────────────────────────────────────
 
-        return attractionRepository
-                .findNearby(lat, lng, pageable)
-                .map(mapper::toResponse);
-    }
+    @Query("""
+            SELECT DISTINCT a FROM Attraction a
+            JOIN a.interests i
+            WHERE i.id IN :interestIds
+            ORDER BY a.ratingAverage DESC
+            """)
+    Page<Attraction> findByInterests(@Param("interestIds") Set<Long> interestIds, Pageable pageable);
 
-    public AttractionResponse createAttraction(CreateAttractionRequest request) {
-        Attraction attraction = new Attraction();
-        attraction.setName(request.getName());
-        attraction.setAddress(request.getAddress());
-        attraction.setDescription(request.getDescription());
-        attraction.setLatitude(request.getLatitude());
-        attraction.setLongitude(request.getLongitude());
-        attraction.setRatingAverage(0.0);
-        attraction.setReviewCount(0);
+    // ─────────────────────────────────────────────
+    // PostGIS — nearby (dùng bởi getNearbyAttractions() và getNearbyRaw())
+    // Radius mặc định 10km được hardcode trong query
+    // ─────────────────────────────────────────────
 
-        attractionRepository.save(attraction);
+    @Query(value = """
+            SELECT a.*
+            FROM locations a  -- SỬA Ở ĐÂY (từ attractions thành locations)
+            WHERE ST_DWithin(
+                ST_MakePoint(a.longitude, a.latitude)::geography,
+                ST_MakePoint(:lon, :lat)::geography,
+                :radius
+            )
+            ORDER BY ST_Distance(
+                ST_MakePoint(a.longitude, a.latitude)::geography,
+                ST_MakePoint(:lon, :lat)::geography
+            )
+            """, countQuery = """
+            SELECT COUNT(*) FROM locations a -- SỬA Ở ĐÂY
+            WHERE ST_DWithin(
+                ST_MakePoint(a.longitude, a.latitude)::geography,
+                ST_MakePoint(:lon, :lat)::geography,
+                :radius
+            )
+            """, nativeQuery = true)
+    Page<Attraction> findNearby(
+            @Param("lat") double lat,
+            @Param("lon") double lon,
+            @Param("radius") double radius,
+            Pageable pageable);
 
-        return mapper.toResponse(attraction);
-    }
+    // ─────────────────────────────────────────────
+    // PostGIS — distance tới 1 địa điểm cụ thể
+    // ─────────────────────────────────────────────
 
-    public Page<AttractionResponse> search(
-            String keyword,
-            Double rating,
-            Pageable pageable) {
-        Page<Attraction> result;
+    @Query(value = """
+            SELECT ST_Distance(
+                ST_MakePoint(a.longitude, a.latitude)::geography,
+                ST_MakePoint(:lon, :lat)::geography
+            )
+            FROM locations a -- SỬA Ở ĐÂY
+            WHERE a.id = :id
+            """, nativeQuery = true)
+    Double getDistanceMeters(
+            @Param("id") Long id,
+            @Param("lat") double lat,
+            @Param("lon") double lon);
+    // ─────────────────────────────────────────────
+    // OsmService
+    // ─────────────────────────────────────────────
 
-        if (keyword != null) {
-            result = attractionRepository.findByNameContainingIgnoreCase(keyword, pageable);
-        } else if (rating != null) {
-            result = attractionRepository.findByRatingAverageGreaterThanEqual(rating, pageable);
-        } else {
-            result = attractionRepository.findAll(pageable);
-        }
+    boolean existsByNameAndAddress(String name, String address);
 
-        return result.map(mapper::toResponse);
-    }
-
-    public Page<AttractionResponse> getAttractionsByInterest(
-            Set<Long> interestIds,
-            int page,
-            int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        return attractionRepository
-                .findByInterests(interestIds, pageable)
-                .map(mapper::toResponse);
-    }
-
-    public Page<AttractionResponse> getPopularAttractions(int page, int size) {
-        return attractionRepository
-                .findAllByOrderByRatingAverageDesc(PageRequest.of(page, size))
-                .map(mapper::toResponse);
-    }
-
-    public List<AttractionResponse> getNearbyRaw(Double lat, Double lng) {
-        // Lấy tối đa 10 địa điểm gần nhất để gửi cho AI phân tích
-        Pageable topTen = PageRequest.of(0, 10);
-        return attractionRepository
-                .findNearby(lat, lng, topTen)
-                .map(mapper::toResponse)
-                .getContent();
-    }
+    boolean existsByExternalIdAndSource(String externalId, String source);
 }

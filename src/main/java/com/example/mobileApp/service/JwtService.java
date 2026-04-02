@@ -26,13 +26,14 @@ public class JwtService {
         this.accessTokenMillis = accessTokenMinutes * 60 * 1000;
     }
 
-    public String generateToken(Long userId, String email, String role) {
+    public String generateToken(Long userId, String email, String role, Long tokenVersion) {
         long now = System.currentTimeMillis();
 
         return Jwts.builder()
                 .setSubject(email)                       
                 .claim("userId", userId)            
-                .claim("role", role)               
+                .claim("role", role)
+                .claim("tokenVersion", tokenVersion)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + accessTokenMillis))
                 .signWith(key)
@@ -50,6 +51,10 @@ public class JwtService {
 
     public String extractRole(String token) {
         return parseClaims(token).get("role", String.class);
+    }
+
+    public Long extractTokenVersion(String token) {
+        return parseClaims(token).get("tokenVersion", Long.class);
     }
 
     // ===== VALIDATE =====

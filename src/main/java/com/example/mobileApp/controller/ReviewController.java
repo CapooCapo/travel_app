@@ -24,13 +24,10 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/attractions")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-public class ReviewController {
+public class ReviewController extends BaseController {
 
     private final ReviewService reviewService;
 
-    private <T> ApiResponse<T> ok(T data, String message) {
-        return new ApiResponse<>(200, message, data, System.currentTimeMillis());
-    }
 
     @PostMapping("/{id}/reviews")
     public ApiResponse<Void> createReview(

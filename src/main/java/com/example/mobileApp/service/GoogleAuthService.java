@@ -73,7 +73,8 @@ public class GoogleAuthService {
         String token = jwtService.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRole().name());
+                user.getRole().name(),
+                user.getTokenVersion());
 
         return new LoginResponse(token);
     }

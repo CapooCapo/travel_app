@@ -16,11 +16,13 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (interestRepository.count() == 0) {
-            interestRepository.save(new Interest(null, "FOOD"));
-            interestRepository.save(new Interest(null, "CULTURE"));
-            interestRepository.save(new Interest(null, "SHOPPING"));
-            interestRepository.save(new Interest(null, "NATURE"));
-            interestRepository.save(new Interest(null, "ADVENTURE"));
+            // Khởi tạo theo đúng thứ tự ID 1 -> 6 của MASTER_INTERESTS ở Frontend
+            interestRepository.save(new Interest(null, "Beaches"));
+            interestRepository.save(new Interest(null, "Hiking"));
+            interestRepository.save(new Interest(null, "Culture"));
+            interestRepository.save(new Interest(null, "Food & Culinary"));
+            interestRepository.save(new Interest(null, "Relaxation"));
+            interestRepository.save(new Interest(null, "Photography"));
         }
     }
 }

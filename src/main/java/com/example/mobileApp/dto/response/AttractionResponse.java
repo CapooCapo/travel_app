@@ -1,6 +1,7 @@
 package com.example.mobileApp.dto.response;
 
 import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,7 @@ public class AttractionResponse {
     private Double latitude;
     private Double longitude;
     private Double ratingAverage;
-    private Integer reviewCount;
-    private List<String> imageUrls;
-    private List<String> category; // Ví dụ: ["Beach", "Restaurant"]
+    
+    private String category; 
+    private List<String> imageUrls; 
 }

@@ -1,5 +1,7 @@
 package com.example.mobileApp.mapper;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.example.mobileApp.dto.request.RegisterRequest;
@@ -16,7 +18,7 @@ public class UserMapper {
         return user;
     }
 
-    public UserResponse profileResponse(User user) {
+    public UserResponse toProfileResponse(User user) {
         return new UserResponse(
                 user.getId(),
                 user.getFullName(),
@@ -25,9 +27,10 @@ public class UserMapper {
                 user.getGender() != null ? user.getGender().name() : null,
                 user.getTravelStyle() != null ? user.getTravelStyle().name() : null,
                 user.getAvatarUrl(),
-                user.getInterests()
-                        .stream()
-                        .map(i -> i.getName())
-                        .toList());
+                user.getInterests() != null
+                        ? user.getInterests().stream()
+                                .map(i -> new UserResponse.Interest(i.getId(), i.getName())) 
+                                .toList()
+                        : List.of());
     }
 }

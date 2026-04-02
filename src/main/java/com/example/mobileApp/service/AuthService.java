@@ -16,13 +16,17 @@ import com.example.mobileApp.dto.request.RegisterRequest;
 import com.example.mobileApp.dto.request.ResetPasswordRequest;
 import com.example.mobileApp.dto.response.LoginResponse;
 import com.example.mobileApp.entity.User;
+import com.example.mobileApp.exception.ConflictException;
+import com.example.mobileApp.exception.ResourceNotFoundException;
 import com.example.mobileApp.mapper.UserMapper;
 import com.example.mobileApp.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -39,11 +43,11 @@ public class AuthService {
     public void register(RegisterRequest request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email is already registered!");
+            throw new ConflictException("Email is already registered!");
         }
 
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new RuntimeException("Passwords do not match!");
+            throw new IllegalArgumentException("Passwords do not match!");
         }
 
         User user = userMapper.toUser(request);
@@ -68,16 +72,17 @@ public class AuthService {
                         request.getPassword()));
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!user.getVerified()) {
-            throw new RuntimeException("Account is not verified");
+            throw new IllegalStateException("Account is not verified");
         }
 
         String token = jwtService.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getRole().name());
+                user.getRole().name(),
+                user.getTokenVersion());
 
         return new LoginResponse(token);
     }
@@ -86,15 +91,11 @@ public class AuthService {
     public void verifyAccount(String token) {
 
         User user = userRepository.findByVerificationToken(token)
-                .orElse(null);
-
-        if (user == null) {
-            throw new RuntimeException("Invalid verification token");
-        }
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid verification token"));
 
         if (user.getVerificationExpiry() == null ||
                 user.getVerificationExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Link activation has expired.");
+            throw new IllegalStateException("Link activation has expired.");
         }
 
         user.setVerified(true);
@@ -110,6 +111,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
 
         if (user == null) {
+            log.warn("Forgot password requested for non-existent email: {}", request.getEmail());
             return; // tránh leak thông tin email tồn tại hay không
         }
 
@@ -128,16 +130,16 @@ public class AuthService {
     public void resetPassword(ResetPasswordRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Email không tồn tại"));
 
         if (user.getResetPasswordToken() == null ||
                 !passwordEncoder.matches(request.getPin(), user.getResetPasswordToken())) {
-            throw new RuntimeException("Verification code is incorrect");
+            throw new IllegalArgumentException("Verification code is incorrect");
         }
 
         if (user.getResetPasswordExpiry() == null ||
                 user.getResetPasswordExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Verification code has expired");
+            throw new IllegalStateException("Verification code has expired");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

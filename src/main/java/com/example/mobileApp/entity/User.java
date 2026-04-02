@@ -79,6 +79,12 @@ public class User {
     @Column(name = "reset_password_expiry")
     private LocalDateTime resetPasswordExpiry;
 
+    @Column(name = "otp_attempts")
+    private Integer otpAttempts = 0;
+
+    @Column(name = "token_version")
+    private Long tokenVersion = 0L;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

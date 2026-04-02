@@ -2,49 +2,40 @@ package com.example.mobileApp.controller;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.data.domain.*;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.mobileApp.dto.request.CreateAttractionRequest;
-import com.example.mobileApp.dto.response.AiRecommendationResponse;
-import com.example.mobileApp.dto.response.ApiResponse;
-import com.example.mobileApp.dto.response.AttractionResponse;
-import com.example.mobileApp.entity.Interest;
+import com.example.mobileApp.dto.response.*;
 import com.example.mobileApp.entity.User;
+import com.example.mobileApp.repository.UserRepository;
 import com.example.mobileApp.service.AttractionService;
-import com.example.mobileApp.service.GeminiService;
-import com.example.mobileApp.service.OsmService;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/attractions")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-public class AttractionController {
+public class AttractionController extends BaseController {
 
     private final AttractionService attractionService;
-    private final GeminiService geminiService;
-    private final OsmService osmService;
+    private final UserRepository userRepository;
 
-    // Helper method để đóng gói response chuẩn
-    private <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(
-                200,
-                "OK",
-                data,
-                System.currentTimeMillis());
-    }
+    // ========================
+    // BASIC APIs
+    // ========================
 
     @GetMapping
     public ApiResponse<Page<AttractionResponse>> getAllAttractions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+
         return ok(attractionService.getAttractions(page, size));
     }
 
@@ -59,30 +50,52 @@ public class AttractionController {
             @RequestParam(required = false) Double rating,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+
         Pageable pageable = PageRequest.of(page, size);
         return ok(attractionService.search(keyword, rating, pageable));
     }
 
+    // ========================
+    // NEARBY
+    // ========================
+
     @GetMapping("/nearby")
-    public ApiResponse<Page<AttractionResponse>> getNearbyAttractions(
+    public ResponseEntity<ApiResponse<Page<AttractionResponse>>> getNearbyAttractions(
             @RequestParam Double lat,
-            @RequestParam Double lng, // Đổi từ lon sang lng để đồng bộ với Service
+            @RequestParam Double lng,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ok(attractionService.getNearbyAttractions(lat, lng, page, size));
+
+        Page<AttractionResponse> data =
+                attractionService.getNearbyAttractions(lat, lng, page, size);
+
+        return ResponseEntity.ok()
+                // ✅ cache browser 2 phút
+                .cacheControl(CacheControl.maxAge(2, TimeUnit.MINUTES))
+                .body(ok(data));
     }
+
+    // ========================
+    // CREATE
+    // ========================
 
     @PostMapping
     public ApiResponse<AttractionResponse> createAttraction(
             @RequestBody CreateAttractionRequest request) {
+
         return ok(attractionService.createAttraction(request));
     }
+
+    // ========================
+    // INTEREST
+    // ========================
 
     @PostMapping("/by-interests")
     public ApiResponse<Page<AttractionResponse>> getByInterests(
             @RequestBody Set<Long> interestIds,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+
         return ok(attractionService.getAttractionsByInterest(interestIds, page, size));
     }
 
@@ -90,33 +103,31 @@ public class AttractionController {
     public ApiResponse<Page<AttractionResponse>> getPopular(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+
         return ok(attractionService.getPopularAttractions(page, size));
     }
 
+    // ========================
+    // AI RECOMMEND (QUAN TRỌNG)
+    // ========================
+
     @GetMapping("/ai-recommend")
-    public ApiResponse<List<AiRecommendationResponse>> getAiRecommend(
+    public ResponseEntity<ApiResponse<List<AiRecommendationResponse>>> getAiRecommend(
             @RequestParam Double lat,
             @RequestParam Double lng,
-            @AuthenticationPrincipal User user) {
+            @org.springframework.security.core.annotation.AuthenticationPrincipal Long userId
+    ) {
 
-        if (user == null || user.getInterests() == null) {
-            return ok(java.util.Collections.emptyList());
-        }
+        User user = userRepository.findByIdWithInterests(userId)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found: " + userId));
 
-        // 1. Quét DB cục bộ
-        List<AttractionResponse> nearby = attractionService.getNearbyRaw(lat, lng);
+        List<AiRecommendationResponse> result =
+                attractionService.getAiRecommendations(lat, lng, user);
 
-        // 2. Tự động cào dữ liệu từ OpenStreetMap (OSM) nếu DB trống
-        if (nearby.isEmpty()) {
-            osmService.fetchAndSaveNearbyPlaces(lat, lng);
-            nearby = attractionService.getNearbyRaw(lat, lng);
-        }
-
-        // 3. Sử dụng Gemini AI để lọc và gợi ý dựa trên sở thích User
-        Set<String> interestNames = user.getInterests().stream()
-                .map(Interest::getName)
-                .collect(Collectors.toSet());
-
-        return ok(geminiService.process(interestNames, nearby));
+        return ResponseEntity.ok()
+                // ✅ cache browser 3 phút (GIẢM REFRESH CALL API)
+                .cacheControl(CacheControl.maxAge(3, TimeUnit.MINUTES))
+                .body(ok(result));
     }
 }
