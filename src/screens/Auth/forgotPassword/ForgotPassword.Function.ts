@@ -4,9 +4,7 @@ import { isEmail } from "../../../services/validator";
 import { authService } from "../../../services/auth.service";
 
 export function ForgotPasswordFunction(navigation: any) {
-  const BG_IMAGE = {
-    uri: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070",
-  };
+  const BG_IMAGE = require("../../../../assets/images/lgoinbackground.jpg");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,8 +32,8 @@ export function ForgotPasswordFunction(navigation: any) {
     try {
       await authService.forgotPassword(email.trim());
 
-      Alert.alert("Check your email", "Reset link sent!", [
-        { text: "OK", onPress: () => navigation.goBack() },
+      Alert.alert("Check your email", "An OTP has been sent!", [
+        { text: "OK", onPress: () => navigation.navigate("OtpVerification", { email: email.trim() }) },
       ]);
     } catch (e: any) {
       Alert.alert("Failed", e?.message || "Unable to send reset email");

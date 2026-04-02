@@ -9,77 +9,71 @@ export function HomeFunction(navigation: any) {
   const [featuredPlaces, setFeaturedPlaces] = useState<AiRecommendationDTO[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<EventDTO[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
 
-  // 1. Hàm lấy GPS đã được tối ưu cho máy thật
+  // State mới để báo cáo tiến trình
+  const [loadingStep, setLoadingStep] = useState<string>("Đang chuẩn bị...");
+
   const requestLocationPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.warn("Quyền truy cập vị trí bị từ chối");
-        return null;
-      }
+      if (status !== "granted") return null;
 
-      // Thử lấy vị trí hiện tại (mức độ Balanced)
-      let currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      }).catch(() => null);
-
-      // Nếu không bắt được tín hiệu, lấy vị trí cũ gần nhất
-      if (!currentLocation) {
-        currentLocation = await Location.getLastKnownPositionAsync({});
+      let location = null;
+      try {
+        location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+      } catch {
+        location = await Location.getLastKnownPositionAsync();
       }
-
-      if (currentLocation) {
-        setLocation(currentLocation);
-        return currentLocation;
-      } else {
-        console.warn("Không thể định vị được thiết bị");
-        return null;
-      }
-    } catch (error) {
-      console.error("Lỗi lấy GPS:", error);
+      return location?.coords ? location : null;
+    } catch (err) {
       return null;
     }
   };
 
-  // 2. Logic load dữ liệu gộp chung với GPS
   const loadHomeData = useCallback(async () => {
     setIsLoading(true);
+
     try {
-      // GỌI HÀM LẤY GPS XỊN VỪA VIẾT Ở TRÊN
+      setLoadingStep("📍 Đang lấy tọa độ GPS...");
       const currLoc = await requestLocationPermission();
 
-      // Nếu có tọa độ thì mới gọi API Gemini
-      if (currLoc) {
-        const places = await discoveryService.getAiRecommendations(
-          currLoc.coords.latitude,
-          currLoc.coords.longitude,
-        );
+      if (!currLoc?.coords) {
+        setFeaturedPlaces([]);
+        return;
+      }
 
-        setFeaturedPlaces(places ?? []);
+      setLoadingStep("✨ AI đang phân tích sở thích & tìm kiếm quanh bạn...");
+      const { latitude, longitude } = currLoc.coords;
 
-        // Lấy sự kiện của địa điểm top 1
-        if (places && places.length > 0) {
-          try {
-            const eventRes = await eventService.getEventsByAttraction(
-              places[0].attraction.id,
-            );
-            setUpcomingEvents(eventRes.events ?? []);
-          } catch {
+      const places = await discoveryService.getAiRecommendations(
+        latitude,
+        longitude,
+      );
+
+      setFeaturedPlaces(places ?? []);
+
+      if (places?.length > 0) {
+        setLoadingStep("📅 Đang tải sự kiện lân cận...");
+        try {
+          // Lấy attraction.id từ phần tử đầu tiên của mảng AI trả về
+          const eventRes = await eventService.getEventsByAttraction(
+            places[0].attraction.id,
+          );
+          setUpcomingEvents(eventRes.events ?? []);
+        } catch {
             setUpcomingEvents([]);
-          }
         }
       }
     } catch (error) {
-      console.error("Lỗi load data:", error);
+      console.error("Load data lỗi:", error);
       setFeaturedPlaces([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // 3. CHỈ DÙNG 1 useEffect DUY NHẤT để tránh lặp vô tận
   useEffect(() => {
     loadHomeData();
   }, [loadHomeData]);
@@ -88,6 +82,7 @@ export function HomeFunction(navigation: any) {
     featuredPlaces,
     upcomingEvents,
     isLoading,
+    loadingStep, // Trả ra UI
     loadHomeData,
     navigateToExplore: () => navigation.navigate("Explore"),
     navigateToEventList: () => navigation.navigate("Events"),

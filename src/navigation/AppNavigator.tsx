@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoginScreen           from "../screens/Auth/login/Login.Screen";
 import RegisterScreen        from "../screens/Auth/register/Register.Screen";
 import ForgotPasswordScreen  from "../screens/Auth/forgotPassword/ForgotPassword.Screen";
+import OtpVerificationScreen from "../screens/Auth/otpVerification/OtpVerification.Screen";
+import ResetPasswordScreen   from "../screens/Auth/resetPassword/ResetPassword.Screen";
 
 // ─── Home ─────────────────────────────────────────────────────────────────
 import HomeScreen            from "../screens/Home/home/Home.Screen";
@@ -27,6 +29,7 @@ import EventDetailScreen     from "../screens/Event/eventDetail/EventDetail.Scre
 // ─── Travel Planning ──────────────────────────────────────────────────────
 import ItineraryScreen       from "../screens/TravelPlanning/itinerary/Itinerary.Screen";
 import CreatePlanScreen      from "../screens/TravelPlanning/createPlan/CreatePlan.Screen";
+import ItineraryDetailScreen from "../screens/TravelPlanning/itineraryDetail/ItineraryDetail.Screen";
 
 // ─── Social ───────────────────────────────────────────────────────────────
 import FeedScreen            from "../screens/Social/feed/Feed.Screen";
@@ -56,9 +59,11 @@ import { EventDTO } from "../dto/event/event.DTO";
 // ────────────────────────────────────────────────────────────────────────────
 export type RootStackParamList = {
   // Auth
-  SignIn:         undefined;
-  SignUp:         undefined;
-  ForgotPassword: undefined;
+  SignIn:          undefined;
+  SignUp:          undefined;
+  ForgotPassword:  undefined;
+  OtpVerification: { email: string };
+  ResetPassword:   { email: string; otp: string };
 
   // Tabs
   MainTabs: undefined;
@@ -192,6 +197,8 @@ export default function AppNavigator() {
             <Stack.Screen name="SignIn"          component={LoginScreen}          />
             <Stack.Screen name="SignUp"           component={RegisterScreen}       />
             <Stack.Screen name="ForgotPassword"   component={ForgotPasswordScreen} />
+            <Stack.Screen name="OtpVerification"  component={OtpVerificationScreen} />
+            <Stack.Screen name="ResetPassword"    component={ResetPasswordScreen} />
           </>
         ) : (
           <>
@@ -211,6 +218,10 @@ export default function AppNavigator() {
             />
             <Stack.Screen name="Itinerary"
               component={ItineraryScreen}
+              options={{ animation: "slide_from_right" }}
+            />
+            <Stack.Screen name="ItineraryDetail"
+              component={ItineraryDetailScreen}
               options={{ animation: "slide_from_right" }}
             />
             <Stack.Screen name="CreatePlan"

@@ -6,13 +6,18 @@ import { PlaceDTO } from "../../../dto/discovery/place.DTO";
 
 const PAGE_SIZE = 10;
 
+export const CATEGORIES = [
+  "Food", "Nature", "Culture", "Beach", "Museum", "Shopping", "Adventure", "Park",
+];
+
 export function ExploreFunction(navigation: any) {
-  const [places,          setPlaces]          = useState<PlaceDTO[]>([]);
-  const [isLoading,       setIsLoading]       = useState(false);
-  const [keyword,         setKeyword]         = useState("");
-  const [page,            setPage]            = useState(0);   // BE 0-indexed
-  const [totalPages,      setTotalPages]      = useState(1);
-  const [recentSearches,  setRecentSearches]  = useState<string[]>([]);
+  const [places,            setPlaces]           = useState<PlaceDTO[]>([]);
+  const [isLoading,         setIsLoading]        = useState(false);
+  const [keyword,           setKeyword]          = useState("");
+  const [selectedCategory,  setSelectedCategory] = useState("");
+  const [page,              setPage]             = useState(0);
+  const [totalPages,        setTotalPages]       = useState(1);
+  const [recentSearches,    setRecentSearches]   = useState<string[]>([]);
 
   const hasMore = page < totalPages - 1;
 
@@ -21,8 +26,6 @@ export function ExploreFunction(navigation: any) {
     setRecentSearches(searches);
   };
 
-  // BE params: { keyword?, rating?, page, size }
-  // Không có sortBy / category / priceRange / limit
   const fetchPlaces = useCallback(
     async (reset = false) => {
       if (isLoading) return;
@@ -68,6 +71,8 @@ export function ExploreFunction(navigation: any) {
     isLoading,
     keyword,
     setKeyword,
+    selectedCategory,
+    setSelectedCategory,
     recentSearches,
     hasMore,
     handleSearch,

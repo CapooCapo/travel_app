@@ -38,6 +38,14 @@ export const authService = {
     await apiRequest.forgotPassword(email);
   },
 
+  async verifyOtp(email: string, otp: string): Promise<void> {
+    await apiRequest.verifyOtp(email, otp);
+  },
+
+  async resetPassword(email: string, otp: string, newPassword: string, confirmPassword: string): Promise<void> {
+    await apiRequest.resetPassword(email, otp, newPassword, confirmPassword);
+  },
+
   async signOut(): Promise<void> {
     await authStorage.clear();
   },

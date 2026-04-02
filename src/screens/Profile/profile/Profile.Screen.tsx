@@ -18,10 +18,20 @@ const ProfileScreen = ({ navigation }: any) => {
         fullName, setFullName,
         travelStyle, setTravelStyle,
         gender, setGender,
-        travelStyles, genders,
+        selectedInterestIds, setSelectedInterestIds,
+        travelStyles, genders, masterInterests,
         handleSave, handleSignOut,
         navigateToItineraries, navigateToBookmarks,
     } = ProfileFunction(navigation);
+
+    // Hàm hỗ trợ toggle chọn/bỏ chọn Sở thích
+    const toggleInterest = (id: number) => {
+        if (selectedInterestIds.includes(id)) {
+            setSelectedInterestIds(prev => prev.filter(item => item !== id));
+        } else {
+            setSelectedInterestIds(prev => [...prev, id]);
+        }
+    };
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -38,7 +48,7 @@ const ProfileScreen = ({ navigation }: any) => {
                                 setIsEditing(true);
                             }}
                         >
-                        <Text style={{ color: COLORS.primary }}>Edit</Text>
+                            <Text style={{ color: COLORS.primary }}>Edit</Text>
                         </TouchableOpacity>
                     )}
                     <View style={styles.avatar}>
@@ -54,6 +64,22 @@ const ProfileScreen = ({ navigation }: any) => {
                         <ActivityIndicator size="small" color={COLORS.primary} style={{ marginTop: 6 }} />
                     )}
                 </View>
+
+                {/* ── Edit name ── */}
+                {isEditing && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Display Name</Text>
+                        <View style={styles.inputRow}>
+                            <TextInput
+                                style={styles.textInput}
+                                value={fullName}
+                                onChangeText={setFullName}
+                                placeholder="Your name"
+                                placeholderTextColor={COLORS.muted}
+                            />
+                        </View>
+                    </View>
+                )}
 
                 {/* ── Travel Style ── */}
                 <View style={styles.section}>
@@ -93,35 +119,45 @@ const ProfileScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                {/* ── Interests from BE ── */}
-                {beUser?.interests && beUser.interests.length > 0 && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Interests</Text>
-                        <View style={styles.interestRow}>
-                            {beUser.interests.map((interest) => (
-                                <View key={interest} style={styles.interestChipActive}>
-                                    <Text style={styles.interestChipTextActive}>{interest}</Text>
-                                </View>
-                            ))}
-                        </View>
+                {/* ── Interests ── */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Interests</Text>
+                    <View style={styles.interestRow}>
+                        {!isEditing ? (
+                            // Chế độ xem: Hiển thị các sở thích hiện tại
+                            beUser?.interests?.map((interest: any, index: number) => {
+                                const name = typeof interest === 'string' ? interest : interest.name;
+                                return (
+                                    <View key={`view-${index}`} style={styles.interestChipActive}>
+                                        <Text style={styles.interestChipTextActive}>{name}</Text>
+                                    </View>
+                                )
+                            })
+                        ) : (
+                            // Chế độ sửa: Hiển thị toàn bộ danh sách để chọn/bỏ chọn
+                            masterInterests.map((item) => {
+                                const isSelected = selectedInterestIds.includes(item.id);
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={[
+                                            styles.interestChip,
+                                            isSelected && styles.interestChipActive
+                                        ]}
+                                        onPress={() => toggleInterest(item.id)}
+                                    >
+                                        <Text style={[
+                                            styles.interestChipText,
+                                            isSelected && styles.interestChipTextActive
+                                        ]}>
+                                            {item.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })
+                        )}
                     </View>
-                )}
-
-                {/* ── Edit name ── */}
-                {isEditing && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Display Name</Text>
-                        <View style={styles.inputRow}>
-                            <TextInput
-                                style={styles.textInput}
-                                value={fullName}
-                                onChangeText={setFullName}
-                                placeholder="Your name"
-                                placeholderTextColor={COLORS.muted}
-                            />
-                        </View>
-                    </View>
-                )}
+                </View>
 
                 {/* ── Quick actions ── */}
                 {!isEditing && (
@@ -149,7 +185,10 @@ const ProfileScreen = ({ navigation }: any) => {
                                 : <Text style={styles.saveBtnText}>Save Changes</Text>
                             }
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.signOutBtn} onPress={() => setIsEditing(false)}>
+                        <TouchableOpacity style={styles.signOutBtn} onPress={() => {
+                            setIsEditing(false);
+                            loadBeProfile(); // Trả lại data ban đầu nếu Hủy
+                        }}>
                             <Text style={[styles.signOutText, { color: COLORS.muted }]}>Cancel</Text>
                         </TouchableOpacity>
                     </>

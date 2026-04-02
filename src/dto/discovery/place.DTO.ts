@@ -13,6 +13,8 @@ export type AttractionResponse = {
   latitude: number;
   longitude: number;
   ratingAverage: number;
+  category?: string;
+  imageUrls?: string[];
 };
 
 /** Khớp BE AttractionImageResponse */

@@ -8,7 +8,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.backgroundDark,
   },
-  // --- BACKGROUND TUYỆT ĐỐI ---
   backgroundImage: {
     position: "absolute",
     top: 0,
@@ -24,7 +23,6 @@ export const styles = StyleSheet.create({
     height: height,
     backgroundColor: "rgba(0,0,0,0.5)",
   },
-  // ----------------------------
 
   glassContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.15)",

@@ -7,15 +7,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./PlaceDetail.Style";
 import { PlaceDetailFunction } from "./PlaceDetail.Function";
-import { COLORS } from "../../../constants/theme";
+import { COLORS, SIZES, FONTS } from "../../../constants/theme";
 import { ReviewDTO } from "../../../dto/review/review.DTO";
 import { EventDTO } from "../../../dto/event/event.DTO";
+import AddToItineraryModal from "../../../components/AddToItineraryModal";
 
 const TABS = ["info", "reviews", "events"] as const;
 
 const PlaceDetailScreen = ({ navigation, route }: any) => {
   const { placeId } = route.params;
   const insets = useSafeAreaInsets();
+  const [modalVisible, setModalVisible] = React.useState(false);
   const {
     place, reviews, events, isLoading,
     isBookmarked, activeTab, setActiveTab,
@@ -219,6 +221,44 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
           )}
         </View>
       </ScrollView>
+
+      {/* Floating Action Footer */}
+      <View style={{
+        padding: SIZES.padding,
+        paddingBottom: Math.max(insets.bottom, SIZES.padding),
+        backgroundColor: COLORS.card,
+        borderTopWidth: 1,
+        borderColor: COLORS.border,
+      }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: COLORS.primary,
+            borderRadius: 12,
+            height: 50,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+          onPress={() => setModalVisible(true)}
+        >
+          <Ionicons name="calendar-outline" size={20} color="#fff" />
+          <Text style={{ ...FONTS.body1, color: "#fff", fontWeight: "700" }}>
+            Add to Itinerary
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Add To Itinerary Modal */}
+      <AddToItineraryModal
+        visible={modalVisible}
+        item={{ id: place.id, name: place.name, type: "place" }}
+        onClose={() => setModalVisible(false)}
+        onSuccess={() => {
+          setModalVisible(false);
+          // Optional: Show toast or alert
+        }}
+      />
     </View>
   );
 };

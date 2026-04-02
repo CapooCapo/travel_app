@@ -16,7 +16,6 @@ export const styles = StyleSheet.create({
     left: 0,
     width: width,
     height: height,
-    zIndex: -1,
   },
   overlay: {
     position: "absolute",
@@ -25,7 +24,6 @@ export const styles = StyleSheet.create({
     width: width,
     height: height,
     backgroundColor: "rgba(0,0,0,0.4)",
-    zIndex: -1,
   },
   // ------------------------------------------------------------------
 

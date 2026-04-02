@@ -1,4 +1,8 @@
 // ─── Auth DTOs (khớp BE AuthController) ────────────────────────────────────
+export type InterestItem = {
+  id: number;
+  name: string;
+};
 
 export type LoginRequest = {
   email: string;
@@ -21,8 +25,15 @@ export type ForgotPasswordRequest = {
   email: string;
 };
 
+export type VerifyOtpRequest = {
+  email: string;
+  otp: string;
+};
+
 export type ResetPasswordRequest = {
-  token: string;
+  email: string;
+  otp: string;
+  token?: string;
   newPassword: string;
   confirmPassword: string;
 };
@@ -37,11 +48,11 @@ export type UserDTO = {
   id: number;
   fullName: string;
   email: string;
-  dateOfBirth?: string;    // LocalDate → ISO string
+  dateOfBirth?: string;
   gender?: string;
   travelStyle?: string;
   avatarUrl?: string;
-  interests?: string[];
+  interests?: InterestItem[]; 
 };
 
 export type UpdateUserRequest = {

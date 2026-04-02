@@ -1,5 +1,6 @@
 import api from "../api/client";
 import { saveOffline, getOffline, OfflineAttraction } from "../storage/offline.storage";
+import { ItineraryDTO, CreateItineraryRequest, AddPlanItemRequest } from "../dto/travel/travel.DTO";
 
 export interface Attraction {
   id: number;
@@ -43,3 +44,41 @@ export async function getNearbyAttractions(
     return { data: [], source: "empty" };
   }
 }
+
+export const travelService = {
+  // Mock data during dev where APIs might be missing
+  getItineraries: async (): Promise<ItineraryDTO[]> => {
+    try {
+      const res = await api.get<ItineraryDTO[]>("/itineraries");
+      return res.data;
+    } catch {
+      return []; // fallback if API isn't implemented yet
+    }
+  },
+
+  getItineraryById: async (id: number): Promise<ItineraryDTO | null> => {
+    try {
+      const res = await api.get<ItineraryDTO>(`/itineraries/${id}`);
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  createItinerary: async (req: CreateItineraryRequest): Promise<ItineraryDTO> => {
+    const res = await api.post<ItineraryDTO>("/itineraries", req);
+    return res.data;
+  },
+
+  addItineraryItem: async (itineraryId: number, req: AddPlanItemRequest): Promise<void> => {
+    await api.post(`/itineraries/${itineraryId}/items`, req);
+  },
+
+  deleteItineraryItem: async (itemId: number): Promise<void> => {
+    await api.delete(`/items/${itemId}`);
+  },
+
+  shareItinerary: async (id: number): Promise<string> => {
+    return `myapp://itinerary/${id}`;
+  }
+};

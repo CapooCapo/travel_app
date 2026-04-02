@@ -1,6 +1,6 @@
-import { PlaceDTO } from "../discovery/place.DTO"; // Điều chỉnh đường dẫn cho đúng
+import { AttractionResponse } from "../discovery/place.DTO";
 
-export interface AiRecommendationDTO {
-  attraction: PlaceDTO;
+export type AiRecommendationDTO = {
+  attraction: AttractionResponse;
   aiReason: string;
-}
+};

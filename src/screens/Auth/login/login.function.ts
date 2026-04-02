@@ -14,9 +14,7 @@ export function LoginFunction(navigation: any) {
   const [isLoading, setIsLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
 
-  const BG_SOURCE = {
-    uri: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070",
-  };
+  const BG_SOURCE = require("../../../../assets/images/lgoinbackground.jpg");
 
   const canSubmit = isEmail(email) === null && validatePassword(password) === null;
 

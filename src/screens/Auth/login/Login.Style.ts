@@ -16,7 +16,6 @@ export const styles = StyleSheet.create({
     left: 0,
     width: width,
     height: height,
-    zIndex: -1, // Nằm dưới cùng
   },
   overlay: {
     position: "absolute", // Overlay cũng phải tuyệt đối theo ảnh
@@ -25,7 +24,6 @@ export const styles = StyleSheet.create({
     width: width,
     height: height,
     backgroundColor: "rgba(0,0,0,0.4)", // Lớp phủ tối
-    zIndex: -1,
   },
   // ------------------------------------------------
 
