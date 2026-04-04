@@ -11,17 +11,21 @@ import {
   Alert,
 } from "react-native";
 import * as Location from "expo-location";
-import { getNearbyAttractions, Attraction, AttractionSource } from "../../services/travel.service";
+import { getNearbyAttractions, AttractionSource } from "../../services/travel.service";
+import { AttractionResponse } from "../../dto/discovery/place.DTO";
+import { useNavigation } from "@react-navigation/native";
+import { COLORS } from "../../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function AttractionScreen() {
-  const [attractions, setAttractions] = useState<Attraction[]>([]);
+  const [attractions, setAttractions] = useState<AttractionResponse[]>([]);
   const [source, setSource] = useState<AttractionSource | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchAttractions = useCallback(async () => {
     let lat: number | null = null;
-    let lon: number | null = null;
+    let lng: number | null = null;
 
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -30,7 +34,7 @@ export default function AttractionScreen() {
           accuracy: Location.Accuracy.Balanced,
         });
         lat = location.coords.latitude;
-        lon = location.coords.longitude;
+        lng = location.coords.longitude;
       } else {
         Alert.alert(
           "Location Unavailable",
@@ -41,7 +45,7 @@ export default function AttractionScreen() {
       // Location failed — fall through to default
     }
 
-    const result = await getNearbyAttractions(lat, lon);
+    const result = await getNearbyAttractions(lat, lng);
     setAttractions(result.data);
     setSource(result.source);
   }, []);
@@ -91,10 +95,18 @@ export default function AttractionScreen() {
   );
 }
 
-function AttractionCard({ attraction }: { attraction: Attraction }) {
-  const thumb = attraction.images?.[0];
+function AttractionCard({ attraction }: { attraction: AttractionResponse }) {
+  const navigation = useNavigation<any>();
+  const thumb = attraction.imageUrls?.[0];
+
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.85}
+      onPress={() => {
+        /* Navigate to detail if needed */
+      }}
+    >
       {thumb ? (
         <Image source={{ uri: thumb }} style={styles.cardImage} resizeMode="cover" />
       ) : (
@@ -103,9 +115,18 @@ function AttractionCard({ attraction }: { attraction: Attraction }) {
         </View>
       )}
       <View style={styles.cardBody}>
-        <Text style={styles.cardTitle} numberOfLines={1}>
-          {attraction.name}
-        </Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {attraction.name}
+          </Text>
+          <TouchableOpacity
+            style={styles.scheduleButton}
+            onPress={() => navigation.navigate("Schedule", { attraction })}
+          >
+            <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.scheduleButtonText}>Schedule</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.cardDescription} numberOfLines={2}>
           {attraction.description}
         </Text>
@@ -162,7 +183,27 @@ const styles = StyleSheet.create({
   },
   cardImagePlaceholderText: { fontSize: 40 },
   cardBody: { padding: 12 },
-  cardTitle: { fontSize: 16, fontWeight: "600", color: "#1E293B", marginBottom: 4 },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  cardTitle: { fontSize: 16, fontWeight: "600", color: "#1E293B", flex: 1 },
+  scheduleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  scheduleButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#2563EB",
+  },
   cardDescription: { fontSize: 13, color: "#64748B", lineHeight: 18 },
 
   emptyState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },

@@ -1,40 +1,94 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
-import { authStorage } from '../storage/auth.storage'; // Trỏ đúng đường dẫn của bạn
+import React, { createContext, useEffect, ReactNode, useCallback } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
+import { apiClient, setClerkTokenGetter } from '../api/apiClient';
+
+/**
+ * Clerk Token Cache implementation using Expo SecureStore
+ */
+const tokenCache = {
+  async getToken(key: string) {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch (err) {
+      return null;
+    }
+  },
+  async saveToken(key: string, value: string) {
+    try {
+      return await SecureStore.setItemAsync(key, value);
+    } catch (err) {
+      return;
+    }
+  },
+};
 
 interface AuthContextType {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  setHasCustomToken: (value: boolean) => void;
+  user: any; // User object from Clerk
+  isSignedIn: boolean;
+  isLoaded: boolean;
+  getToken: () => Promise<string | null>;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const { isSignedIn, isLoaded: isClerkLoaded } = useAuth();
-  const [hasCustomToken, setHasCustomToken] = useState<boolean>(false);
-  const [isStorageLoaded, setIsStorageLoaded] = useState(false);
+const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
-  // Kiểm tra token nội bộ khi mở app
+/**
+ * Inner component to utilize Clerk hooks
+ */
+const AuthProviderInner = ({ children }: { children: ReactNode }) => {
+  const { isSignedIn, isLoaded, getToken, signOut } = useAuth();
+  const { user } = useUser();
+
+  // Initialize global API interceptor with Clerk token getter
   useEffect(() => {
-    const checkToken = async () => {
-      // Giả sử authStorage của bạn có hàm getToken()
-      const token = await authStorage.getToken();
-      if (token) setHasCustomToken(true);
-      setIsStorageLoaded(true);
-    };
-    checkToken();
-  }, []);
+    if (isLoaded) {
+      setClerkTokenGetter(getToken);
+    }
+  }, [isLoaded, getToken]);
 
-  // User được tính là đã đăng nhập nếu Clerk OK HOẶC có token nội bộ
-  const isAuthenticated = isSignedIn || hasCustomToken;
-  const isLoading = !isClerkLoaded || !isStorageLoaded;
+  /**
+   * Sync Flow: Automatically sync user profile to Spring Boot backend
+   */
+  const syncUser = useCallback(async () => {
+    if (isSignedIn && user) {
+      try {
+        const payload = {
+          clerkId: user.id,
+          email: user.primaryEmailAddress?.emailAddress,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          imageUrl: user.imageUrl,
+        };
+
+        console.log('[AuthContext] Syncing user to backend...', payload.email);
+        await apiClient.post('/api/auth/sync', payload);
+        console.log('[AuthContext] User sync successful.');
+      } catch (error) {
+        console.error('[AuthContext] User sync failed:', error);
+      }
+    }
+  }, [isSignedIn, user]);
+
+  useEffect(() => {
+    if (isSignedIn && user) {
+      syncUser();
+    }
+  }, [isSignedIn, user, syncUser]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, setHasCustomToken }}>
+    <AuthContext.Provider value={{ user, isSignedIn, isLoaded, getToken, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAppAuth = () => useContext(AuthContext);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  return (
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+      <AuthProviderInner>{children}</AuthProviderInner>
+    </ClerkProvider>
+  );
+};

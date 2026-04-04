@@ -20,7 +20,7 @@ const ProfileScreen = ({ navigation }: any) => {
         gender, setGender,
         selectedInterestIds, setSelectedInterestIds,
         travelStyles, genders, masterInterests,
-        handleSave, handleSignOut,
+        handleSave, handleSignOut, loadBeProfile,
         navigateToItineraries, navigateToBookmarks,
     } = ProfileFunction(navigation);
 

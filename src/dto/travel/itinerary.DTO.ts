@@ -4,15 +4,15 @@ export type DayPlanItemDTO = {
   referenceId: number;
   name: string;
   address: string;
-  startTime?: string;
-  endTime?: string;
+  imageUrl?: string;
+  startTime?: string;   // "HH:mm"
+  endTime?: string;     // "HH:mm"
   note?: string;
-  order: number;
   orderIndex: number;
 };
 
 export type DayPlanDTO = {
-  date: string;
+  date: string; // "YYYY-MM-DD"
   items: DayPlanItemDTO[];
 };
 
@@ -35,7 +35,6 @@ export type CreateItineraryRequest = {
 };
 
 export type AddPlanItemRequest = {
-  itineraryId: number;
   date: string;
   type: 'PLACE' | 'EVENT';
   referenceId: number;

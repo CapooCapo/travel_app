@@ -14,6 +14,8 @@ import CustomInput from "../../../components/CustomInput";
 import CustomButton from "../../../components/CustomButton";
 import { LoginFunction } from "./login.function";
 
+import { GoogleLoginButton } from "../../../components/Auth/GoogleLoginButton";
+
 
 const LoginScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
@@ -85,9 +87,12 @@ const LoginScreen = ({ navigation }: any) => {
                             <View style={styles.line} />
                         </View>
 
-                        {/* Ví dụ Social Button */}
-                        <View style={{ gap: 10 }}>
-                            <CustomButton title="Continue with Google" onPress={handleGoogleLogin} variant="outline" />
+                        {/* Social Login Button */}
+                        <View className="mt-4">
+                            <GoogleLoginButton 
+                                onPress={handleGoogleLogin} 
+                                isLoading={isLoading} 
+                            />
                         </View>
 
                         <View style={styles.footerContainer}>

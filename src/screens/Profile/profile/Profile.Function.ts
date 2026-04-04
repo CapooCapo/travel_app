@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Alert } from "react-native";
-import { useAuth, useUser } from "@clerk/clerk-expo";
+import { Ionicons } from "@expo/vector-icons";
 import { apiRequest } from "../../../api/client";
 import { authStorage } from "../../../storage/auth.storage";
-import { useAppAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../hooks/useAuth";
 import { UserDTO} from "../../../dto/auth/user.DTO";
 import { Res } from "../../../dto/format";
 
@@ -22,9 +22,7 @@ export const MASTER_INTERESTS = [
 ];
 
 export function ProfileFunction(navigation: any) {
-  const { signOut } = useAuth();
-  const { setHasCustomToken } = useAppAuth();
-  const { user } = useUser();
+  const { signOut, user } = useAuth();
 
   const [beUser, setBeUser] = useState<UserDTO | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -111,8 +109,6 @@ export function ProfileFunction(navigation: any) {
         onPress: async () => {
           try {
             await signOut();
-            await authStorage.clear();
-            setHasCustomToken(false);
           } catch (e: any) {
             Alert.alert("Error", e?.message || "Sign out failed");
           }
@@ -122,8 +118,8 @@ export function ProfileFunction(navigation: any) {
   };
 
   const displayName = beUser?.fullName ?? user?.fullName ?? "Traveler";
-  const displayEmail = beUser?.email ?? user?.primaryEmailAddress?.emailAddress ?? "";
-  const displayAvatar = beUser?.avatarUrl ?? user?.imageUrl;
+  const displayEmail = beUser?.email ?? user?.email ?? user?.primaryEmailAddress?.emailAddress ?? "";
+  const displayAvatar = beUser?.avatarUrl ?? user?.avatarUrl ?? user?.imageUrl;
 
   return {
     displayName,

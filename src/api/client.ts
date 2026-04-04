@@ -1,8 +1,6 @@
 import http from "../utils/http";
 import { Res, PageRes } from "../dto/format";
 import {
-  LoginRequest,
-  LoginResponse,
   RegisterRequest,
   UpdateUserRequest,
   UserDTO,
@@ -16,22 +14,32 @@ import {
 import { EventResponse } from "../dto/event/event.DTO";
 import { ReviewResponse } from "../dto/review/review.DTO";
 import { NotificationResponse } from "../dto/notification/notification.DTO";
+import {
+  ItineraryDTO,
+  CreateItineraryRequest,
+  AddPlanItemRequest,
+} from "../dto/travel/travel.DTO";
+import {
+  TravelScheduleDTO,
+  CreateTravelScheduleRequest,
+} from "../dto/schedule/schedule.DTO";
 
 export const apiRequest = {
   // ─── AUTH ────────────────────────────────────────────────────────────────
-  // POST /api/auth/login  → ApiResponse<LoginResponse{ token }>
-  login(req: LoginRequest) {
-    return http.post<Res<LoginResponse>>("/api/auth/login", req);
+
+  // POST /api/auth/login  → ApiResponse<{ token }>
+  login(req: any) {
+    return http.post<Res<{ token: string }>>("/api/auth/login", req);
+  },
+
+  // POST /api/auth/google  → ApiResponse<{ token }>
+  googleLogin(idToken: string) {
+    return http.post<Res<{ token: string }>>("/api/auth/google", { idToken });
   },
 
   // POST /api/auth/register  → ApiResponse<Void>
   register(req: RegisterRequest) {
     return http.post<Res<null>>("/api/auth/register", req);
-  },
-
-  // POST /api/auth/google  → ApiResponse<LoginResponse{ token }>
-  googleLogin(idToken: string) {
-    return http.post<Res<LoginResponse>>("/api/auth/google", { idToken });
   },
 
   // POST /api/auth/forgot-password  → ApiResponse<Void>
@@ -165,17 +173,17 @@ export const apiRequest = {
   // ─── USERS ───────────────────────────────────────────────────────────────
   // GET /api/users/me  → UserResponse
   getMe() {
-    return http.get<UserDTO>("/api/users/me");
+    return http.get<Res<UserDTO>>("/api/users/me");
   },
 
   // PUT /api/users/updateProfile  body: UpdateUserRequest  → UserResponse
   updateProfile(req: UpdateUserRequest) {
-    return http.put<UserDTO>("/api/users/updateProfile", req);
+    return http.put<Res<UserDTO>>("/api/users/updateProfile", req);
   },
 
   // PUT /api/users/me/interests  body: number[]  → UserResponse
   updateInterests(interestIds: number[]) {
-    return http.put<UserDTO>("/api/users/me/interests", interestIds);
+    return http.put<Res<UserDTO>>("/api/users/me/interests", interestIds);
   },
 
   // GET /api/users/me/data  → UserDataResponse
@@ -197,10 +205,109 @@ export const apiRequest = {
   getUserProfile(userId: number) {
     return http.get<Res<any>>(`/api/users/${userId}/profile`);
   },
+  searchUsers(keyword: string) {
+    return http.get<Res<UserDTO[]>>("/api/users/search", {
+      params: { keyword },
+    });
+  },
 
   getAiRecommendations(lat: number, lng: number) {
     return http.get<Res<any>>("/api/attractions/ai-recommend", {
       params: { lat, lng },
     });
+  },
+
+ getItineraries() {
+    return http.get<Res<ItineraryDTO[]>>("/api/itineraries");
+  },
+
+  getItineraryById(id: number) {
+    return http.get<Res<ItineraryDTO>>(`/api/itineraries/${id}`);
+  },
+
+  createItinerary(req: CreateItineraryRequest) {
+    return http.post<Res<ItineraryDTO>>("/api/itineraries", req);
+  },
+
+  addItineraryItem(itineraryId: number, req: AddPlanItemRequest) {
+    return http.post<Res<null>>(
+      `/api/itineraries/${itineraryId}/items`,
+      req // ✅ FIX Ở ĐÂY
+    );
+  },
+
+  deleteItineraryItem(itineraryId: number, itemId: number) {
+    return http.delete<Res<null>>(
+      `/api/itineraries/${itineraryId}/items/${itemId}`
+    );
+  },
+
+  shareItinerary(id: number) {
+    return http.post<Res<string>>(`/api/itineraries/${id}/share`);
+  },
+
+  updateItineraryNotes(id: number, notes: string) {
+    return http.put<Res<null>>(`/api/itineraries/${id}/notes`, { notes });
+  },
+
+  // ─── TRAVEL SCHEDULES ────────────────────────────────────────────────────
+  getSchedules() {
+    return http.get<Res<TravelScheduleDTO[]>>("/api/schedules");
+  },
+
+  createSchedule(req: CreateTravelScheduleRequest) {
+    return http.post<Res<TravelScheduleDTO>>("/api/schedules", req);
+  },
+
+  updateSchedule(id: number, req: CreateTravelScheduleRequest) {
+    return http.put<Res<TravelScheduleDTO>>(`/api/schedules/${id}`, req);
+  },
+
+  deleteSchedule(id: number) {
+    return http.delete<Res<null>>(`/api/schedules/${id}`);
+  },
+
+  // ─── CALENDAR ────────────────────────────────────────────────────────────
+  getCalendar() {
+    return http.get<Res<any[]>>("/api/calendar");
+  },
+
+  // ─── ADMIN ───────────────────────────────────────────────────────────────
+  adminGetPendingEvents() {
+    return http.get<Res<any>>("/api/admin/events/pending");
+  },
+  adminGetAnalytics() {
+    return http.get<Res<any>>("/api/admin/analytics");
+  },
+  adminApproveEvent(id: number) {
+    return http.post<Res<any>>(`/api/admin/events/${id}/approve`);
+  },
+  adminRejectEvent(id: number) {
+    return http.post<Res<any>>(`/api/admin/events/${id}/reject`);
+  },
+
+  // ─── MESSAGING ───────────────────────────────────────────────────────────
+  getChats() {
+    return http.get<Res<any>>("/api/messaging/chats");
+  },
+  getChatById(id: number) {
+    return http.get<Res<any>>(`/api/messaging/chats/${id}`);
+  },
+  createChat(req: any) {
+    return http.post<Res<any>>("/api/messaging/chats", req);
+  },
+  getMessages(chatId: number, page: number = 1) {
+    return http.get<Res<any>>(`/api/messaging/chats/${chatId}/messages`, { params: { page } });
+  },
+  sendMessage(req: any) {
+    return http.post<Res<any>>("/api/messaging/messages", req);
+  },
+  pinMessage(chatId: number, messageId: number) {
+    return http.post<Res<any>>(`/api/messaging/chats/${chatId}/messages/${messageId}/pin`);
+  },
+
+  // ─── EVENTS ──────────────────────────────────────────────────────────────
+  createEvent(req: any) {
+    return http.post<Res<any>>("/api/events", req);
   },
 };

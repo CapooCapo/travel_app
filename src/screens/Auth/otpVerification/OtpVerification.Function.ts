@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import { authService } from "../../../services/auth.service";
+import { useAuthService } from "../../../services/auth.service";
 
 export function OtpVerificationFunction(navigation: any, email: string) {
+  const authService = useAuthService();
   const BG_IMAGE = require("../../../../assets/images/lgoinbackground.jpg");
   
   const [otp, setOtp] = useState("");

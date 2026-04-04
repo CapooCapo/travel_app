@@ -1,22 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Alert } from "react-native";
 import { isEmail, validatePassword } from "../../../services/validator";
-import { authService } from "../../../services/auth.service";
-import { useOAuth } from "@clerk/clerk-expo";
-import { useAppAuth } from "../../../context/AuthContext";
+import { useAuthService } from "../../../services/auth.service";
 
 export function LoginFunction(navigation: any) {
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
-  const { setHasCustomToken } = useAppAuth();
+  const authService = useAuthService();
 
   const [email,     setEmail]     = useState("");
   const [password,  setPassword]  = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
 
   const BG_SOURCE = require("../../../../assets/images/lgoinbackground.jpg");
 
-  const canSubmit = isEmail(email) === null && validatePassword(password) === null;
+  const canSubmit = useMemo(() => 
+    isEmail(email) === null && validatePassword(password) === null
+  , [email, password]);
 
   const validateForm = () => {
     const emailError    = isEmail(email);
@@ -24,46 +22,50 @@ export function LoginFunction(navigation: any) {
     return { emailError, passwordError, isValid: !emailError && !passwordError };
   };
 
-  // ── Email / Password login ──────────────────────────────────────────────
+  /**
+   * Handle Email/Password Login via Clerk
+   */
   const handleLogin = async () => {
     const { isValid } = validateForm();
     if (!isValid || isLoading) return;
 
     setIsLoading(true);
     try {
-      // authService.login (lowercase) — trả token, tự lưu vào storage
-      await authService.login(email.trim(), password);
-      setHasCustomToken(true);
-      // Navigation điều hướng tự động qua useAuth().isSignedIn trong AppNavigator
+      await authService.signInWithEmail(email, password);
+      console.log("[Login] Email login successful via Clerk.");
+      // Navigation will be handled automatically by AuthContext/AppNavigator state change
     } catch (e: any) {
-      Alert.alert("Login Failed", e?.message || "Something went wrong");
+      console.error("[Login] Email login error:", e);
+      Alert.alert("Login Failed", e?.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ── Google OAuth (Clerk) ────────────────────────────────────────────────
+  /**
+   * Handle Google OAuth Login via Clerk
+   */
   const handleGoogleLogin = async () => {
-    if (oauthLoading) return;
-    setOauthLoading(true);
+    if (isLoading) return;
+    setIsLoading(true);
     try {
-      const { createdSessionId, setActive } = await startOAuthFlow({
-      });
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        // AppNavigator sẽ tự redirect vì isSignedIn thay đổi
-      }
+      await authService.signInWithGoogle();
+      console.log("[Login] Google login initiated via Clerk.");
     } catch (err: any) {
-      Alert.alert("Login Failed", err?.errors?.[0]?.message || "Google login failed");
+      console.error("[Login] Google login error:", err);
+      // Only alert if it's not a user cancellation
+      if (!err.message?.includes("cancel")) {
+        Alert.alert("Login Failed", "Could not complete Google sign in.");
+      }
     } finally {
-      setOauthLoading(false);
+      setIsLoading(false);
     }
   };
 
   return {
     email, setEmail,
     password, setPassword,
-    isLoading: isLoading || oauthLoading,
+    isLoading,
     canSubmit,
     validateForm,
     handleLogin,

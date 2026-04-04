@@ -25,4 +25,10 @@ export const socialService = {
     if (res.status !== 200) throw new Error(res.data.message || "User not found");
     return res.data.data;
   },
+
+  async searchUsers(keyword: string) {
+    const res = await apiRequest.searchUsers(keyword);
+    if (res.status !== 200) throw new Error(res.data.message || "Search failed");
+    return res.data; // API users/search usually returns List<UserDTO> directly or wrapped in Res
+  },
 };

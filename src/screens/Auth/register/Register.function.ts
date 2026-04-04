@@ -3,9 +3,10 @@ import { Alert } from "react-native";
 import {
   isEmail, isRequired, validateConfirmPassword, validatePassword,
 } from "../../../services/validator";
-import { authService } from "../../../services/auth.service";
+import { useAuthService } from "../../../services/auth.service";
 
 export function RegisterFunction(navigation: any) {
+  const authService = useAuthService();
   const [fullName,         setFullName]         = useState("");
   const [email,            setEmail]            = useState("");
   const [password,         setPassword]         = useState("");
@@ -36,14 +37,12 @@ export function RegisterFunction(navigation: any) {
 
     setIsLoading(true);
     try {
-      // authService.register (lowercase) — trả message string
-      const message = await authService.register(
-        fullName.trim(),
+      // Sử dụng Clerk SignUp
+      await authService.signUpWithEmail(
         email.trim(),
         password.trim(),
-        confirmPassword.trim(),
       );
-      Alert.alert("Success 🎉", message, [
+      Alert.alert("Success 🎉", "Account created! Please sign in.", [
         { text: "OK", onPress: () => navigation.navigate("SignIn") },
       ]);
     } catch (err: any) {

@@ -1,84 +1,118 @@
-import api from "../api/client";
-import { saveOffline, getOffline, OfflineAttraction } from "../storage/offline.storage";
-import { ItineraryDTO, CreateItineraryRequest, AddPlanItemRequest } from "../dto/travel/travel.DTO";
+import { apiRequest } from "../api/client";
+import {
+  saveOffline,
+  getOffline,
+  OfflineAttraction,
+} from "../storage/offline.storage";
+import { Res, PageRes } from "../dto/format";
+import { AttractionResponse } from "../dto/discovery/place.DTO";
+import {
+  ItineraryDTO,
+  CreateItineraryRequest,
+  AddPlanItemRequest,
+} from "../dto/travel/travel.DTO";
 
-export interface Attraction {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-  images: string[];
-}
+// ================== TYPES ==================
 
 export type AttractionSource = "online" | "offline" | "empty";
 
 export interface AttractionsResult {
-  data: Attraction[];
+  data: AttractionResponse[];
   source: AttractionSource;
 }
 
-const DEFAULT_LOCATION = { lat: 10.7769, lon: 106.7009 }; // Ho Chi Minh City
+// ================== CONFIG ==================
 
+const DEFAULT_LOCATION = { lat: 10.7769, lng: 106.7009 };
+
+// ================== ATTRACTIONS ==================
+
+/**
+ * Lấy danh sách địa điểm lân cận từ API hoặc cache offline nếu lỗi.
+ */
 export async function getNearbyAttractions(
   lat: number | null,
-  lon: number | null
+  lng: number | null
 ): Promise<AttractionsResult> {
   const resolvedLat = lat ?? DEFAULT_LOCATION.lat;
-  const resolvedLon = lon ?? DEFAULT_LOCATION.lon;
+  const resolvedLng = lng ?? DEFAULT_LOCATION.lng;
 
   try {
-    const res = await api.get<Attraction[]>("/attractions/nearby", {
-      params: { lat: resolvedLat, lon: resolvedLon },
-    });
+    const res = await apiRequest.getNearbyAttractions(resolvedLat, resolvedLng);
+    const attractions = res.data.data.content;
 
-    const attractions = res.data;
-    await saveOffline(attractions as OfflineAttraction[]);
+    // Lưu cache offline (ép kiểu nếu cần vì OfflineAttraction có thể khác nhẹ)
+    await saveOffline(attractions as unknown as OfflineAttraction[]);
 
     return { data: attractions, source: "online" };
   } catch (e) {
+    console.warn("getNearbyAttractions API failed, falling back to offline:", e);
     const cached = await getOffline();
-    if (cached.length > 0) {
-      return { data: cached, source: "offline" };
+
+    if (cached && cached.length > 0) {
+      return { data: cached as unknown as AttractionResponse[], source: "offline" };
     }
+
     return { data: [], source: "empty" };
   }
 }
 
+// ================== ITINERARY ==================
+
+/**
+ * Service quản lý lịch trình (Itineraries).
+ * Tuân thủ Clean Code: Gọi trực tiếp named methods từ apiRequest.
+ */
 export const travelService = {
-  // Mock data during dev where APIs might be missing
+  // 🔹 Lấy tất cả lịch trình
   getItineraries: async (): Promise<ItineraryDTO[]> => {
     try {
-      const res = await api.get<ItineraryDTO[]>("/itineraries");
-      return res.data;
-    } catch {
-      return []; // fallback if API isn't implemented yet
+      const res = await apiRequest.getItineraries();
+      return res.data.data;
+    } catch (e) {
+      console.error("getItineraries error:", e);
+      return [];
     }
   },
 
+  // 🔹 Lấy chi tiết một lịch trình
   getItineraryById: async (id: number): Promise<ItineraryDTO | null> => {
     try {
-      const res = await api.get<ItineraryDTO>(`/itineraries/${id}`);
-      return res.data;
-    } catch {
+      const res = await apiRequest.getItineraryById(id);
+      return res.data.data;
+    } catch (e) {
+      console.error("getItineraryById error:", e);
       return null;
     }
   },
 
-  createItinerary: async (req: CreateItineraryRequest): Promise<ItineraryDTO> => {
-    const res = await api.post<ItineraryDTO>("/itineraries", req);
-    return res.data;
+  // 🔹 Tạo mới lịch trình
+  createItinerary: async (
+    req: CreateItineraryRequest
+  ): Promise<ItineraryDTO> => {
+    const res = await apiRequest.createItinerary(req);
+    return res.data.data;
   },
 
-  addItineraryItem: async (itineraryId: number, req: AddPlanItemRequest): Promise<void> => {
-    await api.post(`/itineraries/${itineraryId}/items`, req);
+  // 🔹 Thêm địa điểm vào lịch trình
+  addItineraryItem: async (
+    itineraryId: number,
+    req: AddPlanItemRequest
+  ): Promise<void> => {
+    await apiRequest.addItineraryItem(itineraryId, req);
   },
 
-  deleteItineraryItem: async (itemId: number): Promise<void> => {
-    await api.delete(`/items/${itemId}`);
+  // 🔹 Xóa địa điểm khỏi lịch trình
+  deleteItineraryItem: async (
+    itineraryId: number,
+    itemId: number
+  ): Promise<void> => {
+    await apiRequest.deleteItineraryItem(itineraryId, itemId);
   },
 
+  // 🔹 Chia sẻ lịch trình
   shareItinerary: async (id: number): Promise<string> => {
-    return `myapp://itinerary/${id}`;
-  }
+    const res = await apiRequest.shareItinerary(id);
+    return res.data.data;
+  },
 };

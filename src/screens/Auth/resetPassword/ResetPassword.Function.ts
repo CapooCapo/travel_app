@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import { authService } from "../../../services/auth.service";
+import { useAuthService } from "../../../services/auth.service";
 import { validatePassword } from "../../../services/validator";
 
 export function ResetPasswordFunction(navigation: any, email: string, otp: string) {
+  const authService = useAuthService();
   const BG_IMAGE = require("../../../../assets/images/lgoinbackground.jpg");
   
   const [password, setPassword] = useState("");
@@ -28,7 +29,7 @@ export function ResetPasswordFunction(navigation: any, email: string, otp: strin
     setErrors({ password: "", confirm: "" });
 
     try {
-      await authService.resetPassword(email, otp, password, confirmPassword);
+      await authService.resetPassword(email, otp, password);
       
       Alert.alert("Success", "Your password has been successfully reset. Please log in.", [
         { 

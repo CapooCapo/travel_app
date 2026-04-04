@@ -18,7 +18,7 @@ const ItineraryScreen = ({ navigation }: any) => {
   } = ItineraryFunction(navigation);
 
   const renderCard = ({ item }: { item: ItineraryDTO }) => {
-    const totalItems = item.days.reduce((sum, d) => sum + d.items.length, 0);
+    const totalItems = (item.days || []).reduce((sum, d) => sum + d.items.length, 0);
     return (
       <TouchableOpacity
         style={styles.card}
@@ -45,7 +45,7 @@ const ItineraryScreen = ({ navigation }: any) => {
         <View style={styles.cardStats}>
           <View style={styles.statItem}>
             <Ionicons name="sunny-outline" size={13} color={COLORS.muted} />
-            <Text style={styles.statText}>{item.days.length} days</Text>
+            <Text style={styles.statText}>{(item.days || []).length} days</Text>
           </View>
           <View style={styles.statItem}>
             <Ionicons name="location-outline" size={13} color={COLORS.muted} />

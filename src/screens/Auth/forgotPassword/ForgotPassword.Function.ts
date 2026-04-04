@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { isEmail } from "../../../services/validator";
-import { authService } from "../../../services/auth.service";
+import { useAuthService } from "../../../services/auth.service";
 
 export function ForgotPasswordFunction(navigation: any) {
+  const authService = useAuthService();
   const BG_IMAGE = require("../../../../assets/images/lgoinbackground.jpg");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");

@@ -3,6 +3,7 @@ import {
   Modal, View, Text, TouchableOpacity,
   ActivityIndicator, FlatList, TextInput, Alert, StyleSheet
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SIZES, FONTS } from "../constants/theme";
 import { travelService } from "../services/travel.service";
@@ -24,6 +25,7 @@ interface AddToItineraryModalProps {
 export default function AddToItineraryModal({
   visible, item, onClose, onSuccess
 }: AddToItineraryModalProps) {
+  const navigation = useNavigation<any>();
   const [itineraries, setItineraries] = useState<ItineraryDTO[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -77,7 +79,7 @@ export default function AddToItineraryModal({
 
     // Check for conflict
     if (!override && startTime) {
-      const dayData = itin.days.find(d => d.date.startsWith(selectedDate));
+      const dayData = (itin.days || []).find(d => d.date.startsWith(selectedDate));
       if (dayData) {
         const conflict = dayData.items.find(i => i.startTime === startTime);
         if (conflict) {
@@ -98,7 +100,7 @@ export default function AddToItineraryModal({
       await travelService.addItineraryItem(selectedItinId, {
         itineraryId: selectedItinId,
         date: selectedDate,
-        type: item.type,
+        type: item.type === "place" ? "PLACE" : "EVENT",
         referenceId: item.id,
         startTime: startTime || undefined,
         note: ""
@@ -130,19 +132,30 @@ export default function AddToItineraryModal({
               <Text style={styles.itemRef}>Adding: {item?.name}</Text>
 
               {/* Step 1: Pick Itinerary */}
-              <Text style={styles.label}>1. Select Trip</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>1. Select Trip</Text>
+                <TouchableOpacity
+                  style={styles.addBtn}
+                  onPress={() => {
+                    onClose();
+                    navigation.navigate("CreatePlan", { autoAddPlace: item });
+                  }}
+                >
+                  <Ionicons name="add-circle" size={22} color={COLORS.primary} />
+                  <Text style={styles.addBtnText}>New</Text>
+                </TouchableOpacity>
+              </View>
               {itineraries.length === 0 ? (
                 <Text style={styles.emptyText}>No itineraries found. Create one first!</Text>
               ) : (
-                <View style={styles.listWrapper}>
+                <View style={styles.listWrapperVertical}>
                   <FlatList
                     data={itineraries}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
+                    showsVerticalScrollIndicator={false}
                     keyExtractor={i => i.id.toString()}
                     renderItem={({ item: i }) => (
                       <TouchableOpacity
-                        style={[styles.chip, selectedItinId === i.id && styles.chipActive]}
+                        style={[styles.chipVertical, selectedItinId === i.id && styles.chipActive]}
                         onPress={() => {
                           setSelectedItinId(i.id);
                           setSelectedDate(""); // reset date on changing trip
@@ -184,18 +197,18 @@ export default function AddToItineraryModal({
 
               {/* Step 3: Pick Time (Optional) */}
               {selectedItin && selectedDate && (
-                <>
+                <View style={{ width: "100%", alignItems: "stretch" }}>
                   <Text style={styles.label}>3. Start Time (Optional)</Text>
                   <TextInput
                     style={styles.timeInput}
-                    placeholder="HH:MM (e.g. 09:30)"
+                    placeholder="HH:MM(e.g.09)"
                     placeholderTextColor={COLORS.muted}
                     value={startTime}
                     onChangeText={setStartTime}
                     maxLength={5}
                     keyboardType="numeric"
                   />
-                </>
+                </View>
               )}
 
               {/* Footer */}
@@ -226,6 +239,8 @@ const styles = StyleSheet.create({
     padding: SIZES.padding,
     paddingBottom: SIZES.padding * 2,
     maxHeight: "85%",
+    width: "100%",
+    alignItems: "stretch"
   },
   header: {
     flexDirection: "row", justifyContent: "space-between",
@@ -236,13 +251,32 @@ const styles = StyleSheet.create({
   itemRef: { ...FONTS.body1, color: COLORS.primary, marginBottom: 20, fontWeight: "600" },
   
   label: { ...FONTS.body2, color: COLORS.text, fontWeight: "600", marginBottom: 8, marginTop: 10 },
+  labelRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    marginBottom: 8, marginTop: 10
+  },
+  addBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: COLORS.surface, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 8, borderWidth: 1, borderColor: COLORS.border
+  },
+  addBtnText: { ...FONTS.body2, color: COLORS.primary, fontWeight: "600" },
   listWrapper: { marginBottom: 14 },
+  listWrapperVertical: { marginBottom: 14, maxHeight: 180 },
   chip: {
     paddingHorizontal: 16, paddingVertical: 10,
     borderRadius: 8,
     backgroundColor: COLORS.surface,
     borderWidth: 1, borderColor: COLORS.border,
     marginRight: 10
+  },
+  chipVertical: {
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: COLORS.border,
+    marginBottom: 8,
+    width: "100%"
   },
   chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { ...FONTS.body1, color: COLORS.text },
@@ -256,7 +290,7 @@ const styles = StyleSheet.create({
     ...FONTS.body1,
     color: COLORS.text,
     marginBottom: 20,
-    width: "40%"
+    width: "100%"
   },
   
   saveBtn: {

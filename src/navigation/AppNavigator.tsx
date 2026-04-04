@@ -1,10 +1,9 @@
 import React from "react";
-import { useAppAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -30,6 +29,8 @@ import EventDetailScreen     from "../screens/Event/eventDetail/EventDetail.Scre
 import ItineraryScreen       from "../screens/TravelPlanning/itinerary/Itinerary.Screen";
 import CreatePlanScreen      from "../screens/TravelPlanning/createPlan/CreatePlan.Screen";
 import ItineraryDetailScreen from "../screens/TravelPlanning/itineraryDetail/ItineraryDetail.Screen";
+import ScheduleScreen        from "../screens/TravelPlanning/schedule/Schedule.Screen";
+import CalendarScreen        from "../screens/TravelPlanning/calendar/CalendarScreen";
 
 // ─── Social ───────────────────────────────────────────────────────────────
 import FeedScreen            from "../screens/Social/feed/Feed.Screen";
@@ -81,6 +82,8 @@ export type RootStackParamList = {
   Itinerary:       undefined;
   ItineraryDetail: { itineraryId: number };
   CreatePlan:      undefined;
+  Schedule:        { attraction?: any };
+  Calendar:        undefined;
 
   // Messaging
   ChatRoom: { chatId: number; chatName: string; chatType: "one_to_one" | "group" };
@@ -167,6 +170,7 @@ const tabStyles = StyleSheet.create({
 function MainTabs() {
   return (
     <Tab.Navigator
+      id="main-tabs"
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
@@ -179,22 +183,21 @@ function MainTabs() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-//  Root Navigator
-// ────────────────────────────────────────────────────────────────────────────
+// ─── Root Navigator ────────────────────────────────────────────────────────────
 export default function AppNavigator() {
-    const { isAuthenticated, isLoading } = useAppAuth();
-  if (isLoading) return null;
+  const { isSignedIn, isLoaded } = useAuth();
+  if (!isLoaded) return null;
 
   return (
     <NavigationContainer>
       <Stack.Navigator
+        id="root-stack"
         screenOptions={{ headerShown: false }}
-        initialRouteName={isAuthenticated ? "MainTabs" : "SignIn"}
+        initialRouteName={isSignedIn ? "MainTabs" : "SignIn"}
       >
-        {!isAuthenticated ? (
+        {!isSignedIn ? (
           <>
-            <Stack.Screen name="SignIn"          component={LoginScreen}          />
+            <Stack.Screen name="SignIn" component={LoginScreen} />
             <Stack.Screen name="SignUp"           component={RegisterScreen}       />
             <Stack.Screen name="ForgotPassword"   component={ForgotPasswordScreen} />
             <Stack.Screen name="OtpVerification"  component={OtpVerificationScreen} />
@@ -218,6 +221,14 @@ export default function AppNavigator() {
             />
             <Stack.Screen name="Itinerary"
               component={ItineraryScreen}
+              options={{ animation: "slide_from_right" }}
+            />
+            <Stack.Screen name="Schedule"
+              component={ScheduleScreen}
+              options={{ animation: "slide_from_right" }}
+            />
+            <Stack.Screen name="Calendar"
+              component={CalendarScreen}
               options={{ animation: "slide_from_right" }}
             />
             <Stack.Screen name="ItineraryDetail"

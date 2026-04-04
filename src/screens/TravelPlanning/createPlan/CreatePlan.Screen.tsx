@@ -34,15 +34,41 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { opacity: 0.5 },
   submitBtnText: { ...FONTS.body1, color: "#fff", fontWeight: "700" },
+  calendarWrapper: {
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.radius,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 16,
+  },
+  dateSummary: {
+    backgroundColor: COLORS.surface,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  dateSummaryText: {
+    ...FONTS.body1,
+    color: COLORS.primary,
+    fontWeight: "600"
+  },
 });
 
-const CreatePlanScreen = ({ navigation }: any) => {
+import { Calendar } from "react-native-calendars";
+
+const CreatePlanScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const {
     title, setTitle, description, setDescription,
-    startDate, setStartDate, endDate, setEndDate,
-    isLoading, canSubmit, handleCreate, goBack,
-  } = CreatePlanFunction(navigation);
+    startDate, endDate,
+    isLoading, canSubmit, handleCreate,
+    onDayPress, markedDates, goBack,
+  } = CreatePlanFunction(navigation, route);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -63,13 +89,35 @@ const CreatePlanScreen = ({ navigation }: any) => {
           onChangeText={setDescription} placeholder="What's this trip about?"
           placeholderTextColor={COLORS.muted} multiline numberOfLines={3} />
 
-        <Text style={styles.label}>Dates *</Text>
-        <View style={styles.row}>
-          <TextInput style={styles.halfInput} value={startDate} onChangeText={setStartDate}
-            placeholder="Start (YYYY-MM-DD)" placeholderTextColor={COLORS.muted} />
-          <TextInput style={styles.halfInput} value={endDate} onChangeText={setEndDate}
-            placeholder="End (YYYY-MM-DD)" placeholderTextColor={COLORS.muted} />
+        <Text style={styles.label}>Select Dates *</Text>
+        <View style={styles.calendarWrapper}>
+          <Calendar
+            onDayPress={onDayPress}
+            markedDates={markedDates}
+            markingType={'period'}
+            theme={{
+              backgroundColor: COLORS.card,
+              calendarBackground: COLORS.card,
+              textSectionTitleColor: COLORS.muted,
+              selectedDayBackgroundColor: COLORS.primary,
+              selectedDayTextColor: '#ffffff',
+              todayTextColor: COLORS.primary,
+              dayTextColor: COLORS.text,
+              textDisabledColor: COLORS.border,
+              monthTextColor: COLORS.text,
+              arrowColor: COLORS.primary,
+            }}
+          />
         </View>
+
+        {startDate ? (
+          <View style={styles.dateSummary}>
+            <Text style={styles.dateSummaryText}>
+              <Ionicons name="calendar" size={16} /> {startDate} 
+              {endDate ? `  →  ${endDate}` : " (Select end date)"}
+            </Text>
+          </View>
+        ) : null}
 
         <Text style={styles.hint}>
           After creating your itinerary, you can add places and events day by day.

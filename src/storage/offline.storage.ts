@@ -6,10 +6,12 @@ const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 export interface OfflineAttraction {
   id: number;
   name: string;
+  address?: string;
   latitude: number;
   longitude: number;
+  ratingAverage?: number;
   description: string;
-  images: string[];
+  imageUrls?: string[];
   updatedAt: string;
 }
 
@@ -47,3 +49,23 @@ export async function getOffline(): Promise<OfflineAttraction[]> {
 export async function clearOffline(): Promise<void> {
   await AsyncStorage.removeItem(OFFLINE_KEY);
 }
+
+const RECENT_SEARCHES_KEY = "RECENT_SEARCHES";
+const MAX_SEARCHES = 10;
+
+export const offlineStorage = {
+  getOffline,
+  saveOffline,
+  clearOffline,
+
+  async getRecentSearches(): Promise<string[]> {
+    const raw = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  },
+
+  async saveRecentSearch(keyword: string): Promise<void> {
+    const searches = await this.getRecentSearches();
+    const updated = [keyword, ...searches.filter(s => s !== keyword)].slice(0, MAX_SEARCHES);
+    await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+  }
+};
