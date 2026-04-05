@@ -7,25 +7,15 @@ const { width, height } = Dimensions.get("screen");
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.backgroundDark,
-  },
-  // --- BACKGROUND TUYỆT ĐỐI (Cố định, không bị co khi bàn phím lên) ---
-  backgroundImage: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
   },
   overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)", // Darker overlay for better readability
   },
-  // ------------------------------------------------------------------
+  flexContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
 
   glassContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.15)",

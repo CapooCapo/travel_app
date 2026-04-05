@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { apiRequest } from "../../../api/client";
-import { authStorage } from "../../../storage/auth.storage";
 import { useAuth } from "../../../hooks/useAuth";
 import { UserDTO} from "../../../dto/auth/user.DTO";
 import { Res } from "../../../dto/format";

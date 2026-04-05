@@ -1,7 +1,7 @@
 import {
     View,
     Text,
-    Image, // Dùng Image thay vì ImageBackground
+    ImageBackground,
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
@@ -10,42 +10,36 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./Login.Style";
-import CustomInput from "../../../components/CustomInput";
-import CustomButton from "../../../components/CustomButton";
+import CustomInput from "@components/CustomInput";
+import CustomButton from "@components/CustomButton";
 import { LoginFunction } from "./login.function";
-
-import { GoogleLoginButton } from "../../../components/Auth/GoogleLoginButton";
-
+import { GoogleLoginButton } from "@components/Auth/GoogleLoginButton";
 
 const LoginScreen = ({ navigation }: any) => {
     const insets = useSafeAreaInsets();
     const {
         email, setEmail, password, setPassword,
-        isLoading, validateForm, handleLogin, handleGoogleLogin, canSubmit,BG_SOURCE
+        isLoading, validateForm, handleLogin, handleGoogleLogin, canSubmit, BG_SOURCE
     } = LoginFunction(navigation);
 
     return (
-        <View style={styles.container}>
+        <ImageBackground
+            source={BG_SOURCE}
+            style={styles.container}
+            resizeMode="cover"
+        >
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
-            {/* --- LỚP 1: ẢNH NỀN TĨNH (Không bị bàn phím đẩy) --- */}
-            <Image
-                source={BG_SOURCE}
-                style={styles.backgroundImage}
-                resizeMode="cover"
-            />
+            
             <View style={styles.overlay} />
 
-            {/* --- LỚP 2: NỘI DUNG (Chịu ảnh hưởng bàn phím) --- */}
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
+                style={styles.flexContainer}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
-            // keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -500} // Bỏ comment nếu trên Android bị đẩy quá cao
             >
                 <ScrollView
                     contentContainerStyle={[
                         styles.scrollContent,
-                        { paddingTop: insets.top + 20 } // Thêm padding top để tránh tai thỏ
+                        { paddingTop: insets.top + 20 }
                     ]}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
@@ -55,7 +49,7 @@ const LoginScreen = ({ navigation }: any) => {
                         <Text style={styles.subtitle}>Sign in to start your adventure</Text>
 
                         <CustomInput
-                            icon="mail-outline" // Đảm bảo bạn có icon này hoặc xóa prop icon đi
+                            icon="mail-outline"
                             placeholder="Email Address"
                             value={email}
                             onChangeText={setEmail}
@@ -67,7 +61,7 @@ const LoginScreen = ({ navigation }: any) => {
                             placeholder="Password"
                             value={password}
                             onChangeText={setPassword}
-                            secureTextEntry
+                            secureTextEntry={true}
                         />
 
                         <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} style={styles.forgotPassword}>
@@ -87,8 +81,7 @@ const LoginScreen = ({ navigation }: any) => {
                             <View style={styles.line} />
                         </View>
 
-                        {/* Social Login Button */}
-                        <View className="mt-4">
+                        <View style={styles.socialButtonWrapper}>
                             <GoogleLoginButton 
                                 onPress={handleGoogleLogin} 
                                 isLoading={isLoading} 
@@ -104,7 +97,7 @@ const LoginScreen = ({ navigation }: any) => {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </View>
+        </ImageBackground>
     );
 };
 

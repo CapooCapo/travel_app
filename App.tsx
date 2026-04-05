@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import "./global.css";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from './src/context/AuthContext';
 import { ScheduleProvider } from './src/context/ScheduleContext';

@@ -1,10 +1,14 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "lib": ["dom", "esnext"],
-    "types": ["react", "react-native", "jest"],
-    "skipLibCheck": true
+    "baseUrl": ".",
+    "paths": {
+      "@assets/*": ["assets/*"],
+      "@components/*": ["src/components/*"],
+      "@screens/*": ["src/screens/*"],
+      "@utils/*": ["src/utils/*"],
+      "@services/*": ["src/services/*"],
+      "@constants/*": ["src/constants/*"]
+    }
   }
 }
-

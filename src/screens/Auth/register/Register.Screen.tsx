@@ -1,13 +1,13 @@
 import {
-  View, Text, TouchableOpacity, Image,
+  View, Text, TouchableOpacity, ImageBackground,
   StatusBar, KeyboardAvoidingView,
   Platform, ScrollView
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./Register.Style";
-import CustomInput from "../../../components/CustomInput";
-import CustomButton from "../../../components/CustomButton";
-import {RegisterFunction} from "./Register.function";
+import CustomInput from "@components/CustomInput";
+import CustomButton from "@components/CustomButton";
+import { RegisterFunction } from "./Register.function";
 
 export default function RegisterScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -17,25 +17,29 @@ export default function RegisterScreen({ navigation }: any) {
     email,
     password,
     confirmPassword,
+    code,
     setFullName,
     setEmail,
     setPassword,
     setConfirmPassword,
+    setCode,
     errors,
     isLoading,
+    pendingVerification,
     handleRegister,
+    handleVerify,
   } = RegisterFunction(navigation);
-
-  const BG_IMAGE = { uri: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021" };
+  
+  const BG_IMAGE = require("@assets/images/signInbackground.jpg");
 
   return (
-    <View style={styles.container}>
+    <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <Image source={BG_IMAGE} style={styles.backgroundImage} resizeMode="cover" />
+
       <View style={styles.overlay} />
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.flexContainer}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
@@ -44,56 +48,88 @@ export default function RegisterScreen({ navigation }: any) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.glassContainer}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join the adventure today</Text>
+            {pendingVerification ? (
+              <>
+                <Text style={styles.title}>Verify Email</Text>
+                <Text style={styles.subtitle}>We've sent a 6-digit code to {email}</Text>
 
-            <CustomInput
-              placeholder="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-              error={errors.fullName}
-            />
+                <CustomInput
+                  placeholder="6-digit Code"
+                  value={code}
+                  onChangeText={setCode}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  error={errors.code}
+                />
 
-            <CustomInput
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              error={errors.email}
-            />
+                <CustomButton
+                  title="VERIFY & JOIN"
+                  onPress={handleVerify}
+                  isLoading={isLoading}
+                />
 
-            <CustomInput
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              error={errors.password}
-            />
+                <TouchableOpacity 
+                  style={{ marginTop: 15 }} 
+                  onPress={() => handleRegister()} // This would resend the code if implemented in backend, but Clerk preparation logic works here too
+                >
+                  <Text style={[styles.footerText, { textAlign: 'center', color: '#fff', opacity: 0.8 }]}>
+                    Didn't receive a code? <Text style={styles.signInText}>Resend</Text>
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.title}>Create Account</Text>
+                <Text style={styles.subtitle}>Join the adventure today</Text>
 
-            <CustomInput
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              error={errors.confirm}
-            />
+                <CustomInput
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChangeText={setFullName}
+                  error={errors.fullName}
+                />
 
-            <CustomButton
-              title="SIGN UP"
-              onPress={handleRegister}
-              isLoading={isLoading}
-            />
+                <CustomInput
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  error={errors.email}
+                />
 
-            <View style={styles.footerContainer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
-                <Text style={styles.signInText}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
+                <CustomInput
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={true}
+                  error={errors.password}
+                />
+
+                <CustomInput
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={true}
+                  error={errors.confirm}
+                />
+
+                <CustomButton
+                  title="SIGN UP"
+                  onPress={handleRegister}
+                  isLoading={isLoading}
+                />
+
+                <View style={styles.footerContainer}>
+                  <Text style={styles.footerText}>Already have an account? </Text>
+                  <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
+                    <Text style={styles.signInText}>Sign In</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </ImageBackground>
   );
 }
-

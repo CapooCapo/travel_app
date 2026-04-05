@@ -1,7 +1,8 @@
 import React, { createContext, useEffect, ReactNode, useCallback } from 'react';
+import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
-import { apiClient, setClerkTokenGetter } from '../api/apiClient';
+import { apiRequest, setClerkTokenGetter } from '../api/apiClient';
 
 /**
  * Clerk Token Cache implementation using Expo SecureStore
@@ -27,8 +28,10 @@ interface AuthContextType {
   user: any; // User object from Clerk
   isSignedIn: boolean;
   isLoaded: boolean;
-  getToken: () => Promise<string | null>;
+  isBackendSynced: boolean; // Tracks if backend /api/auth/sync is complete
+  getToken: (options?: { template?: string }) => Promise<string | null>;
   signOut: () => Promise<void>;
+  syncUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -41,6 +44,7 @@ const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   const { isSignedIn, isLoaded, getToken, signOut } = useAuth();
   const { user } = useUser();
+  const [isBackendSynced, setIsBackendSynced] = React.useState(false);
 
   // Initialize global API interceptor with Clerk token getter
   useEffect(() => {
@@ -55,31 +59,41 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   const syncUser = useCallback(async () => {
     if (isSignedIn && user) {
       try {
-        const payload = {
-          clerkId: user.id,
-          email: user.primaryEmailAddress?.emailAddress,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          imageUrl: user.imageUrl,
-        };
-
-        console.log('[AuthContext] Syncing user to backend...', payload.email);
-        await apiClient.post('/api/auth/sync', payload);
+        console.log('[AuthContext] Syncing user to backend...', user.primaryEmailAddress?.emailAddress);
+        await apiRequest.syncUser();
         console.log('[AuthContext] User sync successful.');
-      } catch (error) {
+        setIsBackendSynced(true);
+      } catch (error: any) {
         console.error('[AuthContext] User sync failed:', error);
+        
+        // Handle 401 or 500 errors by logging out
+        const status = error.response?.status;
+        if (status === 401 || status === 500) {
+          const apiMessage = error.response?.data?.message || "Backend synchronization failed. Please try again.";
+          Alert.alert("Sync Error", apiMessage);
+          await signOut();
+        }
+        
+        setIsBackendSynced(false);
       }
     }
-  }, [isSignedIn, user]);
+  }, [isSignedIn, user, signOut]);
 
   useEffect(() => {
-    if (isSignedIn && user) {
+    if (isSignedIn && user && !isBackendSynced) {
       syncUser();
     }
-  }, [isSignedIn, user, syncUser]);
+  }, [isSignedIn, user, syncUser, isBackendSynced]);
+
+  // Reset sync status on sign out
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      setIsBackendSynced(false);
+    }
+  }, [isLoaded, isSignedIn]);
 
   return (
-    <AuthContext.Provider value={{ user, isSignedIn, isLoaded, getToken, signOut }}>
+    <AuthContext.Provider value={{ user, isSignedIn, isLoaded, isBackendSynced, getToken, signOut, syncUser }}>
       {children}
     </AuthContext.Provider>
   );

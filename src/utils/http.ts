@@ -1,13 +1,14 @@
 import axios from "axios";
 
 // ─── Tích hợp Clerk Token ──────────────────────────────────────────────────
-let clerkTokenGetter: (() => Promise<string | null>) | null = null;
+type GetTokenOptions = { template?: string; skipCache?: boolean };
+let clerkTokenGetter: ((options?: GetTokenOptions) => Promise<string | null>) | null = null;
 
 /**
  * Hàm này dùng để liên kết Clerk getToken với Axios.
  * Thường được gọi từ AuthContext.tsx sau khi Clerk isLoaded.
  */
-export const setClerkTokenGetter = (fn: () => Promise<string | null>) => {
+export const setClerkTokenGetter = (fn: (options?: GetTokenOptions) => Promise<string | null>) => {
   clerkTokenGetter = fn;
 };
 
@@ -25,9 +26,14 @@ const http = axios.create({
 http.interceptors.request.use(
   async (config) => {
     if (clerkTokenGetter) {
-      const token = await clerkTokenGetter();
+      const token = await clerkTokenGetter({ template: 'jwt-template-account' });
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        // If token is null, the user is likely signed out or the session has expired.
+        // We throw an error to prevent the request and potentially trigger a redirect/refresh.
+        console.error("[HTTP] Clerk token is null. Request aborted.");
+        return Promise.reject(new Error("TOKEN_NULL"));
       }
     }
     return config;

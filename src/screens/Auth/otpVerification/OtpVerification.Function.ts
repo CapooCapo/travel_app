@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import { useAuthService } from "../../../services/auth.service";
+import { useAuthService } from "@services/auth.service";
 
 export function OtpVerificationFunction(navigation: any, email: string) {
   const authService = useAuthService();
-  const BG_IMAGE = require("../../../../assets/images/lgoinbackground.jpg");
+  const BG_IMAGE = require("@assets/images/forgotpassbackground.jpg");
   
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState("");
@@ -20,8 +20,6 @@ export function OtpVerificationFunction(navigation: any, email: string) {
 
     try {
       await authService.verifyOtp(email, otp);
-      
-      // Navigate to Reset Password if successful
       navigation.navigate("ResetPassword", { email, otp });
     } catch (e: any) {
       const msg = e?.message || "Invalid or expired OTP";

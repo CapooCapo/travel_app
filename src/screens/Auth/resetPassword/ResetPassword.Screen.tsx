@@ -1,20 +1,20 @@
 import React from "react";
 import {
-  View, Text, TouchableOpacity, Image, StatusBar,
+  View, Text, TouchableOpacity, ImageBackground, StatusBar,
   KeyboardAvoidingView, Platform, ScrollView
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./ResetPassword.Style";
-import CustomInput from "../../../components/CustomInput";
-import CustomButton from "../../../components/CustomButton";
 import { ResetPasswordFunction } from "./ResetPassword.Function";
+import CustomInput from "@components/CustomInput";
+import CustomButton from "@components/CustomButton";
 
 export default function ResetPasswordScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
-  const email = route.params?.email || "";
-  const otp = route.params?.otp || "";
-  
+  const email = route?.params?.email || "";
+  const otp = route?.params?.otp || "";
+
   const {
     BG_IMAGE,
     password,
@@ -27,16 +27,13 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
   } = ResetPasswordFunction(navigation, email, otp);
 
   return (
-    <View style={styles.container}>
+    <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* --- LAYER 1: BACKGROUND --- */}
-      <Image source={BG_IMAGE} style={styles.backgroundImage} resizeMode="cover" />
       <View style={styles.overlay} />
 
-      {/* --- LAYER 2: CONTENT --- */}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.flexContainer}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
@@ -46,19 +43,21 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
         >
           <View style={styles.glassContainer}>
             <View style={styles.iconContainer}>
-              <Ionicons name="key-outline" size={40} color="#fff" />
+              <View style={styles.iconWrapper}>
+                <Ionicons name="key-outline" size={40} color="#fff" />
+              </View>
             </View>
 
             <Text style={styles.title}>New Password</Text>
             <Text style={styles.description}>
-              Enter your new password below. Make sure it's strong and secure!
+              Please create a new password that is different from previous passwords.
             </Text>
 
             <CustomInput
               placeholder="New Password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={true}
               error={errors.password}
             />
 
@@ -66,7 +65,7 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
               placeholder="Confirm New Password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              secureTextEntry
+              secureTextEntry={true}
               error={errors.confirm}
             />
 
@@ -82,6 +81,6 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </ImageBackground>
   );
 }

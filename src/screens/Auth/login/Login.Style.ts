@@ -7,28 +7,14 @@ const { width, height } = Dimensions.get("screen");
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.backgroundDark, // Màu nền dự phòng
-  },
-  // --- BACKGROUND TUYỆT ĐỐI (SỬA LẠI PHẦN NÀY) ---
-  backgroundImage: {
-    position: "absolute", // Quan trọng: Tách khỏi layout
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
   },
   overlay: {
-    position: "absolute", // Overlay cũng phải tuyệt đối theo ảnh
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    backgroundColor: "rgba(0,0,0,0.4)", // Lớp phủ tối
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)", // Darker overlay for better readability
   },
-  // ------------------------------------------------
-
-  safeArea: {
+  flexContainer: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
@@ -79,5 +65,8 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: "bold",
     textDecorationLine: "underline",
+  },
+  socialButtonWrapper: {
+    marginTop: 16,
   },
 });

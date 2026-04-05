@@ -6,22 +6,18 @@ const { width, height } = Dimensions.get("screen");
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.backgroundDark,
-  },
-  backgroundImage: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
   },
   overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)", // Darker overlay for better readability
+  },
+  flexContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  iconWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   glassContainer: {

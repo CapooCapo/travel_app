@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Alert } from "react-native";
-import { isEmail, validatePassword } from "../../../services/validator";
-import { useAuthService } from "../../../services/auth.service";
+import { isEmail, validatePassword } from "@services/validator";
+import { useAuthService } from "@services/auth.service";
 
 export function LoginFunction(navigation: any) {
   const authService = useAuthService();
@@ -10,7 +10,7 @@ export function LoginFunction(navigation: any) {
   const [password,  setPassword]  = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const BG_SOURCE = require("../../../../assets/images/lgoinbackground.jpg");
+  const BG_SOURCE = require("@assets/images/loginbackground.jpg");
 
   const canSubmit = useMemo(() => 
     isEmail(email) === null && validatePassword(password) === null
@@ -33,7 +33,6 @@ export function LoginFunction(navigation: any) {
     try {
       await authService.signInWithEmail(email, password);
       console.log("[Login] Email login successful via Clerk.");
-      // Navigation will be handled automatically by AuthContext/AppNavigator state change
     } catch (e: any) {
       console.error("[Login] Email login error:", e);
       Alert.alert("Login Failed", e?.message || "Invalid email or password");
@@ -53,7 +52,6 @@ export function LoginFunction(navigation: any) {
       console.log("[Login] Google login initiated via Clerk.");
     } catch (err: any) {
       console.error("[Login] Google login error:", err);
-      // Only alert if it's not a user cancellation
       if (!err.message?.includes("cancel")) {
         Alert.alert("Login Failed", "Could not complete Google sign in.");
       }

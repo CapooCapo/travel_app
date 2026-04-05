@@ -2,7 +2,7 @@ import { useOAuth, useSignIn, useSignUp, useAuth } from '@clerk/clerk-expo';
 import { useCallback } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { IAuthService } from './interfaces/IAuthService';
-import { apiClient } from '../api/apiClient';
+import { apiRequest } from '../api/apiClient';
 
 /**
  * Ensures the browser session is properly handled for OAuth
@@ -83,9 +83,9 @@ export const useAuthService = (): IAuthService => {
   /**
    * Sync User data to Spring Boot (Internal utility called by effect)
    */
-  const syncUserWithBackend = useCallback(async (payload: any) => {
+  const syncUserWithBackend = useCallback(async () => {
     try {
-      await apiClient.post('/api/auth/sync', payload);
+      await apiRequest.syncUser();
     } catch (error) {
       console.error('[AuthService] Backend Sync Error:', error);
       throw error;

@@ -1,12 +1,12 @@
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-    View, Text, TouchableOpacity, Image, StatusBar,
-    KeyboardAvoidingView, Platform, ScrollView, Alert
+    View, Text, TouchableOpacity, ImageBackground, StatusBar,
+    KeyboardAvoidingView, Platform, ScrollView
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./ForgotPassword.Style";
-import CustomInput from "../../../components/CustomInput";
-import CustomButton from "../../../components/CustomButton";
+import CustomInput from "@components/CustomInput";
+import CustomButton from "@components/CustomButton";
 import { ForgotPasswordFunction } from "./ForgotPassword.Function";
 
 export default function ForgotPasswordScreen({ navigation }: any) {
@@ -18,20 +18,17 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         emailError,
         setEmailError,
         isLoading,
-        canSubmit,
         handleResetPassword
     } = ForgotPasswordFunction(navigation);
+
     return (
-        <View style={styles.container}>
+        <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover">
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            {/* --- LAYER 1: NỀN CỐ ĐỊNH --- */}
-            <Image source={BG_IMAGE} style={styles.backgroundImage} resizeMode="cover" />
             <View style={styles.overlay} />
 
-            {/* --- LAYER 2: NỘI DUNG --- */}
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
+                style={styles.flexContainer}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
                 <ScrollView
@@ -41,7 +38,9 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                 >
                     <View style={styles.glassContainer}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="lock-open-outline" size={40} color="#fff" />
+                            <View style={styles.iconWrapper}>
+                                <Ionicons name="lock-open-outline" size={40} color="#fff" />
+                            </View>
                         </View>
 
                         <Text style={styles.title}>Forgot Password?</Text>
@@ -58,7 +57,6 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                         />
 
                         <CustomButton
-
                             title="SEND RESET LINK"
                             onPress={handleResetPassword}
                             isLoading={isLoading}
@@ -70,6 +68,6 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </View>
+        </ImageBackground>
     );
 }

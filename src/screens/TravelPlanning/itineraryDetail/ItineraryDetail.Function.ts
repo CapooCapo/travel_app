@@ -36,7 +36,7 @@ export function ItineraryDetailFunction(navigation: any, itineraryId: number) {
       {
         text: "Remove", style: "destructive", onPress: async () => {
           try {
-            await travelService.deleteItineraryItem(itemId);
+            await travelService.deleteItineraryItem(itineraryId, itemId);
             // Delete locally
             if (itinerary) {
               const newDays = itinerary.days.map(d => ({

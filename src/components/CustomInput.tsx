@@ -1,27 +1,22 @@
 import React, { useState } from "react";
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from "react-native";
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, TextInputProps } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SIZES, FONTS } from "../constants/theme";
+import { COLORS, SIZES, FONTS } from "@constants/theme";
 
-interface CustomInputProps {
+interface CustomInputProps extends TextInputProps {
   icon?: keyof typeof Ionicons.glyphMap;   // optional — Register doesn't use icons
-  placeholder: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  secureTextEntry?: boolean;
-  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
   error?: string;
 }
 
-const CustomInput: React.FC<CustomInputProps> = ({
+const CustomInput = ({
   icon,
-  placeholder,
-  value,
-  onChangeText,
-  secureTextEntry = false,
-  keyboardType = "default",
   error,
-}) => {
+  style,
+  onFocus,
+  onBlur,
+  secureTextEntry,
+  ...props
+}: CustomInputProps) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -44,16 +39,19 @@ const CustomInput: React.FC<CustomInputProps> = ({
         ) : null}
 
         <TextInput
-          style={[styles.input, !icon && { paddingLeft: 0 }]}
-          placeholder={placeholder}
+          style={[styles.input, !icon && { paddingLeft: 0 }, style]}
           placeholderTextColor={COLORS.gray}
-          value={value}
-          onChangeText={onChangeText}
-          secureTextEntry={secureTextEntry && !isPasswordVisible}
-          keyboardType={keyboardType}
           autoCapitalize="none"
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          {...props}
+          secureTextEntry={secureTextEntry && !isPasswordVisible}
+          onFocus={(e) => {
+            setIsFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            onBlur?.(e);
+          }}
         />
 
         {secureTextEntry && (

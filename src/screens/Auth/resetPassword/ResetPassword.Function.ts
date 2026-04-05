@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import { useAuthService } from "../../../services/auth.service";
-import { validatePassword } from "../../../services/validator";
+import { useAuthService } from "@services/auth.service";
+import { validatePassword } from "@services/validator";
 
 export function ResetPasswordFunction(navigation: any, email: string, otp: string) {
   const authService = useAuthService();
-  const BG_IMAGE = require("../../../../assets/images/lgoinbackground.jpg");
+  const BG_IMAGE = require("@assets/images/forgotpassbackground.jpg");
   
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -30,12 +30,10 @@ export function ResetPasswordFunction(navigation: any, email: string, otp: strin
 
     try {
       await authService.resetPassword(email, otp, password);
-      
       Alert.alert("Success", "Your password has been successfully reset. Please log in.", [
         { 
           text: "Login now", 
           onPress: () => {
-             // To prevent going back into the OTP/reset flow, reset the stack to Auth
              navigation.reset({
                 index: 0,
                 routes: [{ name: "SignIn" }],

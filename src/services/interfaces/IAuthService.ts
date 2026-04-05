@@ -22,13 +22,7 @@ export interface IAuthService {
   /**
    * Đồng bộ dữ liệu người dùng từ Clerk về Backend Spring Boot
    */
-  syncUserWithBackend(payload: {
-    clerkId: string;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    imageUrl?: string;
-  }): Promise<void>;
+  syncUserWithBackend(): Promise<void>;
   /**
    * Yêu cầu mã khôi phục mật khẩu (ForgotPassword)
    */

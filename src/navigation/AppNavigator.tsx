@@ -13,6 +13,7 @@ import RegisterScreen        from "../screens/Auth/register/Register.Screen";
 import ForgotPasswordScreen  from "../screens/Auth/forgotPassword/ForgotPassword.Screen";
 import OtpVerificationScreen from "../screens/Auth/otpVerification/OtpVerification.Screen";
 import ResetPasswordScreen   from "../screens/Auth/resetPassword/ResetPassword.Screen";
+import SyncLoadingScreen    from "../screens/Auth/syncLoading/SyncLoading.Screen";
 
 // ─── Home ─────────────────────────────────────────────────────────────────
 import HomeScreen            from "../screens/Home/home/Home.Screen";
@@ -65,6 +66,7 @@ export type RootStackParamList = {
   ForgotPassword:  undefined;
   OtpVerification: { email: string };
   ResetPassword:   { email: string; otp: string };
+  SyncLoading:     undefined;
 
   // Tabs
   MainTabs: undefined;
@@ -185,7 +187,7 @@ function MainTabs() {
 
 // ─── Root Navigator ────────────────────────────────────────────────────────────
 export default function AppNavigator() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, isBackendSynced } = useAuth();
   if (!isLoaded) return null;
 
   return (
@@ -193,16 +195,18 @@ export default function AppNavigator() {
       <Stack.Navigator
         id="root-stack"
         screenOptions={{ headerShown: false }}
-        initialRouteName={isSignedIn ? "MainTabs" : "SignIn"}
+        initialRouteName={isSignedIn ? (isBackendSynced ? "MainTabs" : "SyncLoading") : "SignIn"}
       >
         {!isSignedIn ? (
           <>
-            <Stack.Screen name="SignIn" component={LoginScreen} />
+            <Stack.Screen name="SignIn"           component={LoginScreen} />
             <Stack.Screen name="SignUp"           component={RegisterScreen}       />
             <Stack.Screen name="ForgotPassword"   component={ForgotPasswordScreen} />
             <Stack.Screen name="OtpVerification"  component={OtpVerificationScreen} />
             <Stack.Screen name="ResetPassword"    component={ResetPasswordScreen} />
           </>
+        ) : !isBackendSynced ? (
+          <Stack.Screen name="SyncLoading" component={SyncLoadingScreen} />
         ) : (
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />

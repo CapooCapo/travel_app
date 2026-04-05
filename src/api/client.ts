@@ -4,6 +4,8 @@ import {
   RegisterRequest,
   UpdateUserRequest,
   UserDTO,
+  GoogleLoginRequest,
+  SyncUserRequest,
 } from "../dto/auth/user.DTO";
 import {
   AttractionResponse,
@@ -27,39 +29,9 @@ import {
 export const apiRequest = {
   // ─── AUTH ────────────────────────────────────────────────────────────────
 
-  // POST /api/auth/login  → ApiResponse<{ token }>
-  login(req: any) {
-    return http.post<Res<{ token: string }>>("/api/auth/login", req);
-  },
-
-  // POST /api/auth/google  → ApiResponse<{ token }>
-  googleLogin(idToken: string) {
-    return http.post<Res<{ token: string }>>("/api/auth/google", { idToken });
-  },
-
-  // POST /api/auth/register  → ApiResponse<Void>
-  register(req: RegisterRequest) {
-    return http.post<Res<null>>("/api/auth/register", req);
-  },
-
-  // POST /api/auth/forgot-password  → ApiResponse<Void>
-  forgotPassword(email: string) {
-    return http.post<Res<null>>("/api/auth/forgot-password", { email });
-  },
-
-  // POST /api/auth/verify-otp  → ApiResponse<Void>
-  verifyOtp(email: string, otp: string) {
-    return http.post<Res<null>>("/api/auth/verify-otp", { email, otp });
-  },
-
-  // POST /api/auth/reset-password  → ApiResponse<Void>
-  resetPassword(email: string, otp: string, newPassword: string, confirmPassword: string) {
-    return http.post<Res<null>>("/api/auth/reset-password", {
-      email,
-      otp,
-      newPassword,
-      confirmPassword,
-    });
+  // POST /api/auth/sync  → ApiResponse<Void>
+  syncUser() {
+    return http.post<Res<null>>("/api/auth/sync");
   },
 
   // ─── ATTRACTIONS ──────────────────────────────────────────────────────────
@@ -165,9 +137,9 @@ export const apiRequest = {
   },
 
   // ─── NOTIFICATIONS ───────────────────────────────────────────────────────
-  // GET /api/notifications  → List<NotificationResponse>  (KHÔNG có ApiResponse wrapper!)
+  // GET /api/notifications  → ApiResponse<List<NotificationResponse>>
   getNotifications() {
-    return http.get<NotificationResponse[]>("/api/notifications");
+    return http.get<Res<NotificationResponse[]>>("/api/notifications");
   },
 
   // ─── USERS ───────────────────────────────────────────────────────────────
@@ -232,7 +204,7 @@ export const apiRequest = {
   addItineraryItem(itineraryId: number, req: AddPlanItemRequest) {
     return http.post<Res<null>>(
       `/api/itineraries/${itineraryId}/items`,
-      req // ✅ FIX Ở ĐÂY
+      req
     );
   },
 

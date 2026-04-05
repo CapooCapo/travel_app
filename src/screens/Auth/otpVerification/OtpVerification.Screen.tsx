@@ -1,13 +1,13 @@
 import React from "react";
 import {
-  View, Text, TouchableOpacity, Image, StatusBar,
+  View, Text, TouchableOpacity, ImageBackground, StatusBar,
   KeyboardAvoidingView, Platform, ScrollView
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./OtpVerification.Style";
-import CustomInput from "../../../components/CustomInput";
-import CustomButton from "../../../components/CustomButton";
+import CustomInput from "@components/CustomInput";
+import CustomButton from "@components/CustomButton";
 import { OtpVerificationFunction } from "./OtpVerification.Function";
 
 export default function OtpVerificationScreen({ navigation, route }: any) {
@@ -25,16 +25,13 @@ export default function OtpVerificationScreen({ navigation, route }: any) {
   } = OtpVerificationFunction(navigation, email);
 
   return (
-    <View style={styles.container}>
+    <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover">
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* --- LAYER 1: BACKGROUND --- */}
-      <Image source={BG_IMAGE} style={styles.backgroundImage} resizeMode="cover" />
       <View style={styles.overlay} />
 
-      {/* --- LAYER 2: CONTENT --- */}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.flexContainer}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
@@ -44,7 +41,9 @@ export default function OtpVerificationScreen({ navigation, route }: any) {
         >
           <View style={styles.glassContainer}>
             <View style={styles.iconContainer}>
-              <Ionicons name="mail-unread-outline" size={40} color="#fff" />
+              <View style={styles.iconWrapper}>
+                <Ionicons name="mail-unread-outline" size={40} color="#fff" />
+              </View>
             </View>
 
             <Text style={styles.title}>Check Your Email</Text>
@@ -77,6 +76,6 @@ export default function OtpVerificationScreen({ navigation, route }: any) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </ImageBackground>
   );
 }

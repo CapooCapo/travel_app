@@ -97,4 +97,19 @@ export const styles = StyleSheet.create({
 
   listContent: { paddingBottom: 32 },
   horizontalList: { paddingRight: SIZES.padding },
+  
+  // Icon Wrappers
+  iconWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchIconWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickActionIconWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
 });

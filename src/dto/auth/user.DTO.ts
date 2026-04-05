@@ -62,3 +62,11 @@ export type UpdateUserRequest = {
   avatarUrl?: string;
   travelStyle?: 'SOLO' | 'FAMILY' | 'GROUP';
 };
+
+export type SyncUserRequest = {
+  clerkId: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  imageUrl?: string;
+};
