@@ -1,9 +1,9 @@
 # Travel App Backend - Copilot Instructions
 
 **Project:** Spring Boot 3.5.9 REST API for travel discovery mobile app  
-**Java Version:** 21  
+**Java Version:** 17 (pom.xml) / 21 (Dockerfile) - standardize to 21  
 **Primary Database:** PostgreSQL 16 + PostGIS (geospatial queries)  
-**Authentication:** JWT + Google OAuth  
+**Authentication:** Clerk OAuth2 (JWT tokens from Clerk issuer)  
 
 ---
 
@@ -34,49 +34,66 @@ docker-compose up
 
 ### Layered Structure
 ```
-Controllers (8 REST endpoints)
+Controllers (15 REST endpoints)
     ↓
-Services (14 business logic components)
+Services (15 business logic components)
     ↓
-Repositories (8 JPA repositories + custom queries)
+Repositories (11 JPA repositories + custom queries)
     ↓
-Entities (8 domain models)
+Entities (12 domain models)
 ```
 
 ### Core Services
 | Service | Purpose |
 |---------|---------|
-| **AuthService** | JWT token generation, user authentication, Google OAuth |
+| **ClerkService** | Clerk OAuth2 integration, user authentication via Clerk API |
 | **UserService** | User profile management, registration, role-based access |
-| **AttractionService** | Attraction CRUD, geospatial search (PostGIS) |
-| **ReviewService** | User reviews for attractions |
-| **BookmarkService** | User-favorite attractions tracking |
+| **LocationService** | Location CRUD, geospatial search (PostGIS) |
+| **ReviewService** | User reviews for locations |
+| **BookmarkService** | User-favorite locations tracking |
 | **EventService** | Travel events management |
 | **NotificationService** | User notifications and alerts |
 | **EmailService** | Verification & password reset emails (Gmail SMTP) |
-| **GeminiAIService** | Intelligent recommendations via Gemini API |
+| **GeminiService** | Intelligent recommendations via Gemini API |
+| **OsmService** | OpenStreetMap integration for location data |
+| **CalendarService** | Calendar integration for travel schedules |
+| **ItineraryService** | Itinerary management |
+| **MessagingService** | Messaging functionality |
+| **SocialService** | Social features |
+| **TravelScheduleService** | Travel schedule management |
 
 ### Controllers
 | Controller | Endpoints |
 |-----------|-----------|
 | **AuthController** | `/api/auth/**` - Login, registration, token refresh, logout |
 | **UserController** | `/api/users/**` - User profile, stats, interests |
-| **AttractionController** | `/api/attractions/**` - Search, filter, details (public + private) |
+| **LocationController** | `/api/locations/**` - Search, filter, details (public + private) |
 | **ReviewController** | `/api/reviews/**` - Create, update, delete reviews |
 | **BookmarkController** | `/api/bookmarks/**` - Add/remove favorites |
 | **EventController** | `/api/events/**` - Event management |
 | **NotificationController** | `/api/notifications/**` - Notification retrieval |
-| **AttractionImageController** | `/api/attraction-images/**` - Image management |
+| **LocationImageController** | `/api/location-images/**` - Image management |
+| **ItineraryController** | `/api/itineraries/**` - Itinerary management |
+| **TravelScheduleController** | `/api/travel-schedules/**` - Travel schedule management |
+| **CalendarController** | `/api/calendar/**` - Calendar integration |
+| **MessagingController** | `/api/messaging/**` - Messaging functionality |
+| **SocialController** | `/api/social/**` - Social features |
+| **AdminController** | `/api/admin/**` - Admin operations |
+| **BaseController** | Base controller class |
 
 ### Data Models
 - **User** - Authentication, profile, interests, roles (ADMIN, USER)
-- **Attraction** - Travel destinations with geospatial data
-- **Review** - Ratings and feedback for attractions
+- **Location** - Travel destinations with geospatial data
+- **Review** - Ratings and feedback for locations
 - **Event** - Travel events and activities
-- **Bookmark** - User-saved attractions
+- **Bookmark** - User-saved locations
 - **Notification** - System and user notifications
 - **Interest** - User travel preferences (e.g., cultural, adventure)
-- **AttractionImage** - Media assets for attractions
+- **LocationImage** - Media assets for locations
+- **Itinerary** - Travel itineraries
+- **ItineraryItem** - Items within itineraries
+- **TravelSchedule** - Travel schedules
+- **ItemType** - Types of itinerary items
 
 ---
 
@@ -85,7 +102,7 @@ Entities (8 domain models)
 | Component | Details |
 |-----------|---------|
 | **Framework** | Spring Boot 3.5.9 + Spring Data JPA |
-| **Security** | Spring Security + JWT (JJWT 0.11.5) + Google OAuth |
+| **Security** | Spring Security + JWT (JJWT 0.11.5) + Clerk OAuth2 |
 | **Database** | PostgreSQL 16 + PostGIS (geospatial queries) |
 | **ORM** | Hibernate + Hibernate Spatial |
 | **Validation** | Spring Validation (JSR-380) |
@@ -108,8 +125,10 @@ DB_URL=jdbc:postgresql://localhost:5432/travel_app
 DB_USER=postgres
 DB_PASSWORD=<your_password>
 
-# JWT
-JWT_SECRET=<your_jwt_secret_key>
+# Clerk OAuth
+CLERK_ISSUER_URI=<your_clerk_issuer_uri>
+SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=<your_clerk_jwk_set_uri>
+CLERK_SECRET_KEY=<your_clerk_secret_key>
 
 # Email (Gmail SMTP)
 SPRING_MAIL_USERNAME=<your_gmail>
@@ -133,24 +152,24 @@ PGADMIN_MAIL=admin@example.com
 PGADMIN_PASS=admin
 ```
 
-**Configuration File:** [application.properties](src/main/resources/application.properties)
+**Configuration File:** [application.yml](src/main/resources/application.yml)
 
 ---
 
 ## Security & Authentication
 
-### JWT Authentication
-- Token-based, stateless authentication
-- Token Expiry:** 60 minutes (configurable via `JWT_SECRET`)
-- **Filter:** [JwtAuthenticationFilter](src/main/java/com/example/mobileApp/config/JwtAuthenticationFilter.java) - injected before Spring's chain
+### Clerk OAuth2 Authentication
+- Token-based, stateless authentication using Clerk JWT tokens
+- Token validation against Clerk's JWK set
+- **Filter:** [ClerkJwtFilter](src/main/java/com/example/mobileApp/config/ClerkJwtFilter.java) - injected before Spring's chain
 - **Config:** [SecurityConfig.java](src/main/java/com/example/mobileApp/config/SecurityConfig.java)
 
 ### Public Routes (No Auth Required)
 ```
 /api/auth/**              - All authentication endpoints
-/api/attractions/**       - Browse attractions
-/api/attraction-images/** - View attraction images
-/api/events/**           - Browse events
+/api/locations/**         - Browse locations
+/api/location-images/**   - View location images
+/api/events/**            - Browse events
 ```
 
 ### Protected Routes (Auth Required)
@@ -174,7 +193,7 @@ PGADMIN_PASS=admin
 @Entity
 @Data              // Lombok: generates getters/setters
 @RequiredArgsConstructor
-public class Attraction {
+public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -192,11 +211,11 @@ public class Attraction {
 ```java
 @Service
 @RequiredArgsConstructor    // Lombok constructor injection
-public class AttractionService {
-    private final AttractionRepository repository;
-    private final AttractionMapper mapper;
+public class LocationService {
+    private final LocationRepository repository;
+    private final LocationMapper mapper;
     
-    public List<AttractionResponse> getAll() {
+    public List<LocationResponse> getAll() {
         return repository.findAll().stream()
             .map(mapper::toResponse)
             .collect(Collectors.toList());
@@ -207,13 +226,13 @@ public class AttractionService {
 ### Controller Pattern
 ```java
 @RestController
-@RequestMapping("/api/attractions")
+@RequestMapping("/api/locations")
 @RequiredArgsConstructor
-public class AttractionController {
-    private final AttractionService service;
+public class LocationController {
+    private final LocationService service;
     
     @GetMapping
-    public ResponseEntity<List<AttractionResponse>> getAll() {
+    public ResponseEntity<List<LocationResponse>> getAll() {
         return ResponseEntity.ok(service.getAll());
     }
 }
@@ -222,10 +241,10 @@ public class AttractionController {
 ### Mapper Pattern
 ```java
 @Component
-public class AttractionMapper {
-    public AttractionResponse toResponse(Attraction entity) {
+public class LocationMapper {
+    public LocationResponse toResponse(Location entity) {
         // Manual mapping (no MapStruct dependency)
-        return AttractionResponse.builder()
+        return LocationResponse.builder()
             .id(entity.getId())
             .name(entity.getName())
             .build();
@@ -258,13 +277,13 @@ if (!found) {
 ### PostGIS Integration
 - **Database:** PostgreSQL with PostGIS extension (already configured)
 - **ORM Support:** Hibernate Spatial for geographic queries
-- **Columns:** `latitude` and `longitude` on Attraction entity
+- **Columns:** `latitude` and `longitude` on Location entity
 
 ### Example: Nearby Attractions Query
 ```java
 // Find attractions within 10km of a point
-@Query("SELECT a FROM Attraction a WHERE...")
-List<Attraction> findNearby(Double lat, Double lon, Double radiusKm);
+@Query("SELECT a FROM Location a WHERE...")
+List<Location> findNearby(Double lat, Double lon, Double radiusKm);
 ```
 
 ---
@@ -353,18 +372,29 @@ docker-compose logs -f app # View app logs
 | Issue | Resolution |
 |-------|-----------|
 | Database connection fails | Check `DB_URL`, `DB_USER`, `DB_PASSWORD` env vars or `.env` file |
-| JWT token expiration | Token expires in 60 min; implement refresh token logic in AuthService |
+| Clerk token expiration | Tokens expire per Clerk settings; refresh via Clerk frontend |
 | Email sending fails | Verify Gmail App Password, enable "Less secure" or 2FA + App Password |
 | PostGIS queries fail | Ensure PostGIS extension enabled: `CREATE EXTENSION IF NOT EXISTS postgis;` |
 | Port 8080 already in use | `lsof -i :8080` (Mac/Linux) or use different port in application.properties |
+| Java version mismatch | Standardize pom.xml to Java 21 to match Dockerfile |
+
+### Development Pitfalls
+- **AuthService is empty** — All authentication delegated to Clerk frontend + ClerkService API calls
+- **Manual null checks required** in mappers (no MapStruct safety)
+- **PostGIS queries are native SQL** — Won't catch SQL errors at compile time
+- **Minimal test coverage** — Only 1 stub test exists
+- **Email not async** — Should use `@Async` decorator
+- **Stale documentation** — This file was outdated (fixed now)
 
 ### Enable Debug Logging
 ```properties
-# In application.properties
-logging.level.com.example.mobileApp=DEBUG
-logging.level.org.springframework=DEBUG
-logging.level.org.hibernate.SQL=TRACE
-logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+# In application.yml
+logging:
+  level:
+    com.example: DEBUG
+    org.springframework: DEBUG
+    org.hibernate.SQL: TRACE
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 ```
 
 ---
@@ -418,5 +448,5 @@ logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
 
 ---
 
-**Last Updated:** 2026-03-28  
+**Last Updated:** 2026-04-05  
 **Questions?** Refer to pom.xml for exact dependency versions, application.properties for configs
