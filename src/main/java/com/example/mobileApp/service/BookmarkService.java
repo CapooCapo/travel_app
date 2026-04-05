@@ -4,12 +4,12 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.mobileApp.dto.response.AttractionResponse;
-import com.example.mobileApp.entity.Attraction;
+import com.example.mobileApp.dto.response.LocationResponse;
+import com.example.mobileApp.entity.Location;
 import com.example.mobileApp.entity.Bookmark;
 import com.example.mobileApp.entity.User;
-import com.example.mobileApp.mapper.AttractionMapper;
-import com.example.mobileApp.repository.AttractionRepository;
+import com.example.mobileApp.mapper.LocationMapper;
+import com.example.mobileApp.repository.LocationRepository;
 import com.example.mobileApp.repository.BookmarkRepository;
 import com.example.mobileApp.repository.UserRepository;
 
@@ -21,40 +21,40 @@ public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final UserRepository userRepository;
-    private final AttractionRepository attractionRepository;
-    private final AttractionMapper attractionMapper; // thêm cái này
+    private final LocationRepository locationRepository;
+    private final LocationMapper locationMapper;
 
-    public void addBookmark(Long userId, Long attractionId) {
+    public void addBookmark(Long userId, Long locationId) {
 
         if (userId == null) {
             throw new RuntimeException("Unauthorized");
         }
 
-        if (bookmarkRepository.existsByUserIdAndAttractionId(userId, attractionId)) {
+        if (bookmarkRepository.existsByUserIdAndLocationId(userId, locationId)) {
             return;
         }
 
         User user = userRepository.findById(userId).orElseThrow();
-        Attraction attraction = attractionRepository.findById(attractionId).orElseThrow();
+        Location location = locationRepository.findById(locationId).orElseThrow();
 
         Bookmark bookmark = new Bookmark();
         bookmark.setUser(user);
-        bookmark.setAttraction(attraction);
+        bookmark.setLocation(location);
 
         bookmarkRepository.save(bookmark);
     }
 
-    public void removeBookmark(Long userId, Long attractionId) {
-        bookmarkRepository.deleteByUserIdAndAttractionId(userId, attractionId);
+    public void removeBookmark(Long userId, Long locationId) {
+        bookmarkRepository.deleteByUserIdAndLocationId(userId, locationId);
     }
 
-    public List<AttractionResponse> getBookmarks(Long userId) {
+    public List<LocationResponse> getBookmarks(Long userId) {
 
         return bookmarkRepository
                 .findByUserId(userId)
                 .stream()
-                .map(Bookmark::getAttraction)
-                .map(attractionMapper::toResponse) // convert ở đây
+                .map(Bookmark::getLocation)
+                .map(locationMapper::toResponse) // convert ở đây
                 .toList();
     }
 }

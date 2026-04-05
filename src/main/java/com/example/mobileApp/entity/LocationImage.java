@@ -13,12 +13,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "attraction_images")
+@Table(name = "location_images")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AttractionImage {
+public class LocationImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +27,6 @@ public class AttractionImage {
     private String imageUrl;
 
     @ManyToOne
-    @JoinColumn(name = "attraction_id")
-    private Attraction attraction;
+    @JoinColumn(name = "location_id")
+    private Location location;
 }

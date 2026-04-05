@@ -23,7 +23,6 @@ public class AddItineraryItemRequest {
     private LocalTime startTime;
     private LocalTime endTime;
     private String note;
-    
-    // Config allowing user to override time conflicts
+
     private Boolean overrideConflict = false;
 }

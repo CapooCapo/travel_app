@@ -10,14 +10,12 @@ import lombok.Data;
 @Data
 @Builder
 public class ItineraryResponse {
+
     private Long id;
     private String title;
     private LocalDate startDate;
     private LocalDate endDate;
-    
-    /**
-     * Map structured as 'YYYY-MM-DD' -> List of Items in that day
-     * This matches the CalendarView type="day_based" UI requirement.
-     */
+    private Boolean publicFlag; 
+    private String notes;
     private Map<LocalDate, List<ItineraryItemResponse>> itemsByDate;
 }

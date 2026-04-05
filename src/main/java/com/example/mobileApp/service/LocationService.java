@@ -17,111 +17,111 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.mobileApp.dto.request.CreateAttractionRequest;
+import com.example.mobileApp.dto.request.CreateLocationRequest;
 import com.example.mobileApp.dto.response.AiRecommendationResponse;
-import com.example.mobileApp.dto.response.AttractionResponse;
-import com.example.mobileApp.entity.Attraction;
+import com.example.mobileApp.dto.response.LocationResponse;
+import com.example.mobileApp.entity.Location;
 import com.example.mobileApp.entity.User;
-import com.example.mobileApp.mapper.AttractionMapper;
-import com.example.mobileApp.repository.AttractionRepository;
+import com.example.mobileApp.mapper.LocationMapper;
+import com.example.mobileApp.repository.LocationRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AttractionService {
+public class LocationService {
 
     private final OsmService osmService;
     private final GeminiService geminiService;
-    private final AttractionRepository attractionRepository;
-    private final AttractionMapper mapper;
+    private final LocationRepository locationRepository;
+    private final LocationMapper mapper;
 
     // Hỗ trợ hằng số bán kính từ bản local nếu cần dùng cho logic cũ
     private static final double RADIUS_METERS = 50_000.0;
 
-    public Page<AttractionResponse> getAttractions(int page, int size) {
+    public Page<LocationResponse> getLocations(int page, int size) {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by("ratingAverage").descending());
 
-        return attractionRepository
+        return locationRepository
                 .findAll(pageable)
                 .map(mapper::toResponse);
     }
 
-    public AttractionResponse getAttraction(Long id) {
-        Attraction attraction = attractionRepository
+    public LocationResponse getLocation(Long id) {
+        Location location = locationRepository
                 .findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Attraction not found with id: " + id));
+                        HttpStatus.NOT_FOUND, "Location not found with id: " + id));
 
-        return mapper.toDetailResponse(attraction);
+        return mapper.toDetailResponse(location);
     }
 
-    public Page<AttractionResponse> getNearbyAttractions(Double lat, Double lng, int page, int size) {
+    public Page<LocationResponse> getNearbyLocations(Double lat, Double lng, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return attractionRepository
+        return locationRepository
                 .findNearby(lat, lng, RADIUS_METERS, pageable)
                 .map(mapper::toResponse);
     }
 
-    public List<AttractionResponse> getNearbyRaw(Double lat, Double lng) {
+    public List<LocationResponse> getNearbyRaw(Double lat, Double lng) {
         Pageable topTen = PageRequest.of(0, 10);
-        return attractionRepository
+        return locationRepository
                 .findNearby(lat, lng, RADIUS_METERS, topTen)
                 .map(mapper::toResponse)
                 .getContent();
     }
 
     @Transactional
-    public AttractionResponse createAttraction(CreateAttractionRequest request) {
-        Attraction attraction = new Attraction();
-        attraction.setName(request.getName());
-        attraction.setAddress(request.getAddress());
-        attraction.setDescription(request.getDescription());
-        attraction.setLatitude(request.getLatitude());
-        attraction.setLongitude(request.getLongitude());
-        attraction.setRatingAverage(0.0);
-        attraction.setReviewCount(0);
+    public LocationResponse createLocation(CreateLocationRequest request) {
+        Location location = new Location();
+        location.setName(request.getName());
+        location.setAddress(request.getAddress());
+        location.setDescription(request.getDescription());
+        location.setLatitude(request.getLatitude());
+        location.setLongitude(request.getLongitude());
+        location.setRatingAverage(0.0);
+        location.setReviewCount(0);
 
-        attractionRepository.save(attraction);
+        locationRepository.save(location);
 
-        return mapper.toResponse(attraction);
+        return mapper.toResponse(location);
     }
 
-    public Page<AttractionResponse> search(
+    public Page<LocationResponse> search(
             String keyword,
             Double rating,
             Pageable pageable) {
-        Page<Attraction> result;
+        Page<Location> result;
 
         if (keyword != null) {
-            result = attractionRepository.findByNameContainingIgnoreCase(keyword, pageable);
+            result = locationRepository.findByNameContainingIgnoreCase(keyword, pageable);
         } else if (rating != null) {
-            result = attractionRepository.findByRatingAverageGreaterThanEqual(rating, pageable);
+            result = locationRepository.findByRatingAverageGreaterThanEqual(rating, pageable);
         } else {
-            result = attractionRepository.findAll(pageable);
+            result = locationRepository.findAll(pageable);
         }
 
         return result.map(mapper::toResponse);
     }
 
-    public Page<AttractionResponse> getAttractionsByInterest(
+    public Page<LocationResponse> getLocationsByInterest(
             Set<Long> interestIds,
             int page,
             int size) {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return attractionRepository
+        return locationRepository
                 .findByInterests(interestIds, pageable)
                 .map(mapper::toResponse);
     }
 
-    public Page<AttractionResponse> getPopularAttractions(int page, int size) {
-        return attractionRepository
+    public Page<LocationResponse> getPopularLocations(int page, int size) {
+        return locationRepository
                 .findAllByOrderByRatingAverageDesc(PageRequest.of(page, size))
                 .map(mapper::toResponse);
     }
@@ -131,12 +131,12 @@ public class AttractionService {
         // 1. Nếu user KHÔNG có interest → trả nearby luôn
         if (user.getInterests() == null || user.getInterests().isEmpty()) {
 
-            List<AttractionResponse> nearby = getNearbyRaw(lat, lng);
+            List<LocationResponse> nearby = getNearbyRaw(lat, lng);
 
             return nearby.stream()
                     .map(a -> {
                         AiRecommendationResponse res = new AiRecommendationResponse();
-                        res.setAttraction(a);
+                        res.setLocation(a);
                         res.setReason("Popular nearby place"); // hoặc bỏ cũng được
                         return res;
                     })
@@ -158,7 +158,7 @@ public class AttractionService {
             System.err.println("❌ OSM error: " + e.getMessage());
         }
 
-        List<AttractionResponse> nearbyRaw = getNearbyRaw(lat, lng);
+        List<LocationResponse> nearbyRaw = getNearbyRaw(lat, lng);
 
         if (nearbyRaw == null || nearbyRaw.isEmpty()) {
             return Collections.emptyList();

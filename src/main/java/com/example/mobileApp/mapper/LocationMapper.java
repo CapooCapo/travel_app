@@ -5,16 +5,16 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.example.mobileApp.dto.response.AttractionResponse;
-import com.example.mobileApp.entity.Attraction;
+import com.example.mobileApp.dto.response.LocationResponse;
+import com.example.mobileApp.entity.Location;
 
 @Component
-public class AttractionMapper {
+public class LocationMapper {
 
-    public AttractionResponse toResponse(Attraction entity) {
+    public LocationResponse toResponse(Location entity) {
         if (entity == null) return null;
 
-        AttractionResponse response = new AttractionResponse();
+        LocationResponse response = new LocationResponse();
         response.setId(entity.getId());
         response.setName(entity.getName());
         response.setAddress(entity.getAddress());
@@ -36,13 +36,13 @@ public class AttractionMapper {
         if (entity.getInterests() != null && !entity.getInterests().isEmpty()) {
             response.setCategory(entity.getInterests().iterator().next().getName());
         } else {
-            response.setCategory("Attraction"); // Mặc định nếu DB chưa phân loại
+            response.setCategory("Location"); // Mặc định nếu DB chưa phân loại
         }
 
         return response;
     }
 
-    public AttractionResponse toDetailResponse(Attraction entity) {
+    public LocationResponse toDetailResponse(Location entity) {
         return toResponse(entity);
     }
 }

@@ -13,11 +13,11 @@ public class BookmarkMapper {
         BookmarkResponse r = new BookmarkResponse();
 
         r.setId(b.getId());
-        r.setAttractionId(b.getAttraction().getId());
-        r.setAttractionName(b.getAttraction().getName());
+        r.setLocationId(b.getLocation().getId());
+        r.setLocationName(b.getLocation().getName());
 
-        if (!b.getAttraction().getImages().isEmpty()) {
-            r.setImageUrl(b.getAttraction().getImages().get(0).getImageUrl());
+        if (b.getLocation().getImages() != null && !b.getLocation().getImages().isEmpty()) {
+            r.setImageUrl(b.getLocation().getImages().get(0).getImageUrl());
         }
 
         return r;

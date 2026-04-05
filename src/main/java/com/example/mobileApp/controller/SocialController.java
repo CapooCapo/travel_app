@@ -9,10 +9,10 @@ import com.example.mobileApp.dto.response.ApiResponse;
 
 @RestController
 @RequestMapping("/api/social")
-public class SocialController {
+public class SocialController extends BaseController {
 
     @GetMapping("/feed")
-    public ApiResponse<?> getFeed(@RequestParam(defaultValue = "1") int page) {
-        return new ApiResponse<>(200, "OK", null, System.currentTimeMillis());
+    public ApiResponse<Void> getFeed(@RequestParam(defaultValue = "1") int page) {
+        return ok(null, "OK");
     }
 }

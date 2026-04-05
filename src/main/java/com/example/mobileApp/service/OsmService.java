@@ -11,18 +11,18 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.example.mobileApp.entity.Attraction;
-import com.example.mobileApp.entity.AttractionImage;
-import com.example.mobileApp.repository.AttractionImageRepository;
-import com.example.mobileApp.repository.AttractionRepository;
+import com.example.mobileApp.entity.Location;
+import com.example.mobileApp.entity.LocationImage;
+import com.example.mobileApp.repository.LocationImageRepository;
+import com.example.mobileApp.repository.LocationRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class OsmService {
 
-    private final AttractionRepository attractionRepository;
-    private final AttractionImageRepository imageRepository;
+    private final LocationRepository locationRepository;
+    private final LocationImageRepository imageRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
     private final Random random = new Random();
@@ -37,9 +37,9 @@ public class OsmService {
     private final Map<String, Long> fetchCache = new ConcurrentHashMap<>();
     private static final long CACHE_TIME = 60 * 60 * 1000; // 1h
 
-    public OsmService(AttractionRepository attractionRepository,
-                      AttractionImageRepository imageRepository) {
-        this.attractionRepository = attractionRepository;
+    public OsmService(LocationRepository locationRepository,
+                      LocationImageRepository imageRepository) {
+        this.locationRepository = locationRepository;
         this.imageRepository = imageRepository;
     }
 
@@ -88,23 +88,23 @@ public class OsmService {
             if (!node.has("lat") || !node.has("lon")) continue;
 
             String externalId = String.valueOf(node.get("id").asLong());
-            if (attractionRepository.existsByExternalIdAndSource(externalId, "OSM")) continue;
+            if (locationRepository.existsByExternalIdAndSource(externalId, "OSM")) continue;
 
-            Attraction attr = new Attraction();
-            attr.setName(name);
-            attr.setAddress(node.path("tags").path("addr:full").asText("Việt Nam"));
-            attr.setLatitude(node.get("lat").asDouble());
-            attr.setLongitude(node.get("lon").asDouble());
-            attr.setSource("OSM");
-            attr.setExternalId(externalId);
-            attr.setRatingAverage(0.0);
-            attr.setReviewCount(0);
+            Location location = new Location();
+            location.setName(name);
+            location.setAddress(node.path("tags").path("addr:full").asText("Việt Nam"));
+            location.setLatitude(node.get("lat").asDouble());
+            location.setLongitude(node.get("lon").asDouble());
+            location.setSource("OSM");
+            location.setExternalId(externalId);
+            location.setRatingAverage(0.0);
+            location.setReviewCount(0);
 
-            Attraction saved = attractionRepository.save(attr);
+            Location saved = locationRepository.save(location);
 
-            AttractionImage img = new AttractionImage();
+            LocationImage img = new LocationImage();
             img.setImageUrl(sampleImages.get(random.nextInt(sampleImages.size())));
-            img.setAttraction(saved);
+            img.setLocation(saved);
 
             imageRepository.save(img);
         }

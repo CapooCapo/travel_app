@@ -1,6 +1,7 @@
 package com.example.mobileApp.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +17,8 @@ import com.example.mobileApp.entity.Interest;
 public interface InterestRepository extends JpaRepository<Interest, Long> {
 
     List<Interest> findAllByIdIn(List<Long> ids);
+
+    Optional<Interest> findByName(String name);
 
     @Query("""
             SELECT a FROM Attraction a

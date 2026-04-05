@@ -21,6 +21,6 @@ public class Bookmark {
     private User user;
 
     @ManyToOne
-    private Attraction attraction;
+    private Location location;
 
 }

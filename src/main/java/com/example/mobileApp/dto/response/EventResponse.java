@@ -11,5 +11,5 @@ public class EventResponse {
     private String name;
     private String description;
     private LocalDateTime eventDate;
-    private Long attractionId;
+    private Long locationId;
 }

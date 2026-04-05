@@ -10,25 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.mobileApp.dto.response.ApiResponse;
 import com.example.mobileApp.dto.response.AttractionImageResponse;
-import com.example.mobileApp.service.AttractionImageService;
+import com.example.mobileApp.service.LocationImageService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/attraction-images")
+@RequestMapping("/api/location-images")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-public class AttractionImageController {
+public class LocationImageController extends BaseController {
 
-    private final AttractionImageService imageService;
-
-    private <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(
-                200,
-                "OK",
-                data,
-                System.currentTimeMillis());
-    }
+    private final LocationImageService imageService;
 
     @GetMapping("/{id}/images")
     public ApiResponse<List<AttractionImageResponse>> getImages(

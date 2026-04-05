@@ -15,20 +15,20 @@ public class EventService {
 
     private final EventRepository eventRepository;
 
-    public Page<EventResponse> getEventsByAttraction(
-            Long attractionId,
+    public Page<EventResponse> getEventsByLocation(
+            Long locationId,
             int page,
             int size) {
 
         return eventRepository
-                .findByAttractionId(attractionId, PageRequest.of(page, size))
+                .findByLocationId(locationId, PageRequest.of(page, size))
                 .map(e -> {
                     EventResponse r = new EventResponse();
                     r.setId(e.getId());
                     r.setName(e.getName());
                     r.setDescription(e.getDescription());
                     r.setEventDate(e.getEventDate());
-                    r.setAttractionId(e.getAttraction().getId());
+                    r.setLocationId(e.getLocation().getId());
                     return r;
                 });
     }

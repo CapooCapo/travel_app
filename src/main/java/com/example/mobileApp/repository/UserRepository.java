@@ -3,7 +3,6 @@ package com.example.mobileApp.repository;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,7 +19,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByGoogleId(String googleId);
 
+    Optional<User> findByClerkId(String clerkId);
+
+    Optional<User> findByClerkIdOrEmail(String clerkId, String email);
+
     Optional<User> findByResetPasswordToken(String token);
+
+    java.util.List<User> findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(String fullName, String email);
 
     void deleteByVerifiedFalseAndVerificationExpiryBefore(LocalDateTime now);
 

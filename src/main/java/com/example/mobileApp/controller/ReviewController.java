@@ -1,7 +1,7 @@
 package com.example.mobileApp.controller;
 
 import org.springframework.data.domain.Page;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.example.mobileApp.security.CurrentUser;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +31,7 @@ public class ReviewController extends BaseController {
 
     @PostMapping("/{id}/reviews")
     public ApiResponse<Void> createReview(
-            @AuthenticationPrincipal Long userId,
+            @CurrentUser Long userId,
             @PathVariable Long id,
             @Valid @RequestBody CreateReviewRequest request) {
 

@@ -47,6 +47,6 @@ public class Review {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "attraction_id")
-    private Attraction attraction;
+    @JoinColumn(name = "location_id")
+    private Location location;
 }

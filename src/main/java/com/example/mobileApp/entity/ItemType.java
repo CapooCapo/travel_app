@@ -1,6 +1,6 @@
 package com.example.mobileApp.entity;
 
 public enum ItemType {
-    PLACE,
+    LOCATION,
     EVENT
 }

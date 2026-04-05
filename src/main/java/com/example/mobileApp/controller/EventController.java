@@ -24,13 +24,13 @@ public class EventController extends BaseController {
     private final EventService eventService;
 
 
-    @GetMapping("/attraction/{attractionId}")
-    public ApiResponse<PageResponse<EventResponse>> getEventsByAttraction(
-            @PathVariable Long attractionId,
+    @GetMapping("/location/{locationId}")
+    public ApiResponse<PageResponse<EventResponse>> getEventsByLocation(
+            @PathVariable Long locationId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<EventResponse> result = eventService.getEventsByAttraction(attractionId, page, size);
+        Page<EventResponse> result = eventService.getEventsByLocation(locationId, page, size);
 
         return ok(PageResponse.of(result), "Success");
     }

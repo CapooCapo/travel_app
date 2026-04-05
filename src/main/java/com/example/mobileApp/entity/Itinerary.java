@@ -15,7 +15,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -51,4 +50,10 @@ public class Itinerary {
     @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ItineraryItem> items = new ArrayList<>();
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    private Boolean publicFlag;
+
 }

@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CreateAttractionRequest {
+public class CreateLocationRequest {
     private String name;
     private String address;
     private String description;

@@ -15,7 +15,7 @@ public class EventMapper {
         r.setName(e.getName());
         r.setDescription(e.getDescription());
         r.setEventDate(e.getEventDate());
-        r.setAttractionId(e.getAttraction().getId());
+        r.setLocationId(e.getLocation().getId());
 
         return r;
     }

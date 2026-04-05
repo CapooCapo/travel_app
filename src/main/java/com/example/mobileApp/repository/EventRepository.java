@@ -8,5 +8,5 @@ import com.example.mobileApp.entity.Event;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
 
-    Page<Event> findByAttractionId(Long attractionId, Pageable pageable);
+    Page<Event> findByLocationId(Long locationId, Pageable pageable);
 }

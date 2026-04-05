@@ -6,8 +6,8 @@ import lombok.Data;
 public class BookmarkResponse {
 
     private Long id;
-    private Long attractionId;
-    private String attractionName;
+    private Long locationId;
+    private String locationName;
     private String imageUrl;
 
 }

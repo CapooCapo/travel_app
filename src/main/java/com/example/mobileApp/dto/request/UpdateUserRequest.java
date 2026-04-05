@@ -1,6 +1,7 @@
 package com.example.mobileApp.dto.request;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 import com.example.mobileApp.entity.User.Gender;
 import com.example.mobileApp.entity.User.TravelStyle;
@@ -9,9 +10,11 @@ import lombok.Data;
 
 @Data
 public class UpdateUserRequest {
-     private String fullName;
+    private String firstName;
+    private String lastName;
     private LocalDate dateOfBirth;
-    private Gender gender;
-    private String avatarUrl;
-    private TravelStyle travelStyle;
+    private String gender;
+    private String imageUrl;
+    private String travelStyle;
+    private Set<Long> interestIds;
 }

@@ -2,7 +2,7 @@ package com.example.mobileApp.controller;
 
 import java.util.List;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.example.mobileApp.security.CurrentUser;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.mobileApp.dto.response.ApiResponse;
-import com.example.mobileApp.dto.response.AttractionResponse;
+import com.example.mobileApp.dto.response.LocationResponse;
 import com.example.mobileApp.service.BookmarkService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,41 +21,33 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/bookmarks")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-public class BookmarkController {
+public class BookmarkController extends BaseController {
 
     private final BookmarkService bookmarkService;
 
-    private <T> ApiResponse<T> ok(T data, String message) {
-        return new ApiResponse<>(
-                200,
-                message,
-                data,
-                System.currentTimeMillis());
-    }
-
-    @PostMapping("/{attractionId}")
+    @PostMapping("/{locationId}")
     public ApiResponse<Void> addBookmark(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long attractionId) {
+            @CurrentUser Long userId,
+            @PathVariable Long locationId) {
 
-        bookmarkService.addBookmark(userId, attractionId);
+        bookmarkService.addBookmark(userId, locationId);
         return ok(null, "Bookmark added");
     }
 
-    @DeleteMapping("/{attractionId}")
+    @DeleteMapping("/{locationId}")
     public ApiResponse<Void> removeBookmark(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long attractionId) {
+            @CurrentUser Long userId,
+            @PathVariable Long locationId) {
 
-        bookmarkService.removeBookmark(userId, attractionId);
+        bookmarkService.removeBookmark(userId, locationId);
         return ok(null, "Bookmark removed");
     }
 
     @GetMapping
-    public ApiResponse<List<AttractionResponse>> getBookmarks(
-            @AuthenticationPrincipal Long userId) {
+    public ApiResponse<List<LocationResponse>> getBookmarks(
+            @CurrentUser Long userId) {
 
-        List<AttractionResponse> data = bookmarkService.getBookmarks(userId);
+        List<LocationResponse> data = bookmarkService.getBookmarks(userId);
         return ok(data, "Success");
     }
 }

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AttractionResponse {
+public class LocationResponse {
     private Long id;
     private String name;
     private String address;

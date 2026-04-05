@@ -33,11 +33,14 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash", nullable = true)
     private String password;
 
-    @Column(name = "full_name")
-    private String fullName;
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
@@ -46,11 +49,11 @@ public class User {
     @Column(name = "gender")
     private Gender gender;
 
-    @Column(name = "avatar_url")
-    private String avatarUrl;
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role", nullable = false)
     private Role role = Role.USER;
 
     @Enumerated(EnumType.STRING)
@@ -60,8 +63,11 @@ public class User {
     @Column(name = "google_id", unique = true)
     private String googleId;
 
+    @Column(name = "clerk_id", unique = true)
+    private String clerkId;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "provider", nullable = false)
     private AuthProvider provider = AuthProvider.LOCAL;
 
     @Column(name = "is_verified", nullable = false)
@@ -108,7 +114,13 @@ public class User {
 
     public enum AuthProvider {
         LOCAL,
-        GOOGLE
+        GOOGLE,
+        CLERK
+    }
+
+    public String getFullName() {
+        if (firstName == null && lastName == null) return null;
+        return (firstName != null ? firstName : "") + (lastName != null ? " " + lastName : "");
     }
 
     @ManyToMany(fetch = FetchType.LAZY)

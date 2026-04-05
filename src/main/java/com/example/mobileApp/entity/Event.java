@@ -31,6 +31,6 @@ public class Event {
     private LocalDateTime eventDate;
 
     @ManyToOne
-    @JoinColumn(name = "attraction_id")
-    private Attraction attraction;
+    @JoinColumn(name = "location_id")
+    private Location location;
 }

@@ -2,18 +2,12 @@ package com.example.mobileApp.controller;
 
 import java.util.List;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.mobileApp.security.CurrentUser;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.mobileApp.dto.request.AddItineraryItemRequest;
 import com.example.mobileApp.dto.request.CreateItineraryRequest;
+import com.example.mobileApp.dto.request.UpdateItineraryNotesRequest;
 import com.example.mobileApp.dto.response.ApiResponse;
 import com.example.mobileApp.dto.response.ItineraryItemResponse;
 import com.example.mobileApp.dto.response.ItineraryResponse;
@@ -24,46 +18,87 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/itineraries")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000") // chỉnh lại domain FE của bạn
 public class ItineraryController extends BaseController {
 
     private final ItineraryService itineraryService;
 
+    // ================= CREATE =================
     @PostMapping
     public ApiResponse<ItineraryResponse> createItinerary(
-            @AuthenticationPrincipal Long userId,
+            @CurrentUser Long userId,
             @Valid @RequestBody CreateItineraryRequest request) {
-        return created(itineraryService.createItinerary(userId, request), "Itinerary created");
+
+        ItineraryResponse response = itineraryService.createItinerary(userId, request);
+        return created(response, "Itinerary created");
     }
 
+    // ================= GET ALL =================
     @GetMapping
     public ApiResponse<List<ItineraryResponse>> getUserItineraries(
-            @AuthenticationPrincipal Long userId) {
+            @CurrentUser Long userId) {
+
         return ok(itineraryService.getUserItineraries(userId));
     }
 
-    @GetMapping("/{id}")
+    // ================= GET DETAIL =================
+    @GetMapping("/{itineraryId}")
     public ApiResponse<ItineraryResponse> getItinerary(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long id) {
-        return ok(itineraryService.getItinerary(userId, id));
+            @CurrentUser Long userId,
+            @PathVariable Long itineraryId) {
+
+        return ok(itineraryService.getItinerary(userId, itineraryId));
     }
 
-    @PostMapping("/{id}/items")
+    // ================= ADD ITEM =================
+    @PostMapping("/{itineraryId}/items")
     public ApiResponse<ItineraryItemResponse> addItem(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long id,
+            @CurrentUser Long userId,
+            @PathVariable Long itineraryId,
             @Valid @RequestBody AddItineraryItemRequest request) {
-        return ok(itineraryService.addItem(userId, id, request), "Item added to itinerary");
+
+        return ok(itineraryService.addItem(userId, itineraryId, request));
     }
 
-    // Standardized REST path instead of root /items
-    @DeleteMapping("/items/{itemId}")
+    // ================= DELETE ITEM =================
+    @DeleteMapping("/{itineraryId}/items/{itemId}")
     public ApiResponse<Void> deleteItem(
-            @AuthenticationPrincipal Long userId,
+            @CurrentUser Long userId,
+            @PathVariable Long itineraryId,
             @PathVariable Long itemId) {
+
         itineraryService.deleteItem(userId, itemId);
-        return ok(null, "Item removed from itinerary");
+        return ok(null);
+    }
+
+    // ================= DELETE ITINERARY =================
+    @DeleteMapping("/{itineraryId}")
+    public ApiResponse<Void> deleteItinerary(
+            @CurrentUser Long userId,
+            @PathVariable Long itineraryId) {
+
+        itineraryService.deleteItinerary(userId, itineraryId);
+        return ok(null);
+    }
+
+    // ================= UPDATE NOTES =================
+    @PutMapping("/{itineraryId}/notes")
+    public ApiResponse<Void> updateNotes(
+            @CurrentUser Long userId,
+            @PathVariable Long itineraryId,
+            @Valid @RequestBody UpdateItineraryNotesRequest request) {
+
+        itineraryService.updateItineraryNotes(userId, itineraryId, request.getNotes());
+        return ok(null);
+    }
+
+    // ================= SHARE =================
+    @PostMapping("/{itineraryId}/share")
+    public ApiResponse<String> share(
+            @CurrentUser Long userId,
+            @PathVariable Long itineraryId) {
+
+        return ok(itineraryService.shareItinerary(userId, itineraryId));
     }
 }

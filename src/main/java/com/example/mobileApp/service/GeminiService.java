@@ -32,7 +32,7 @@ public class GeminiService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public List<AiRecommendationResponse> process(Set<String> interests, List<AttractionResponse> nearby) {
+    public List<AiRecommendationResponse> process(Set<String> interests, List<LocationResponse> nearby) {
 
         if (nearby == null || nearby.isEmpty()) return Collections.emptyList();
 
@@ -88,7 +88,7 @@ public class GeminiService {
         return (start != -1 && end != -1) ? text.substring(start, end + 1) : null;
     }
 
-    private List<AiRecommendationResponse> map(String json, List<AttractionResponse> nearby) {
+    private List<AiRecommendationResponse> map(String json, List<LocationResponse> nearby) {
 
         try {
             List<Map<String, Object>> list = mapper.readValue(json, List.class);
@@ -112,7 +112,7 @@ public class GeminiService {
         }
     }
 
-    private List<AiRecommendationResponse> fallback(List<AttractionResponse> nearby) {
+    private List<AiRecommendationResponse> fallback(List<LocationResponse> nearby) {
 
         return nearby.stream()
             .sorted(Comparator.comparing(
@@ -124,7 +124,7 @@ public class GeminiService {
             .toList();
     }
 
-    private String buildPrompt(Set<String> interests, List<AttractionResponse> nearby) {
+    private String buildPrompt(Set<String> interests, List<LocationResponse> nearby) {
 
         String interestStr = (interests == null || interests.isEmpty())
                 ? "du lịch, ngắm cảnh"

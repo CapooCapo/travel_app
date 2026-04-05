@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.BatchSize;
+import org.locationtech.jts.geom.Point;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,12 +18,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 
 @Entity
 @Table(name = "locations")
@@ -31,7 +36,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Attraction {
+public class Location {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,6 +56,9 @@ public class Attraction {
     @Column(nullable = false)
     private Double longitude;
 
+    @Column(columnDefinition = "geography(Point, 4326)")
+    private Point geo;
+
     @Column(name = "rating_average")
     private Double ratingAverage;
 
@@ -64,12 +72,23 @@ public class Attraction {
     private String externalId;
 
     @ManyToMany
-    @JoinTable(name = "attraction_interests", joinColumns = @JoinColumn(name = "attraction_id"), inverseJoinColumns = @JoinColumn(name = "interest_id"))
+    @JoinTable(name = "location_interests", 
+               joinColumns = @JoinColumn(name = "location_id"), 
+               inverseJoinColumns = @JoinColumn(name = "interest_id"))
     @BatchSize(size = 20)
     private Set<Interest> interests;
 
-    @OneToMany(mappedBy = "attraction", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     @BatchSize(size = 20)
-    private List<AttractionImage> images = new ArrayList<>();
+    private List<LocationImage> images = new ArrayList<>();
+
+    @PrePersist
+    @PreUpdate
+    public void updateGeo() {
+        if (latitude != null && longitude != null) {
+            GeometryFactory factory = new GeometryFactory(new PrecisionModel(), 4326);
+            this.geo = factory.createPoint(new org.locationtech.jts.geom.Coordinate(longitude, latitude));
+        }
+    }
 }
