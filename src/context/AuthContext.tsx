@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import { apiRequest, setClerkTokenGetter } from '../api/apiClient';
+import { userApi } from '../api/user.api';
 
 /**
  * Clerk Token Cache implementation using Expo SecureStore
@@ -32,6 +33,8 @@ interface AuthContextType {
   getToken: (options?: { template?: string }) => Promise<string | null>;
   signOut: () => Promise<void>;
   syncUser: () => Promise<void>;
+  updateAvatar: (url: string) => Promise<void>;
+  avatarUrl: string | null;
 }
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -45,6 +48,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   const { isSignedIn, isLoaded, getToken, signOut } = useAuth();
   const { user } = useUser();
   const [isBackendSynced, setIsBackendSynced] = React.useState(false);
+  const [localAvatarUrl, setLocalAvatarUrl] = React.useState<string | null>(null);
 
   // Initialize global API interceptor with Clerk token getter
   useEffect(() => {
@@ -60,7 +64,11 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     if (isSignedIn && user) {
       try {
         console.log('[AuthContext] Syncing user to backend...', user.primaryEmailAddress?.emailAddress);
-        await apiRequest.syncUser();
+        await apiRequest.syncUser({
+          userId: user.id,
+          email: user.primaryEmailAddress?.emailAddress,
+          fullName: user.fullName,
+        });
         console.log('[AuthContext] User sync successful.');
         setIsBackendSynced(true);
       } catch (error: any) {
@@ -68,16 +76,35 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
         
         // Handle 401 or 500 errors by logging out
         const status = error.response?.status;
+        const apiMessage = error.response?.data?.message || "Backend synchronization failed. Please try again.";
+
         if (status === 401 || status === 500) {
-          const apiMessage = error.response?.data?.message || "Backend synchronization failed. Please try again.";
-          Alert.alert("Sync Error", apiMessage);
-          await signOut();
+            Alert.alert("Sync Error", apiMessage);
+            await signOut();
+        } else {
+            // General failure alert as requested by XML
+            Alert.alert("Sync failed", "Please try again later.");
         }
         
         setIsBackendSynced(false);
       }
     }
   }, [isSignedIn, user, signOut]);
+
+  const updateAvatar = useCallback(async (url: string) => {
+    try {
+      console.log('[AuthContext] Updating avatar URL...', url);
+      await userApi.updateAvatar(url);
+      
+      // Update local state for immediate UI feedback
+      setLocalAvatarUrl(url);
+      
+      Alert.alert("Success", "Avatar updated successfully");
+    } catch (error: any) {
+      console.error('[AuthContext] Avatar update failed:', error);
+      Alert.alert("Error", error.message || "Failed to update avatar");
+    }
+  }, []);
 
   useEffect(() => {
     if (isSignedIn && user && !isBackendSynced) {
@@ -92,8 +119,17 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     }
   }, [isLoaded, isSignedIn]);
 
+  // Source of truth for avatar: 
+  // 1. Manually updated local state (highest priority)
+  // 2. Clerk user object (failsafe)
+  const avatarUrl = localAvatarUrl || user?.imageUrl || null;
+
   return (
-    <AuthContext.Provider value={{ user, isSignedIn, isLoaded, isBackendSynced, getToken, signOut, syncUser }}>
+    <AuthContext.Provider value={{ 
+      user, isSignedIn, isLoaded, isBackendSynced, 
+      getToken, signOut, syncUser, updateAvatar,
+      avatarUrl 
+    }}>
       {children}
     </AuthContext.Provider>
   );

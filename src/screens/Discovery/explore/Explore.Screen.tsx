@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./Explore.Style";
-import { ExploreFunction, CATEGORIES } from "./Explore.Function";
+import { useExplore, CATEGORIES } from "./useExplore";
 import { COLORS } from "../../../constants/theme";
 import { PlaceDTO } from "../../../dto/discovery/place.DTO";
 import { getPlaceImage } from "../../../utils/imageUtils";
@@ -24,7 +24,7 @@ const ExploreScreen = ({ navigation }: any) => {
     selectedCategory, setSelectedCategory,
     recentSearches, handleSearch, handleLoadMore,
     navigateToDetail, loadRecentSearches, fetchPlaces,
-  } = ExploreFunction(navigation);
+  } = useExplore(navigation);
 
   useEffect(() => {
     loadRecentSearches();
@@ -60,7 +60,7 @@ const ExploreScreen = ({ navigation }: any) => {
         onChangeText={setKeyword}
         onClear={() => { setKeyword(""); fetchPlaces(true); }}
         onSubmitEditing={handleSearch}
-        placeholder="Search attractions…"
+        placeholder="Search locations…"
         style={{ marginBottom: 16 }}
       />
 
@@ -121,7 +121,7 @@ const ExploreScreen = ({ navigation }: any) => {
           !isLoading ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="search-outline" size={48} color={COLORS.muted} />
-              <Text style={styles.emptyText}>No attractions found</Text>
+              <Text style={styles.emptyText}>No locations found</Text>
             </View>
           ) : null
         }

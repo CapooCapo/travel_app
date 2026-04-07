@@ -1,15 +1,25 @@
 export type MessageDTO = {
   id: number;
-  chatId: number;
+  chatRoomId: number;
   senderId: number;
   senderName: string;
+  senderAvatar?: string;
   content: string;
-  type: 'text' | 'image' | 'location';
+  type: 'TEXT' | 'IMAGE' | 'EMOJI' | 'LOCATION';
   imageUrl?: string;
   latitude?: number;
   longitude?: number;
   createdAt: string;
   isRead: boolean;
+};
+
+export type SendMessageRequest = {
+  chatRoomId: number;
+  content: string;
+  type: 'TEXT' | 'IMAGE' | 'EMOJI' | 'LOCATION';
+  imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type ChatDTO = {
@@ -30,14 +40,6 @@ export type ChatParticipantDTO = {
   role: 'member' | 'organizer';
 };
 
-export type SendMessageRequest = {
-  chatId: number;
-  content: string;
-  type: 'text' | 'image' | 'location';
-  imageUrl?: string;
-  latitude?: number;
-  longitude?: number;
-};
 
 export type CreateChatRequest = {
   type: 'one_to_one' | 'group';

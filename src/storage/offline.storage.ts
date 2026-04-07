@@ -1,9 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const OFFLINE_KEY = "OFFLINE_ATTRACTIONS";
+const OFFLINE_KEY = "OFFLINE_LOCATIONS";
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-export interface OfflineAttraction {
+export interface OfflineLocation {
   id: number;
   name: string;
   address?: string;
@@ -16,13 +16,13 @@ export interface OfflineAttraction {
 }
 
 interface OfflineCacheEntry {
-  data: OfflineAttraction[];
+  data: OfflineLocation[];
   savedAt: number;
 }
 
-export async function saveOffline(attractions: OfflineAttraction[]): Promise<void> {
+export async function saveOffline(locations: OfflineLocation[]): Promise<void> {
   const entry: OfflineCacheEntry = {
-    data: attractions.map((a) => ({
+    data: locations.map((a) => ({
       ...a,
       updatedAt: new Date().toISOString(),
     })),
@@ -31,7 +31,7 @@ export async function saveOffline(attractions: OfflineAttraction[]): Promise<voi
   await AsyncStorage.setItem(OFFLINE_KEY, JSON.stringify(entry));
 }
 
-export async function getOffline(): Promise<OfflineAttraction[]> {
+export async function getOffline(): Promise<OfflineLocation[]> {
   const raw = await AsyncStorage.getItem(OFFLINE_KEY);
   if (!raw) return [];
 

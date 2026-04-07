@@ -24,7 +24,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
         <View style={styles.buttonContentInner}>
           <ActivityIndicator color="white" size="small" />
           <Text style={styles.buttonText}>
-            Đang xử lý...
+            Processing...
           </Text>
         </View>
       );
@@ -35,7 +35,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
         <View style={styles.buttonContentInner}>
           <Ionicons name="checkmark-circle" size={24} color="white" />
           <Text style={styles.buttonText}>
-            Đăng nhập thành công
+            Login successful
           </Text>
         </View>
       );
@@ -46,7 +46,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
         <View style={styles.buttonContentInner}>
           <Ionicons name="alert-circle" size={24} color="white" />
           <Text style={styles.buttonText}>
-            Lỗi đăng nhập
+            Login error
           </Text>
         </View>
       );
@@ -62,7 +62,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
           />
         </View>
         <Text style={styles.buttonText}>
-          Tiếp tục với Google
+          Continue with Google
         </Text>
       </View>
     );
@@ -91,7 +91,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
       
       {status === "default" && !isLoading && (
         <Text style={styles.helperText}>
-          Đăng nhập an toàn qua tài khoản Google của bạn
+          Sign in securely with your Google account
         </Text>
       )}
     </View>

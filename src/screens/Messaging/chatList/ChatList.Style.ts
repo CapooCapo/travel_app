@@ -5,10 +5,14 @@ export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
 
   header: {
-    flexDirection: "row", alignItems: "center",
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: SIZES.padding, paddingVertical: 12, gap: 8,
   },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   headerTitle: { ...FONTS.h2, color: COLORS.text },
+  createGroupBtn: {
+    padding: 4,
+  },
   unreadBadge: {
     backgroundColor: COLORS.primary, borderRadius: 10,
     paddingHorizontal: 7, paddingVertical: 2,

@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./OtpVerification.Style";
 import CustomInput from "@components/CustomInput";
 import CustomButton from "@components/CustomButton";
-import { OtpVerificationFunction } from "./OtpVerification.Function";
+import { useOtpVerification } from "./useOtpVerification";
 
 export default function OtpVerificationScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
@@ -22,7 +22,7 @@ export default function OtpVerificationScreen({ navigation, route }: any) {
     isLoading,
     handleVerifyOtp,
     handleResend,
-  } = OtpVerificationFunction(navigation, email);
+  } = useOtpVerification(navigation, email);
 
   return (
     <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover">

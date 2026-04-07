@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./Itinerary.Style";
-import { ItineraryFunction } from "./Itinerary.Function";
+import { useItinerary } from "./useItinerary";
 import { COLORS } from "../../../constants/theme";
 import { ItineraryDTO } from "../../../dto/travel/travel.DTO";
 
@@ -15,7 +15,7 @@ const ItineraryScreen = ({ navigation }: any) => {
   const {
     itineraries, isLoading,
     handleShare, navigateToDetail, navigateToCreate, loadItineraries,
-  } = ItineraryFunction(navigation);
+  } = useItinerary(navigation);
 
   const renderCard = ({ item }: { item: ItineraryDTO }) => {
     const totalItems = (item.days || []).reduce((sum, d) => sum + d.items.length, 0);

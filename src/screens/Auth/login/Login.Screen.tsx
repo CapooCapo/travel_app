@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./Login.Style";
 import CustomInput from "@components/CustomInput";
 import CustomButton from "@components/CustomButton";
-import { LoginFunction } from "./login.function";
+import { useLogin } from "./useLogin";
 import { GoogleLoginButton } from "@components/Auth/GoogleLoginButton";
 
 const LoginScreen = ({ navigation }: any) => {
@@ -20,7 +20,7 @@ const LoginScreen = ({ navigation }: any) => {
     const {
         email, setEmail, password, setPassword,
         isLoading, validateForm, handleLogin, handleGoogleLogin, canSubmit, BG_SOURCE
-    } = LoginFunction(navigation);
+    } = useLogin(navigation);
 
     return (
         <ImageBackground

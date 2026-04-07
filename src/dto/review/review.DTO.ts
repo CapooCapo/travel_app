@@ -2,8 +2,8 @@
  * Khớp BE ReviewResponse:
  * { id, rating, content, imageUrl, userName }
  *
- * Reviews gắn với attraction:
- *   POST GET /api/attractions/{id}/reviews
+ * Reviews gắn với location:
+ *   POST GET /api/locations/{id}/reviews
  */
 export type ReviewResponse = {
   id: number;
@@ -31,17 +31,17 @@ export type ReviewDTO = {
  * Khớp BE CreateReviewRequest:
  * { rating, content, imageUrl }
  *
- * attractionId truyền qua path param, không phải body.
+ * locationId truyền qua path param, không phải body.
  */
 export type CreateReviewRequest = {
-  attractionId: number;     // đi vào path: /api/attractions/{attractionId}/reviews
+  locationId: number;     // đi vào path: /api/locations/{locationId}/reviews
   rating: number;
   content: string;          // BE dùng content, không phải comment
   imageUrl?: string;
 };
 
 export type ReviewListRequest = {
-  attractionId: number;     // path param
+  locationId: number;     // path param
   page?: number;
   size?: number;
 };

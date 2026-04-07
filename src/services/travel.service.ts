@@ -2,10 +2,10 @@ import { apiRequest } from "../api/client";
 import {
   saveOffline,
   getOffline,
-  OfflineAttraction,
+  OfflineLocation,
 } from "../storage/offline.storage";
 import { Res, PageRes } from "../dto/format";
-import { AttractionResponse } from "../dto/discovery/place.DTO";
+import { LocationResponse } from "../dto/discovery/place.DTO";
 import {
   ItineraryDTO,
   CreateItineraryRequest,
@@ -14,43 +14,43 @@ import {
 
 // ================== TYPES ==================
 
-export type AttractionSource = "online" | "offline" | "empty";
+export type LocationSource = "online" | "offline" | "empty";
 
-export interface AttractionsResult {
-  data: AttractionResponse[];
-  source: AttractionSource;
+export interface LocationsResult {
+  data: LocationResponse[];
+  source: LocationSource;
 }
 
 // ================== CONFIG ==================
 
 const DEFAULT_LOCATION = { lat: 10.7769, lng: 106.7009 };
 
-// ================== ATTRACTIONS ==================
+// ================== LOCATIONS ==================
 
 /**
  * Lấy danh sách địa điểm lân cận từ API hoặc cache offline nếu lỗi.
  */
-export async function getNearbyAttractions(
+export async function getNearbyLocations(
   lat: number | null,
   lng: number | null
-): Promise<AttractionsResult> {
+): Promise<LocationsResult> {
   const resolvedLat = lat ?? DEFAULT_LOCATION.lat;
   const resolvedLng = lng ?? DEFAULT_LOCATION.lng;
 
   try {
-    const res = await apiRequest.getNearbyAttractions(resolvedLat, resolvedLng);
-    const attractions = res.data.data.content;
+    const res = await apiRequest.getNearbyLocations(resolvedLat, resolvedLng);
+    const locations = res.data.data.content;
 
-    // Lưu cache offline (ép kiểu nếu cần vì OfflineAttraction có thể khác nhẹ)
-    await saveOffline(attractions as unknown as OfflineAttraction[]);
+    // Lưu cache offline (ép kiểu nếu cần vì OfflineLocation có thể khác nhẹ)
+    await saveOffline(locations as unknown as OfflineLocation[]);
 
-    return { data: attractions, source: "online" };
+    return { data: locations, source: "online" };
   } catch (e) {
-    console.warn("getNearbyAttractions API failed, falling back to offline:", e);
+    console.warn("getNearbyLocations API failed, falling back to offline:", e);
     const cached = await getOffline();
 
     if (cached && cached.length > 0) {
-      return { data: cached as unknown as AttractionResponse[], source: "offline" };
+      return { data: cached as unknown as LocationResponse[], source: "offline" };
     }
 
     return { data: [], source: "empty" };

@@ -39,12 +39,14 @@ import FeedScreen            from "../screens/Social/feed/Feed.Screen";
 // ─── Messaging ────────────────────────────────────────────────────────────
 import ChatListScreen        from "../screens/Messaging/chatList/ChatList.Screen";
 import ChatRoomScreen        from "../screens/Messaging/chatRoom/ChatRoom.Screen";
+import CreateGroupScreen     from "../screens/Messaging/createGroup/CreateGroup.Screen";
 
 // ─── Notifications ────────────────────────────────────────────────────────
 import NotificationScreen    from "../screens/Notification/notification/Notification.Screen";
 
 // ─── Profile ──────────────────────────────────────────────────────────────
 import ProfileScreen         from "../screens/Profile/profile/Profile.Screen";
+import UserProfileScreen    from "../screens/Profile/userProfile/UserProfile.Screen";
 
 // ─── Review ───────────────────────────────────────────────────────────────
 import WriteReviewScreen     from "../screens/Review/writeReview/WriteReview.Screen";
@@ -77,22 +79,24 @@ export type RootStackParamList = {
   // Events — truyền toàn bộ EventDTO vì BE không có GET /events/{id}
   EventDetail: { event: EventDTO };
 
-  // Review — attractionId (path param cho BE)
-  WriteReview: { attractionId: number };
+  // Review — locationId (path param cho BE)
+  WriteReview: { locationId: number };
 
   // Travel
   Itinerary:       undefined;
   ItineraryDetail: { itineraryId: number };
   CreatePlan:      undefined;
-  Schedule:        { attraction?: any };
+  Schedule:        { location?: any };
   Calendar:        undefined;
 
   // Messaging
-  ChatRoom: { chatId: number; chatName: string; chatType: "one_to_one" | "group" };
+  ChatRoom: { chatRoomId: number; chatName: string; chatType: "one_to_one" | "group" };
+  CreateGroup: undefined;
 
   // Misc
   Notification:   undefined;
   Profile:        undefined;
+  UserProfile:    { userId: number };
   AdminDashboard: undefined;
 };
 
@@ -247,12 +251,20 @@ export default function AppNavigator() {
               component={ChatRoomScreen}
               options={{ animation: "slide_from_right" }}
             />
+            <Stack.Screen name="CreateGroup"
+              component={CreateGroupScreen}
+              options={{ animation: "slide_from_bottom" }}
+            />
             <Stack.Screen name="Notification"
               component={NotificationScreen}
               options={{ animation: "slide_from_right" }}
             />
             <Stack.Screen name="Profile"
               component={ProfileScreen}
+              options={{ animation: "slide_from_right" }}
+            />
+            <Stack.Screen name="UserProfile"
+              component={UserProfileScreen}
               options={{ animation: "slide_from_right" }}
             />
             <Stack.Screen name="AdminDashboard"

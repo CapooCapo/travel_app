@@ -1,6 +1,10 @@
-import { AttractionResponse } from "../discovery/place.DTO";
-
 export type AiRecommendationDTO = {
-  attraction: AttractionResponse;
-  aiReason: string;
+  locationId: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  reason: string;
+  address?: string;
+  category?: string;
+  imageUrls?: string[];
 };

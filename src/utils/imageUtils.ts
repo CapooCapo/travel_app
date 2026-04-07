@@ -57,7 +57,7 @@ export const PHOTO_POOLS: Record<string, string[]> = {
 };
 
 /** 
- * Pick a consistent (non-random) photo based on attraction name + category 
+ * Pick a consistent (non-random) photo based on location name + category 
  * Ensuring a deterministic image based on the content of the string.
  */
 export function getPlaceImage(name: string, category?: string): string {

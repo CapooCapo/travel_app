@@ -1,12 +1,12 @@
 import React from "react";
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar,
+  ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./ChatRoom.Style";
-import { ChatRoomFunction } from "./ChatRoom.Function";
+import { useChatRoom } from "./useChatRoom";
 import { COLORS } from "../../../constants/theme";
 import { MessageDTO } from "../../../dto/messaging/message.DTO";
 
@@ -14,13 +14,35 @@ import { MessageDTO } from "../../../dto/messaging/message.DTO";
 const MY_USER_ID = 1;
 
 const ChatRoomScreen = ({ navigation, route }: any) => {
-  const { chatId, chatName, chatType } = route.params;
+  const { chatRoomId, chatName, chatType } = route.params;
   const insets = useSafeAreaInsets();
   const {
     messages, isLoading, inputText, setInputText,
     isSending, pinnedMessage, listRef,
     handleSend, handlePinMessage, goBack,
-  } = ChatRoomFunction(navigation, chatId);
+  } = useChatRoom(navigation, chatRoomId);
+
+  const renderMessageContent = (item: MessageDTO, isMe: boolean) => {
+    if (item.type === "IMAGE") {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
+      const fullUrl = item.content.startsWith("http")
+        ? item.content
+        : `${baseUrl}${item.content}`;
+      
+      return (
+        <Image
+          source={{ uri: fullUrl }}
+          style={styles.messageImage}
+          resizeMode="cover"
+        />
+      );
+    }
+    return (
+      <Text style={isMe ? styles.bubbleOutText : styles.bubbleInText}>
+        {item.content}
+      </Text>
+    );
+  };
 
   const renderMessage = ({ item }: { item: MessageDTO }) => {
     const isMe = item.senderId === MY_USER_ID;
@@ -28,7 +50,7 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
     if (isMe) {
       return (
         <View style={styles.bubbleOut}>
-          <Text style={styles.bubbleOutText}>{item.content}</Text>
+          {renderMessageContent(item, true)}
           <Text style={styles.bubbleOutTime}>
             {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </Text>
@@ -37,31 +59,40 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
     }
 
     return (
-      <TouchableOpacity
-        style={styles.bubbleInWrapper}
-        onLongPress={() => handlePinMessage(item.id)}
-        delayLongPress={600}
-        activeOpacity={0.9}
-      >
-        {chatType === "group" && (
-          <Text style={styles.bubbleSenderName}>{item.senderName}</Text>
+      <View style={styles.bubbleInRow}>
+        {item.senderAvatar ? (
+          <Image source={{ uri: item.senderAvatar }} style={styles.avatarMini} />
+        ) : (
+          <View style={styles.avatarPlaceholderMini}>
+            <Ionicons name="person" size={14} color={COLORS.muted} />
+          </View>
         )}
-        <View style={styles.bubbleIn}>
-          <Text style={styles.bubbleInText}>{item.content}</Text>
-          <Text style={styles.bubbleInTime}>
-            {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </Text>
-        </View>
-      </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.bubbleInWrapper}
+          onLongPress={() => handlePinMessage(item.id)}
+          delayLongPress={600}
+          activeOpacity={0.9}
+        >
+          <Text style={styles.bubbleSenderName}>{item.senderName || "User"}</Text>
+          <View style={styles.bubbleIn}>
+            {renderMessageContent(item, false)}
+            <Text style={styles.bubbleInTime}>
+              {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     );
   };
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={insets.bottom}
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
+      <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
       {/* Header */}
@@ -138,6 +169,7 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
             />
           )}
         </TouchableOpacity>
+      </View>
       </View>
     </KeyboardAvoidingView>
   );

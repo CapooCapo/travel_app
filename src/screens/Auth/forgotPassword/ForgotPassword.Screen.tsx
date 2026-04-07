@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./ForgotPassword.Style";
 import CustomInput from "@components/CustomInput";
 import CustomButton from "@components/CustomButton";
-import { ForgotPasswordFunction } from "./ForgotPassword.Function";
+import { useForgotPassword } from "./useForgotPassword";
 
 export default function ForgotPasswordScreen({ navigation }: any) {
     const insets = useSafeAreaInsets();
@@ -19,7 +19,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         setEmailError,
         isLoading,
         handleResetPassword
-    } = ForgotPasswordFunction(navigation);
+    } = useForgotPassword(navigation);
 
     return (
         <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover">

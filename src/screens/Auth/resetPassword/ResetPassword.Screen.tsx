@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./ResetPassword.Style";
-import { ResetPasswordFunction } from "./ResetPassword.Function";
+import { useResetPassword } from "./useResetPassword";
 import CustomInput from "@components/CustomInput";
 import CustomButton from "@components/CustomButton";
 
@@ -24,7 +24,7 @@ export default function ResetPasswordScreen({ navigation, route }: any) {
     errors,
     isLoading,
     handleResetPassword,
-  } = ResetPasswordFunction(navigation, email, otp);
+  } = useResetPassword(navigation, email, otp);
 
   return (
     <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover">

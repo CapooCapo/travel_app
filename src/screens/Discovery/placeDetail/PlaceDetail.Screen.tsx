@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./PlaceDetail.Style";
-import { PlaceDetailFunction } from "./PlaceDetail.Function";
+import { usePlaceDetail } from "./usePlaceDetail";
 import { COLORS, SIZES, FONTS } from "../../../constants/theme";
 import { ReviewDTO } from "../../../dto/review/review.DTO";
 import { EventDTO } from "../../../dto/event/event.DTO";
@@ -23,7 +23,7 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
     isBookmarked, activeTab, setActiveTab,
     handleToggleBookmark, handleShare,
     navigateToWriteReview, navigateToEventDetail, goBack,
-  } = PlaceDetailFunction(navigation, placeId);
+  } = usePlaceDetail(navigation, placeId);
 
   if (isLoading) {
     return (

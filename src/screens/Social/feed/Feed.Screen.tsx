@@ -7,17 +7,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./Feed.Style";
-import { FeedFunction } from "./Feed.Function";
+import { useFeed } from "./useFeed";
 import { COLORS } from "../../../constants/theme";
 import { FeedItemDTO } from "../../../dto/social/social.DTO";
 import { UserDTO } from "../../../dto/auth/user.DTO";
 
-const TYPE_META: Record<string, { icon: string; color: string }> = {
-  rating:     { icon: "star",            color: "#f5a623" },
-  event_join: { icon: "calendar",        color: COLORS.primary },
-  bookmark:   { icon: "bookmark",        color: "#00c864" },
-  review:     { icon: "chatbubble",      color: "#7c6af7" },
-};
+import { FeedItem } from "./components/FeedItem";
+import { UserSearchItem } from "./components/UserSearchItem";
 
 const FeedScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
@@ -26,64 +22,7 @@ const FeedScreen = ({ navigation }: any) => {
     searchKeyword, setSearchKeyword,
     searchResults, isSearching,
     handleLoadMore, navigateToTarget, navigateToUser, refresh 
-  } = FeedFunction(navigation);
-
-  const renderFeedItem = ({ item }: { item: FeedItemDTO }) => {
-    const meta = TYPE_META[item.type] ?? { icon: "ellipse", color: COLORS.muted };
-    const initial = item.userName?.charAt(0)?.toUpperCase() ?? "?";
-
-    return (
-      <TouchableOpacity
-        style={styles.item}
-        onPress={() => navigateToTarget(item)}
-        activeOpacity={0.8}
-      >
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
-        </View>
-
-        <View style={styles.content}>
-          <Text style={styles.message}>
-            <Text style={styles.nameHighlight}>{item.userName} </Text>
-            {item.message}{" "}
-            <Text style={styles.targetHighlight}>{item.targetName}</Text>
-          </Text>
-          <Text style={styles.time}>
-            {new Date(item.createdAt).toLocaleString()}
-          </Text>
-        </View>
-
-        <View style={[styles.typeIcon, { backgroundColor: meta.color + "22" }]}>
-          <Ionicons name={meta.icon as any} size={14} color={meta.color} />
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderUserItem = ({ item }: { item: UserDTO }) => {
-    const initial = item.fullName?.charAt(0)?.toUpperCase() ?? "?";
-
-    return (
-      <TouchableOpacity
-        style={styles.userItem}
-        onPress={() => navigateToUser(item.id)}
-        activeOpacity={0.8}
-      >
-        <View style={styles.userAvatar}>
-          <Text style={styles.userAvatarText}>{initial}</Text>
-        </View>
-
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{item.fullName}</Text>
-          <Text style={styles.userEmail}>{item.email}</Text>
-        </View>
-
-        <TouchableOpacity style={styles.followButton}>
-          <Text style={styles.followButtonText}>Follow</Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    );
-  };
+  } = useFeed(navigation);
 
   // Nếu đang tìm kiếm, dùng list search kết quả
   const isSearchActive = searchKeyword.trim().length > 0;
@@ -116,7 +55,11 @@ const FeedScreen = ({ navigation }: any) => {
 
       <FlatList
         data={(isSearchActive ? searchResults : feedItems) as any[]}
-        renderItem={({ item }) => isSearchActive ? renderUserItem({ item: item as UserDTO }) : renderFeedItem({ item: item as FeedItemDTO })}
+        renderItem={({ item }) => 
+          isSearchActive 
+            ? <UserSearchItem item={item as UserDTO} onPress={navigateToUser} />
+            : <FeedItem item={item as FeedItemDTO} onPress={navigateToTarget} />
+        }
         keyExtractor={(item) => `social-${item.id}`}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

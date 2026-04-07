@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { CreatePlanFunction } from "./CreatePlan.Function";
+import { useCreatePlan } from "./useCreatePlan";
 import { COLORS, SIZES, FONTS } from "../../../constants/theme";
 import { StyleSheet } from "react-native";
 
@@ -68,7 +68,7 @@ const CreatePlanScreen = ({ navigation, route }: any) => {
     startDate, endDate,
     isLoading, canSubmit, handleCreate,
     onDayPress, markedDates, goBack,
-  } = CreatePlanFunction(navigation, route);
+  } = useCreatePlan(navigation, route);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

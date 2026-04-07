@@ -47,12 +47,18 @@ export type GoogleLoginRequest = {
 export type UserDTO = {
   id: number;
   fullName: string;
+  username?: string;
   email: string;
   dateOfBirth?: string;
   gender?: string;
   travelStyle?: string;
   avatarUrl?: string;
   interests?: InterestItem[]; 
+  followerCount?: number;
+  followingCount?: number;
+  isFollowing?: boolean;
+  role?: string;
+  verified?: boolean;
 };
 
 export type UpdateUserRequest = {

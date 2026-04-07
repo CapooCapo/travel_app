@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./Register.Style";
 import CustomInput from "@components/CustomInput";
 import CustomButton from "@components/CustomButton";
-import { RegisterFunction } from "./Register.function";
+import { useRegister } from "./useRegister";
 
 export default function RegisterScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -28,7 +28,7 @@ export default function RegisterScreen({ navigation }: any) {
     pendingVerification,
     handleRegister,
     handleVerify,
-  } = RegisterFunction(navigation);
+  } = useRegister(navigation);
   
   const BG_IMAGE = require("@assets/images/signInbackground.jpg");
 

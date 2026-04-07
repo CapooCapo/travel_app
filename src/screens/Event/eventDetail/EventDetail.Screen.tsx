@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { styles } from "./EventDetail.Style";
-import { EventDetailFunction } from "./EventDetail.Function";
+import { useEventDetail } from "./useEventDetail";
 import { COLORS } from "../../../constants/theme";
 import { EventDTO } from "../../../dto/event/event.DTO";
 import AddToItineraryModal from "../../../components/AddToItineraryModal";
@@ -38,7 +38,7 @@ const EventDetailScreen = ({ navigation, route }: any) => {
   const event: EventDTO = route.params?.event;
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = React.useState(false);
-  const { countdown, goBack } = EventDetailFunction(navigation, event);
+  const { countdown, goBack } = useEventDetail(navigation, event);
 
   if (!event) {
     return (
@@ -171,7 +171,7 @@ const EventDetailScreen = ({ navigation, route }: any) => {
         <TouchableOpacity
           style={[styles.primaryBtn, { flex: 1 }]}
           onPress={() => navigation.navigate("PlaceDetail", {
-            placeId: event.attractionId,
+            placeId: event.locationId,
             initialTab: "events",
           })}
         >

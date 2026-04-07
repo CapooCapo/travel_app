@@ -13,19 +13,19 @@ import { COLORS } from "../../constants/theme";
 import { getPlaceImage } from "../../utils/imageUtils";
 
 interface PlaceCardProps {
-  id: string;
+  id: number | string;
   name: string;
   address?: string;
   category?: string;
   rating?: number;
-  aiReason?: string;
+  reason?: string;
   onPress: () => void;
   variant?: "horizontal" | "vertical";
   style?: ViewStyle;
 }
 
 /**
- * A reusable card component for displaying places/attractions.
+ * A reusable card component for displaying places/locations.
  * Supports both horizontal (featured) and vertical (list) layouts.
  */
 export const PlaceCard: React.FC<PlaceCardProps> = ({
@@ -34,7 +34,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
   address,
   category,
   rating = 0,
-  aiReason,
+  reason,
   onPress,
   variant = "vertical",
   style,
@@ -58,13 +58,13 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
       />
 
       {/* AI Recommendation Badge (if available) */}
-      {aiReason && (
+      {reason && (
         <LinearGradient
           colors={[COLORS.primary + '33', COLORS.primary + '10']}
           style={styles.aiBadge}
         >
           <Text style={styles.aiText}>
-            ✨ AI Recommends: {aiReason}
+            ✨ AI Recommends: {reason}
           </Text>
         </LinearGradient>
       )}

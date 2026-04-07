@@ -38,7 +38,10 @@ export const styles = StyleSheet.create({
   bubbleOutTime: { ...FONTS.body2, color: "rgba(255,255,255,0.65)", fontSize: 10, marginTop: 3, textAlign: "right" },
 
   // Bubble in (others)
-  bubbleInWrapper: { alignSelf: "flex-start", marginBottom: 6, maxWidth: width * 0.72 },
+  bubbleInRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 8 },
+  bubbleInWrapper: { alignSelf: "flex-start", maxWidth: width * 0.72 },
+  avatarMini: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surface },
+  avatarPlaceholderMini: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: COLORS.border },
   bubbleSenderName: { ...FONTS.body2, color: COLORS.primary, fontWeight: "600", marginBottom: 3, marginLeft: 4 },
   bubbleIn: {
     backgroundColor: COLORS.card,
@@ -69,6 +72,14 @@ export const styles = StyleSheet.create({
   },
   sendBtnActive: { backgroundColor: COLORS.primary },
   sendBtnInactive: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+
+  messageImage: {
+    width: width * 0.6,
+    height: width * 0.6,
+    borderRadius: 12,
+    marginTop: 2,
+    marginBottom: 4,
+  },
 
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

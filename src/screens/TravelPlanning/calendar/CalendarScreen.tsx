@@ -110,7 +110,7 @@ const CalendarScreen = () => {
                 style={styles.exploreButton}
                 onPress={() => navigation.navigate("Discovery")}
               >
-                <Text style={styles.exploreButtonText}>Explore Attractions</Text>
+                <Text style={styles.exploreButtonText}>Explore Locations</Text>
               </TouchableOpacity>
             </View>
           ) : null

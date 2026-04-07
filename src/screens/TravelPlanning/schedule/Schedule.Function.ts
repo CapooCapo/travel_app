@@ -4,10 +4,10 @@ import { Alert } from "react-native";
 export const useScheduleLogic = () => {
   const { deleteSchedule, addSchedule } = useSchedule();
 
-  const handleAdd = async (attractionId: number, date: Date, notes: string) => {
+  const handleAdd = async (locationId: number, date: Date, notes: string) => {
     try {
       await addSchedule({
-        locationId: attractionId,
+        locationId: locationId,
         scheduledDate: date.toISOString().split("T")[0],
         notes,
       });

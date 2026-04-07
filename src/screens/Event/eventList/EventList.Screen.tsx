@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./EventList.Style";
-import { EventListFunction, AttractionWithEvents } from "./EventList.Function";
+import { useEventList, LocationWithEvents } from "./useEventList";
 import { COLORS } from "../../../constants/theme";
 import { EventDTO } from "../../../dto/event/event.DTO";
 
@@ -49,12 +49,12 @@ function StatusBadge({ status }: { status?: EventDTO["status"] }) {
 const EventListScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const {
-    attractions, isLoading, hasMore,
+    locations, isLoading, hasMore,
     handleLoadMore, navigateToPlaceEvents,
     navigateToEventDetail, refresh,
-  } = EventListFunction(navigation);
+  } = useEventList(navigation);
 
-  const renderCard = ({ item }: { item: AttractionWithEvents }) => (
+  const renderCard = ({ item }: { item: LocationWithEvents }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigateToPlaceEvents(item.id)}
@@ -134,7 +134,7 @@ const EventListScreen = ({ navigation }: any) => {
       </View>
 
       <FlatList
-        data={attractions}
+        data={locations}
         renderItem={renderCard}
         keyExtractor={(item) => `attr-${item.id}`}
         contentContainerStyle={styles.listContent}
@@ -143,7 +143,7 @@ const EventListScreen = ({ navigation }: any) => {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading && attractions.length === 0}
+            refreshing={isLoading && locations.length === 0}
             onRefresh={refresh}
             tintColor={COLORS.primary}
           />

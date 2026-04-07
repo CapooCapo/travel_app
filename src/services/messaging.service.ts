@@ -14,9 +14,22 @@ export const messagingService = {
     return res.data.data;
   },
 
-  async createChat(req: CreateChatRequest) {
-    const res = await apiRequest.createChat(req);
+  async getOrCreatePrivateChat(targetUserId: number) {
+    console.log(`[MessagingService] Getting or creating private chat with user: ${targetUserId}`);
+    const res = await apiRequest.createChat(targetUserId);
+    if (res.status !== 200) throw new Error(res.data.message || "Failed to initiate chat");
+    return res.data.data;
+  },
+
+  async createChat(targetUserId: number) {
+    const res = await apiRequest.createChat(targetUserId);
     if (res.status !== 200) throw new Error(res.data.message || "Failed to create chat");
+    return res.data.data;
+  },
+
+  async createGroupChat(name: string, memberIds: number[]) {
+    const res = await apiRequest.createGroupChat({ name, memberIds });
+    if (res.status !== 200) throw new Error(res.data.message || "Failed to create group chat");
     return res.data.data;
   },
 
@@ -27,7 +40,7 @@ export const messagingService = {
   },
 
   async sendMessage(req: SendMessageRequest) {
-    if (!req.content.trim() && req.type === 'text')
+    if (!req.content.trim() && req.type === 'TEXT')
       throw new Error("Message cannot be empty");
     const res = await apiRequest.sendMessage(req);
     if (res.status !== 200) throw new Error(res.data.message || "Failed to send message");

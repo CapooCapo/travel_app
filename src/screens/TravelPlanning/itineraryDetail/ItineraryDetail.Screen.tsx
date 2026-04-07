@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./ItineraryDetail.Style";
-import { ItineraryDetailFunction } from "./ItineraryDetail.Function";
+import { useItineraryDetail } from "./useItineraryDetail";
 import { COLORS } from "../../../constants/theme";
 import { DayPlanDTO, DayPlanItemDTO } from "../../../dto/travel/travel.DTO";
 
@@ -16,7 +16,7 @@ const ItineraryDetailScreen = ({ navigation, route }: any) => {
   const {
     itinerary, isLoading,
     removeItem, moveItem, goBack, handleAddNewStop
-  } = ItineraryDetailFunction(navigation, itineraryId);
+  } = useItineraryDetail(navigation, itineraryId);
 
   if (isLoading) {
     return (

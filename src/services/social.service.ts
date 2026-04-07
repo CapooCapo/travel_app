@@ -26,9 +26,9 @@ export const socialService = {
     return res.data.data;
   },
 
-  async searchUsers(keyword: string) {
-    const res = await apiRequest.searchUsers(keyword);
+  async searchUsers(query: string, limit = 10, offset = 0) {
+    const res = await apiRequest.searchUsers(query, limit, offset);
     if (res.status !== 200) throw new Error(res.data.message || "Search failed");
-    return res.data; // API users/search usually returns List<UserDTO> directly or wrapped in Res
+    return res.data; 
   },
 };

@@ -13,16 +13,16 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./Home.Style";
-import { HomeFunction } from "./Home.Function";
+import { useHome } from "./useHome";
 import { COLORS } from "../../../constants/theme";
 import { EventDTO } from "../../../dto/event/event.DTO";
 import { LinearGradient } from 'expo-linear-gradient';
 import { AiRecommendationDTO } from "../../../dto/ai/ai.DTO";
-import { getPlaceImage } from "../../utils/imageUtils";
+import { getPlaceImage } from "../../../utils/imageUtils";
 import { PlaceCard } from "../../../components/Discovery/PlaceCard";
 
 
-// Local PHOTO_POOLS and getAttractionImage have been moved to src/utils/imageUtils.ts
+// Local PHOTO_POOLS and getLocationImage have been moved to src/utils/imageUtils.ts
 
 
 // ─── Screen component ─────────────────────────────────────────────────────────
@@ -38,16 +38,16 @@ const HomeScreen = ({ navigation }: any) => {
         navigateToPlaceDetail,
         navigateToEventDetail,
         loadHomeData,
-    } = HomeFunction(navigation);
+    } = useHome(navigation);
 
     const renderPlaceCard = ({ item }: { item: AiRecommendationDTO }) => (
         <PlaceCard
-            id={item.attraction.id}
-            name={item.attraction.name}
-            category={(item.attraction as any).category ?? "Attraction"}
-            rating={item.attraction.ratingAverage}
-            aiReason={item.aiReason}
-            onPress={() => navigateToPlaceDetail(item.attraction.id)}
+            id={item.locationId}
+            name={item.name}
+            address={item.address}
+            category={item.category}
+            reason={item.reason}
+            onPress={() => navigateToPlaceDetail(item.locationId)}
             variant="horizontal"
         />
     );
@@ -161,8 +161,7 @@ const HomeScreen = ({ navigation }: any) => {
                 <FlatList
                     data={featuredPlaces}
                     renderItem={renderPlaceCard}
-                    // Sửa từ item.id thành item.attraction.id
-                    keyExtractor={(item) => `place-${item.attraction.id}`}
+                    keyExtractor={(item) => item.locationId.toString()}
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.horizontalList}
@@ -195,7 +194,6 @@ const HomeScreen = ({ navigation }: any) => {
                 <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 20, marginBottom: 8 }}>
                     {[
                         { icon: "map-outline", label: "Itineraries", route: "Itinerary" },
-                        { icon: "shield-outline", label: "Admin", route: "AdminDashboard" },
                     ].map(({ icon, label, route }) => (
                         <TouchableOpacity
                             key={route}

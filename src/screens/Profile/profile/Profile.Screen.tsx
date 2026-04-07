@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./Profile.Style";
-import { ProfileFunction } from "./Profile.Function";
+import { useProfile } from "./useProfile";
 import { COLORS } from "../../../constants/theme";
 
 const ProfileScreen = ({ navigation }: any) => {
@@ -21,8 +21,9 @@ const ProfileScreen = ({ navigation }: any) => {
         selectedInterestIds, setSelectedInterestIds,
         travelStyles, genders, masterInterests,
         handleSave, handleSignOut, loadBeProfile,
+        isAdmin, navigateToAdmin,
         navigateToItineraries, navigateToBookmarks,
-    } = ProfileFunction(navigation);
+    } = useProfile(navigation);
 
     // Hàm hỗ trợ toggle chọn/bỏ chọn Sở thích
     const toggleInterest = (id: number) => {
@@ -173,6 +174,13 @@ const ProfileScreen = ({ navigation }: any) => {
                                 <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
                             </TouchableOpacity>
                         ))}
+                        {isAdmin && (
+                            <TouchableOpacity style={styles.menuItem} onPress={navigateToAdmin}>
+                                <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.primary} />
+                                <Text style={styles.menuItemText}>Dashmin Hub</Text>
+                                <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
 

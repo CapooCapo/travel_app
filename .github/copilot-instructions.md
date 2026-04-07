@@ -32,6 +32,11 @@ Enable Copilot to contribute safely and quickly in this Expo React Native app wi
 - Keep business logic in `src/services` and `src/api`, UI in `src/screens` and `src/components`
 - Use `CustomButton` / `CustomInput` for consistent style
 - Keep API dto/formatting in `src/dto` for consistency
+- Feature-based modular structure: screens split into `.Screen.tsx` (UI), `.Function.ts` (logic), `.Style.ts` (styles)
+- Service wrappers over direct API calls; all network requests go through service layer
+- DTO mapping: API responses explicitly mapped to app DTOs
+- Path aliases: `@components`, `@services`, `@screens` for clean imports
+- Code comments in Vietnamese (be aware when reading)
 
 ## Common tasks
 - Add new screen: create folder under `src/screens/*`, screen `.tsx`, style `.ts`, router entry in `AppNavigator.tsx`
@@ -41,11 +46,18 @@ Enable Copilot to contribute safely and quickly in this Expo React Native app wi
 ## Known details
 - Expo config in `app.json`, CLI in `eas.json`
 - Development path includes `clerk-expo/` for Clerk SDK wrapper; avoid global `window` in native-only code
+- Environment variables in `.env` with `EXPO_PUBLIC_*` prefix (API URL, OAuth IDs, Clerk key)
+- Hardcoded API URL (http://192.168.1.72:8080) works only on local network; update for devices/CI
+- Clerk token handling: throws "TOKEN_NULL" error if unavailable; ensure auth initializes before navigation
+- Offline storage: 24h TTL AsyncStorage; no network-first fallback
+- Metro config uses defaults; may need custom resolutions later
+- No existing tests, but Jest configured with `jest-expo` preset
 
 ## Style guidelines for Copilot
 - Respond with focused code edits; avoid unlocking more than requested
 - When adding features, suggest and include unit/testing stubs if possible (no tests currently in repo)
-- Keep changes minimal, preserving the existing pattern (function + style file pairing, service layer). 
+- Keep changes minimal, preserving the existing pattern (function + style file pairing, service layer).
+- Be aware of Vietnamese comments in code when reading or editing.
 
 ## Local environment notes
 - `node_modules` is heavy; use `npm install` once before running tasks.

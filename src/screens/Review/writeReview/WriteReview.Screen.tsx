@@ -31,8 +31,8 @@ const styles = StyleSheet.create({
 const RATING_LABELS = ["", "Poor", "Fair", "Good", "Very Good", "Excellent"];
 
 const WriteReviewScreen = ({ navigation, route }: any) => {
-  // attractionId từ PlaceDetail.Function: navigateToWriteReview()
-  const { attractionId } = route.params;
+  // locationId từ PlaceDetail.Function: navigateToWriteReview()
+  const { locationId } = route.params;
   const insets = useSafeAreaInsets();
 
   const [rating,    setRating]    = useState(0);
@@ -45,8 +45,8 @@ const WriteReviewScreen = ({ navigation, route }: any) => {
     if (!canSubmit || isLoading) return;
     setIsLoading(true);
     try {
-      // reviewService.createReview(attractionId, rating, content, imageUrl?)
-      await reviewService.createReview(attractionId, rating, content.trim());
+      // reviewService.createReview(locationId, rating, content, imageUrl?)
+      await reviewService.createReview(locationId, rating, content.trim());
       Alert.alert("Review Submitted ✅", "Thank you for your feedback!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);

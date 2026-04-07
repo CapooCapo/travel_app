@@ -1,16 +1,16 @@
 /**
  * Khớp BE EventResponse:
- * { id, name, description, eventDate, attractionId }
+ * { id, name, description, eventDate, locationId }
  *
  * Lưu ý: BE không có endpoint list toàn bộ events.
- * Events luôn gắn với attraction: GET /api/events/attraction/{attractionId}
+ * Events luôn gắn với location: GET /api/events/location/{locationId}
  */
 export type EventResponse = {
   id: number;
   name: string;
   description: string;
   eventDate: string;       // LocalDateTime → ISO string
-  attractionId: number;
+  locationId: number;
 };
 
 /**
@@ -23,8 +23,8 @@ export type EventDTO = {
   description: string;
   startDate: string;       // mapped từ eventDate
   endDate?: string;        // BE chưa có — optional
-  attractionId: number;
-  address?: string;        // lấy từ attraction parent nếu cần
+  locationId: number;
+  address?: string;        // lấy từ location parent nếu cần
   imageUrl?: string;
   isFree?: boolean;
   price?: number;
@@ -46,7 +46,7 @@ export function mapEvent(e: EventResponse): EventDTO {
     title:        e.name,
     description:  e.description,
     startDate:    e.eventDate,
-    attractionId: e.attractionId,
+    locationId: e.locationId,
     status:       resolveStatus(e.eventDate),
   };
 }

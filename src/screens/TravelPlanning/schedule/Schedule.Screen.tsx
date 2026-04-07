@@ -27,18 +27,18 @@ const ScheduleScreen = () => {
   const [selectedDate, setSelectedDate] = React.useState(new Date());
   const [notes, setNotes] = React.useState("");
   const [showDatePicker, setShowDatePicker] = React.useState(false);
-  const [targetAttraction, setTargetAttraction] = React.useState<any>(null);
+  const [targetLocation, setTargetLocation] = React.useState<any>(null);
 
   useEffect(() => {
     fetchSchedules();
   }, [fetchSchedules]);
 
   useEffect(() => {
-    if (route.params?.attraction) {
-      setTargetAttraction(route.params.attraction);
+    if (route.params?.location) {
+      setTargetLocation(route.params.location);
       setIsModalVisible(true);
       // Clear params to avoid reopening on remount
-      navigation.setParams({ attraction: null });
+      navigation.setParams({ location: null });
     }
   }, [route.params, navigation]);
 
@@ -50,13 +50,13 @@ const ScheduleScreen = () => {
   };
 
   const handleConfirmAdd = async () => {
-    if (!targetAttraction) return;
-    const success = await handleAdd(targetAttraction.id, selectedDate, notes);
+    if (!targetLocation) return;
+    const success = await handleAdd(targetLocation.id, selectedDate, notes);
     if (success) {
       setIsModalVisible(false);
       setNotes("");
       setSelectedDate(new Date());
-      setTargetAttraction(null);
+      setTargetLocation(null);
     }
   };
 
@@ -143,7 +143,7 @@ const ScheduleScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Schedule Visit</Text>
-            <Text style={styles.modalSubtitle}>{targetAttraction?.name}</Text>
+            <Text style={styles.modalSubtitle}>{targetLocation?.name}</Text>
 
             <Text style={styles.label}>Select Date</Text>
             <TouchableOpacity
@@ -182,7 +182,7 @@ const ScheduleScreen = () => {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setIsModalVisible(false);
-                  setTargetAttraction(null);
+                  setTargetLocation(null);
                 }}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>

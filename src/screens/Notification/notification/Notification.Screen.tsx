@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./Notification.Style";
-import { NotificationFunction } from "./Notification.Function";
+import { useNotification } from "./useNotification";
 import { COLORS } from "../../../constants/theme";
 import { NotificationDTO } from "../../../dto/notification/notification.DTO";
 
@@ -23,7 +23,7 @@ const NotificationScreen = () => {
   const {
     notifications, unreadCount, isLoading,
     handleMarkRead, handleMarkAllRead, loadNotifications,
-  } = NotificationFunction();
+  } = useNotification();
 
   const renderItem = ({ item }: { item: NotificationDTO }) => {
     const icon = TYPE_ICON[item.type] ?? { name: "notifications-outline", color: COLORS.muted };

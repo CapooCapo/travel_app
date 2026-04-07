@@ -1,11 +1,11 @@
 /**
- * Khớp BE AttractionResponse:
+ * Khớp BE LocationResponse:
  * { id, name, address, description, latitude, longitude, ratingAverage }
  *
  * Các trường FE thêm vào (images, isBookmarked…) được
  * bổ sung ở service layer sau khi gọi thêm endpoint images.
  */
-export type AttractionResponse = {
+export type LocationResponse = {
   id: number;
   name: string;
   address: string;
@@ -17,14 +17,14 @@ export type AttractionResponse = {
   imageUrls?: string[];
 };
 
-/** Khớp BE AttractionImageResponse */
-export type AttractionImageResponse = {
+/** Khớp BE LocationImageResponse */
+export type LocationImageResponse = {
   id: number;
   imageUrl: string;
 };
 
 /**
- * PlaceDTO — kiểu dùng nội bộ FE, được map từ AttractionResponse.
+ * PlaceDTO — kiểu dùng nội bộ FE, được map từ LocationResponse.
  * Các trường optional là những thứ BE chưa có hoặc lấy từ
  * endpoint riêng (images, bookmark…).
  */
@@ -36,7 +36,7 @@ export type PlaceDTO = {
   latitude: number;
   longitude: number;
   rating: number;            // mapped từ ratingAverage
-  imageUrls: string[];       // từ /api/attraction-images/{id}/images
+  imageUrls: string[];       // từ /api/location-images/{id}/images
   isBookmarked?: boolean;
   reviewCount?: number;
   category?: string;
@@ -45,15 +45,16 @@ export type PlaceDTO = {
 
 // ─── Request / Response wrappers ─────────────────────────────────────────────
 
-export type AttractionListRequest = {
+export type LocationListRequest = {
   keyword?: string;
+  category?: string;
   rating?: number;
   page?: number;
   size?: number;             // BE dùng "size", không phải "limit"
 };
 
 /** Dùng tên cũ để không phải đổi tất cả service calls */
-export type PlaceListRequest = AttractionListRequest;
+export type PlaceListRequest = LocationListRequest;
 
 export type NearbyRequest = {
   lat: number;
@@ -62,7 +63,7 @@ export type NearbyRequest = {
   size?: number;
 };
 
-export type CreateAttractionRequest = {
+export type CreateLocationRequest = {
   name: string;
   address: string;
   description: string;
@@ -70,8 +71,8 @@ export type CreateAttractionRequest = {
   longitude: number;
 };
 
-/** Helper: map BE AttractionResponse → FE PlaceDTO */
-export function mapAttraction(a: AttractionResponse, images: string[] = []): PlaceDTO {
+/** Helper: map BE LocationResponse → FE PlaceDTO */
+export function mapLocation(a: LocationResponse, images: string[] = []): PlaceDTO {
   return {
     id:          a.id,
     name:        a.name,

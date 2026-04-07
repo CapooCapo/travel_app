@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./CreateEvent.Style";
-import { CreateEventFunction } from "./CreateEvent.Function";
+import { useCreateEvent } from "./useCreateEvent";
 import { COLORS } from "../../../constants/theme";
 
 const CreateEventScreen = ({ navigation }: any) => {
@@ -17,7 +17,7 @@ const CreateEventScreen = ({ navigation }: any) => {
     startDate, setStartDate, endDate, setEndDate,
     price, setPrice, isFree, setIsFree,
     isLoading, canSubmit, handleCreate, goBack,
-  } = CreateEventFunction(navigation);
+  } = useCreateEvent(navigation);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

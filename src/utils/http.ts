@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Alert } from "react-native";
 
 // ─── Tích hợp Clerk Token ──────────────────────────────────────────────────
 type GetTokenOptions = { template?: string; skipCache?: boolean };
@@ -22,7 +23,78 @@ const http = axios.create({
   },
 });
 
-// Request Interceptor: Inject Clerk Token
+const logDebugRequest = (config: any) => {
+  const isSearchOrAi = config.url?.includes('/api/users/search') || config.url?.includes('/api/locations/ai-recommend');
+  if (isSearchOrAi) {
+    console.log('[FE DEBUG] Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      headers: config.headers,
+      payload: config.data
+    });
+  }
+};
+
+const logDebugResponse = (response: any) => {
+  const isSearchOrAi = response.config.url?.includes('/api/users/search') || response.config.url?.includes('/api/locations/ai-recommend');
+  if (isSearchOrAi) {
+    console.log('[FE DEBUG] Response:', {
+      status: response.status,
+      data: response.data
+    });
+  }
+};
+
+const logDebugError = (error: any) => {
+  const isSearchOrAi = error.config?.url?.includes('/api/users/search') || error.config?.url?.includes('/api/locations/ai-recommend');
+  const is500 = error.response?.status === 500;
+  
+  if (isSearchOrAi || is500) {
+    console.error(`[FE DEBUG] ${is500 ? 'BACKEND 500 ERROR' : 'Error'}:`, {
+      method: error.config?.method?.toUpperCase(),
+      url: error.config?.url,
+      status: error.response?.status || 'No Status',
+      data: error.response?.data || 'No Data',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Hiển thị thông báo lỗi quy chuẩn cho người dùng
+ */
+const showErrorAlert = (error: any) => {
+  const status = error.response?.status;
+  const data = error.response?.data;
+  const backendMessage = data?.message;
+
+  let title = "Error";
+  let message = backendMessage || "Unable to connect to the server. Please try again later.";
+
+  switch (status) {
+    case 400:
+      title = "Bad Request";
+      break;
+    case 403:
+      title = "Forbidden";
+      break;
+    case 500:
+      title = "Server Error";
+      message = backendMessage || "An internal server error occurred.";
+      break;
+    case 401:
+      // 401 thường được xử lý riêng (ví dụ redirect về login)
+      return; 
+    default:
+      if (!error.response) {
+        message = "Unable to connect to the server. Please try again later.";
+      }
+  }
+
+  Alert.alert(title, message, [{ text: "OK" }]);
+};
+
+// Request Interceptor: Inject Clerk Token & Log Payload
 http.interceptors.request.use(
   async (config) => {
     if (clerkTokenGetter) {
@@ -30,24 +102,31 @@ http.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       } else {
-        // If token is null, the user is likely signed out or the session has expired.
-        // We throw an error to prevent the request and potentially trigger a redirect/refresh.
         console.error("[HTTP] Clerk token is null. Request aborted.");
         return Promise.reject(new Error("TOKEN_NULL"));
       }
     }
+
+    logDebugRequest(config);
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle 401 Unauthorized
+// Response Interceptor: Handle Errors & Log Result
 http.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    logDebugResponse(response);
+    return response;
+  },
   async (error) => {
+    logDebugError(error);
+    
+    // Hiển thị Alert cho các lỗi quy chuẩn
+    showErrorAlert(error);
+
     if (error.response && error.response.status === 401) {
       console.warn("[HTTP] 401 Unauthorized detected. User may need to sign in again.");
-      // Với Clerk, ta có thể để hook useAuth tự xử lý hoặc điều hướng qua AppNavigator
     }
     return Promise.reject(error);
   }

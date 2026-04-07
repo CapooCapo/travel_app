@@ -6,14 +6,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./ChatList.Style";
-import { ChatListFunction } from "./ChatList.Function";
+import { useChatList } from "./useChatList";
 import { COLORS } from "../../../constants/theme";
 import { ChatDTO } from "../../../dto/messaging/message.DTO";
 
 const ChatListScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { chats, isLoading, totalUnread, navigateToChatRoom, loadChats } =
-    ChatListFunction(navigation);
+    useChatList(navigation);
 
   const renderItem = ({ item }: { item: ChatDTO }) => {
     const initial =
@@ -23,7 +23,10 @@ const ChatListScreen = ({ navigation }: any) => {
     const displayName =
       item.type === "group"
         ? item.name ?? "Group Chat"
-        : item.participants.map((p) => p.userName).join(", ");
+        : item.participants
+            .map((p) => p.userName)
+            .filter(name => !!name)
+            .join(", ") || "User";
 
     return (
       <TouchableOpacity
@@ -72,12 +75,21 @@ const ChatListScreen = ({ navigation }: any) => {
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
-        {totalUnread > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadBadgeText}>{totalUnread}</Text>
-          </View>
-        )}
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Messages</Text>
+          {totalUnread > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadBadgeText}>{totalUnread}</Text>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity 
+          style={styles.createGroupBtn}
+          onPress={() => navigation.navigate("CreateGroup")}
+        >
+          <Ionicons name="add-circle-outline" size={26} color={COLORS.primary} />
+        </TouchableOpacity>
       </View>
 
       {isLoading ? (
