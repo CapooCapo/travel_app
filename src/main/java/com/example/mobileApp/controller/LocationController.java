@@ -22,40 +22,36 @@ import com.example.mobileApp.dto.request.CreateLocationRequest;
 import com.example.mobileApp.dto.response.ApiResponse;
 import com.example.mobileApp.dto.response.LocationResponse;
 import com.example.mobileApp.dto.response.AiRecommendationResponse;
-import com.example.mobileApp.entity.User;
-import com.example.mobileApp.repository.UserRepository;
-import com.example.mobileApp.security.CurrentUser;
 import com.example.mobileApp.service.LocationService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/locations")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@Slf4j
 public class LocationController extends BaseController {
 
     private final LocationService locationService;
-    private final UserRepository userRepository;
 
     @GetMapping
     public ApiResponse<Page<LocationResponse>> getLocations(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) Double rating,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        if (keyword != null || rating != null) {
+        if (keyword != null || category != null || rating != null) {
             Pageable pageable = PageRequest.of(page, size);
-            return ok(locationService.search(keyword, rating, pageable));
+            return ok(locationService.search(keyword, category, rating, pageable));
         }
         return ok(locationService.getLocations(page, size));
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<LocationResponse> getLocation(@PathVariable Long id) {
-        return ok(locationService.getLocation(id));
-    }
+
 
     @GetMapping("/nearby")
     public ResponseEntity<ApiResponse<Page<LocationResponse>>> getNearbyLocations(
@@ -96,20 +92,23 @@ public class LocationController extends BaseController {
         return ok(locationService.getPopularLocations(page, size));
     }
 
-    @GetMapping("/ai-recommend")
-    public ResponseEntity<ApiResponse<List<AiRecommendationResponse>>> getAiRecommend(
-            @RequestParam Double lat,
-            @RequestParam Double lng,
-            @CurrentUser Long userId
+    @PostMapping("/ai-recommend")
+    public ResponseEntity<ApiResponse<List<AiRecommendationResponse>>> getAiRecommendations(
+            @RequestBody com.example.mobileApp.dto.request.AiRecommendationRequest request
     ) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+        if (request.getLat() == null || request.getLng() == null || request.getUserId() == null) {
+            throw new IllegalArgumentException("Latitude, Longitude, and UserId are required.");
+        }
 
         List<AiRecommendationResponse> result =
-                locationService.getAiRecommendations(lat, lng, user);
+                locationService.getAiRecommendations(request.getLat(), request.getLng(), request.getUserId());
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(3, TimeUnit.MINUTES))
                 .body(ok(result));
+    }
+    @GetMapping("/{id:[0-9]+}")
+    public ApiResponse<LocationResponse> getLocation(@PathVariable Long id) {
+        return ok(locationService.getLocation(id));
     }
 }

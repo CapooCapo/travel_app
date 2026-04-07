@@ -33,23 +33,28 @@ public class GeminiService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public List<AiRecommendationResponse> process(Set<String> interests, List<LocationResponse> nearby) {
-
         if (nearby == null || nearby.isEmpty()) return Collections.emptyList();
 
         String prompt = buildPrompt(interests, nearby);
+        long startTime = System.currentTimeMillis();
 
         try {
+            log.info("🤖 Calling Gemini API for ranking...");
             String response = callGemini(prompt);
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("✅ Gemini API responded in {}ms", duration);
+
             String aiJson = extractText(response);
 
             if (aiJson == null || aiJson.isEmpty()) {
+                log.warn("⚠️ Gemini returned empty or invalid text. Falling back to default ranking.");
                 return fallback(nearby);
             }
 
             return map(aiJson, nearby);
 
         } catch (Exception e) {
-            log.error("❌ Gemini error", e);
+            log.error("❌ Gemini ranking failed", e);
             return fallback(nearby);
         }
     }
@@ -73,19 +78,31 @@ public class GeminiService {
     }
 
     private String extractText(String response) throws Exception {
-
         JsonNode root = mapper.readTree(response);
-        JsonNode parts = root.path("candidates").get(0)
-                .path("content").path("parts");
+        JsonNode candidates = root.path("candidates");
+        if (candidates.isMissingNode() || !candidates.isArray() || candidates.isEmpty()) {
+            log.error("❌ Gemini response missing candidates: {}", response);
+            return null;
+        }
 
-        if (!parts.isArray() || parts.isEmpty()) return null;
+        JsonNode parts = candidates.get(0).path("content").path("parts");
+        if (!parts.isArray() || parts.isEmpty()) {
+            log.error("❌ Gemini candidate missing parts: {}", response);
+            return null;
+        }
 
         String text = parts.get(0).path("text").asText();
+        log.debug("📝 Gemini Raw Text: {}", text);
 
         int start = text.indexOf('[');
         int end = text.lastIndexOf(']');
 
-        return (start != -1 && end != -1) ? text.substring(start, end + 1) : null;
+        if (start != -1 && end != -1) {
+            return text.substring(start, end + 1);
+        }
+        
+        log.warn("⚠️ Could not find JSON array in Gemini response text.");
+        return null;
     }
 
     private List<AiRecommendationResponse> map(String json, List<LocationResponse> nearby) {
@@ -101,7 +118,15 @@ public class GeminiService {
                     return nearby.stream()
                         .filter(a -> a.getId().equals(id))
                         .findFirst()
-                        .map(a -> new AiRecommendationResponse(a, reason))
+                        .map(a -> AiRecommendationResponse.builder()
+                                .locationId(a.getId())
+                                .name(a.getName())
+                                .latitude(a.getLatitude())
+                                .longitude(a.getLongitude())
+                                .address(a.getAddress())
+                                .category(a.getCategory())
+                                .reason(reason)
+                                .build())
                         .orElse(null);
                 })
                 .filter(Objects::nonNull)
@@ -120,7 +145,15 @@ public class GeminiService {
                 Comparator.reverseOrder()
             ))
             .limit(3)
-            .map(a -> new AiRecommendationResponse(a, "Gợi ý phổ biến gần bạn"))
+            .map(a -> AiRecommendationResponse.builder()
+                    .locationId(a.getId())
+                    .name(a.getName())
+                    .latitude(a.getLatitude())
+                    .longitude(a.getLongitude())
+                    .address(a.getAddress())
+                    .category(a.getCategory())
+                    .reason("Gợi ý phổ biến gần bạn")
+                    .build())
             .toList();
     }
 

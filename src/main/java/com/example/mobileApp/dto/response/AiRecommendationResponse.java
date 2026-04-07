@@ -10,9 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AiRecommendationResponse {
-    // Chứa toàn bộ thông tin địa điểm
-    private LocationResponse location; 
-    
-    // Lý do AI chọn địa điểm này (Ví dụ: "Phù hợp với sở thích leo núi của bạn")
+    private Long locationId;
+    private String name;
+    private Double latitude;
+    private Double longitude;
     private String reason;
+    private String address;
+    private String category;
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.mobileApp.dto.response.AttractionImageResponse;
+import com.example.mobileApp.dto.response.LocationImageResponse;
 import com.example.mobileApp.repository.LocationImageRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -15,13 +15,13 @@ public class LocationImageService {
 
     private final LocationImageRepository imageRepository;
 
-    public List<AttractionImageResponse> getImages(Long locationId) {
+    public List<LocationImageResponse> getImages(Long locationId) {
 
         return imageRepository
                 .findByLocationId(locationId)
                 .stream()
                 .map(img -> {
-                    AttractionImageResponse r = new AttractionImageResponse();
+                    LocationImageResponse r = new LocationImageResponse();
                     r.setId(img.getId());
                     r.setImageUrl(img.getImageUrl());
                     return r;

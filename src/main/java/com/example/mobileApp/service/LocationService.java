@@ -3,10 +3,8 @@ package com.example.mobileApp.service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,21 +22,26 @@ import com.example.mobileApp.entity.Location;
 import com.example.mobileApp.entity.User;
 import com.example.mobileApp.mapper.LocationMapper;
 import com.example.mobileApp.repository.LocationRepository;
+import com.example.mobileApp.repository.UserRepository;
+import com.example.mobileApp.exception.ResourceNotFoundException;
+import com.example.mobileApp.util.OsmTagMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class LocationService {
 
     private final OsmService osmService;
-    private final GeminiService geminiService;
     private final LocationRepository locationRepository;
+    private final UserRepository userRepository;
     private final LocationMapper mapper;
+    private final OsmTagMapper osmTagMapper;
 
-    // Hỗ trợ hằng số bán kính từ bản local nếu cần dùng cho logic cũ
-    private static final double RADIUS_METERS = 50_000.0;
+    private static final double RADIUS_METERS = 100_000.0;
 
     public Page<LocationResponse> getLocations(int page, int size) {
         Pageable pageable = PageRequest.of(
@@ -93,13 +96,19 @@ public class LocationService {
 
     public Page<LocationResponse> search(
             String keyword,
+            String category,
             Double rating,
             Pageable pageable) {
         Page<Location> result;
 
-        if (keyword != null) {
+        if (category != null && !category.isEmpty()) {
+            log.info("Filtering locations by category: {}", category);
+            result = locationRepository.findByInterestsName(category, pageable);
+        } else if (keyword != null && !keyword.isEmpty()) {
+            log.info("Searching locations by keyword: {}", keyword);
             result = locationRepository.findByNameContainingIgnoreCase(keyword, pageable);
         } else if (rating != null) {
+            log.info("Filtering locations by rating >= {}", rating);
             result = locationRepository.findByRatingAverageGreaterThanEqual(rating, pageable);
         } else {
             result = locationRepository.findAll(pageable);
@@ -126,44 +135,103 @@ public class LocationService {
                 .map(mapper::toResponse);
     }
 
-    public List<AiRecommendationResponse> getAiRecommendations(Double lat, Double lng, User user) {
+    @Transactional
+    public List<AiRecommendationResponse> getAiRecommendations(Double lat, Double lng, Long userId) {
+        // 1. Fetch user to ensure existence
+        User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
-        // 1. Nếu user KHÔNG có interest → trả nearby luôn
-        if (user.getInterests() == null || user.getInterests().isEmpty()) {
+        // 2. Create "cleansed" version with empty interests to ignore preferences
+        User cleansedUser = new User();
+        cleansedUser.setId(user.getId());
+        cleansedUser.setInterests(Collections.emptySet());
 
-            List<LocationResponse> nearby = getNearbyRaw(lat, lng);
+        // 3. Fetch nearby locations based on proximity only
+        List<LocationResponse> candidates = getNearbyFromOsm(cleansedUser, lat, lng);
 
-            return nearby.stream()
-                    .map(a -> {
-                        AiRecommendationResponse res = new AiRecommendationResponse();
-                        res.setLocation(a);
-                        res.setReason("Popular nearby place"); // hoặc bỏ cũng được
-                        return res;
-                    })
-                    .toList();
-        }
-
-        // 2. Nếu có interest → xử lý như cũ
-        Set<String> interestNames = user.getInterests().stream()
-                .map(i -> i.getName())
-                .collect(Collectors.toSet());
-
-        CompletableFuture<Void> osmTask = osmService.fetchAndSaveNearbyPlacesAsync(lat, lng);
-
-        try {
-            osmTask.get(5, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            System.out.println("⚠️ OSM timeout -> dùng data cũ");
-        } catch (Exception e) {
-            System.err.println("❌ OSM error: " + e.getMessage());
-        }
-
-        List<LocationResponse> nearbyRaw = getNearbyRaw(lat, lng);
-
-        if (nearbyRaw == null || nearbyRaw.isEmpty()) {
+        if (candidates.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return geminiService.process(interestNames, nearbyRaw);
+        // 4. Return top 10 results (AI disabled logic)
+        return candidates.stream()
+                .limit(10)
+                .map(c -> AiRecommendationResponse.builder()
+                        .locationId(c.getId())
+                        .name(c.getName())
+                        .latitude(c.getLatitude())
+                        .longitude(c.getLongitude())
+                        .address(c.getAddress())
+                        .category(c.getCategory())
+                        .reason("Nearby place (AI disabled)")
+                        .build())
+                .toList();
+    }
+
+    /**
+     * ✅ Optimized retrieval logic: Checks local DB first (Cache Hit) before hitting
+     * OSM API.
+     */
+    @Transactional
+    public List<LocationResponse> getNearbyFromOsm(User user, Double lat, Double lng) {
+        Long userId = user.getId();
+        Set<String> interestNames = user.getInterests() != null
+                ? user.getInterests().stream().map(i -> i.getName()).collect(Collectors.toSet())
+                : Collections.emptySet();
+
+        // 1. Map Interests to OSM tags
+        Set<String> tags = osmTagMapper.mapInterestsToTags(interestNames);
+
+        // 🚀 INTELLIGENT CACHE CHECK (Local-First)
+        // We look for local POIs matching the current user's interests within 5km.
+        double localCheckRadius = 5000.0;
+        List<Location> localPoisByInterest = interestNames.isEmpty()
+                ? locationRepository.findNearby(lat, lng, localCheckRadius, PageRequest.of(0, 15)).getContent()
+                : locationRepository.findNearbyByInterests(lat, lng, localCheckRadius, interestNames);
+
+        if (localPoisByInterest.size() >= 12) {
+            log.info("🔍 [User: {}] Cache Hit: Found {} POIs locally for interests. Skipping OSM call.", userId,
+                    localPoisByInterest.size());
+            return localPoisByInterest.stream()
+                    .map(mapper::toResponse)
+                    .toList();
+        }
+
+        log.info("🌐 [User: {}] Cache Miss (Only {} POIs locally). Fetching from OSM...", userId,
+                localPoisByInterest.size());
+
+        // 2. Call OSM Service
+        List<Location> osmLocations;
+        try {
+            osmLocations = osmService.fetchNearbyPois(lat, lng, tags, userId);
+        } catch (Exception e) {
+            log.error("🛡️ [User: {}] OSM API failed, falling back to all nearby local POIs: {}", userId,
+                    e.getMessage());
+            osmLocations = locationRepository.findNearby(lat, lng, 10000.0, PageRequest.of(0, 20)).getContent();
+        }
+
+        // Merge and deduplicate results
+        Set<String> seenExternalIds = osmLocations.stream()
+                .map(Location::getExternalId)
+                .collect(Collectors.toSet());
+
+        List<LocationResponse> result = new ArrayList<>(osmLocations.stream()
+                .map(mapper::toResponse)
+                .toList());
+
+        for (Location local : localPoisByInterest) {
+            if (local.getExternalId() != null && !seenExternalIds.contains(local.getExternalId())) {
+                result.add(mapper.toResponse(local));
+            }
+        }
+
+        return result;
+    }
+
+    @Transactional
+    public List<LocationResponse> getNearbyFromOsm(Long userId, Double lat, Double lng) {
+        User user = userRepository.findWithInterestsById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return getNearbyFromOsm(user, lat, lng);
     }
 }

@@ -22,6 +22,8 @@ public class LocationMapper {
         response.setLatitude(entity.getLatitude());
         response.setLongitude(entity.getLongitude());
         response.setRatingAverage(entity.getRatingAverage());
+        response.setPhone(entity.getPhone());
+        response.setWebsite(entity.getWebsite());
 
         // 1. Trích xuất danh sách URL ảnh
         if (entity.getImages() != null && !entity.getImages().isEmpty()) {
@@ -37,6 +39,11 @@ public class LocationMapper {
             response.setCategory(entity.getInterests().iterator().next().getName());
         } else {
             response.setCategory("Location"); // Mặc định nếu DB chưa phân loại
+        }
+
+        // 3. Chuyển đổi JTS Point sang WKT
+        if (entity.getGeo() != null) {
+            response.setGeo(entity.getGeo().toText());
         }
 
         return response;

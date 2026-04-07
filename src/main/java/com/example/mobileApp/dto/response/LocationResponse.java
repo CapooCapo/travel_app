@@ -22,4 +22,7 @@ public class LocationResponse {
     
     private String category; 
     private List<String> imageUrls; 
+    private String phone;
+    private String website;
+    private String geo; // POINT(lon lat)
 }

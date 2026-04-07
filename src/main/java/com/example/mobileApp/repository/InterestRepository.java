@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.example.mobileApp.entity.Attraction;
+import com.example.mobileApp.entity.Location;
 import com.example.mobileApp.entity.Interest;
 
 @Repository
@@ -21,9 +21,9 @@ public interface InterestRepository extends JpaRepository<Interest, Long> {
     Optional<Interest> findByName(String name);
 
     @Query("""
-            SELECT a FROM Attraction a
+            SELECT a FROM Location a
             JOIN a.interests i
             WHERE i.id IN :interestIds
             """)
-    Page<Attraction> findRecommended(Set<Long> interestIds, Pageable pageable);
+    Page<Location> findRecommended(Set<Long> interestIds, Pageable pageable);
 }

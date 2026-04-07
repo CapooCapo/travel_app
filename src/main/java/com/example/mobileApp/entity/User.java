@@ -19,11 +19,17 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.RequiredArgsConstructor;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"interests", "following", "followers"})
+@RequiredArgsConstructor
 public class User {
 
     @Id
@@ -50,7 +56,7 @@ public class User {
     private Gender gender;
 
     @Column(name = "image_url")
-    private String imageUrl;
+    private String avatarUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
@@ -125,5 +131,41 @@ public class User {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_interests", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "interest_id"))
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Set<Interest> interests = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_follows",
+            joinColumns = @JoinColumn(name = "follower_id"),
+            inverseJoinColumns = @JoinColumn(name = "following_id"))
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Set<User> following = new HashSet<>();
+
+    @ManyToMany(mappedBy = "following", fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Set<User> followers = new HashSet<>();
+
+    // Relationship helpers
+    public void addFollowing(User user) {
+        this.following.add(user);
+        user.getFollowers().add(this);
+    }
+
+    public void removeFollowing(User user) {
+        this.following.remove(user);
+        user.getFollowers().remove(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : getClass().hashCode();
+    }
 }

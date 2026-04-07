@@ -12,7 +12,9 @@ public record UserResponse(
     String gender,
     String travelStyle,
     String avatarUrl,
-    List<Interest> interests
+    List<Interest> interests,
+    String role,
+    boolean verified
 ) {
     public record Interest(Long id, String name) {}
 }

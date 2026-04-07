@@ -11,10 +11,13 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailService {
-    @Value("${app.base-url-ip}")
+    @Value("${BASE_URL_IP}")
     private String baseIP;
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
@@ -43,7 +46,7 @@ public class EmailService {
 
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send email");
-            //System.err.println("sending email failed: " + e.getMessage());
+            // System.err.println("sending email failed: " + e.getMessage());
         }
     }
     // #endregion
@@ -69,7 +72,7 @@ public class EmailService {
             mailSender.send(message);
 
         } catch (MessagingException e) {
-            System.err.println("Failed to send reset email: " + e.getMessage());
+            log.error("❌ Failed to send reset email to {}: {}", toEmail, e.getMessage());
         }
     }
     // #endregion

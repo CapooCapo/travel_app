@@ -21,7 +21,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/attractions")
+@RequestMapping("/api/locations")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class ReviewController extends BaseController {

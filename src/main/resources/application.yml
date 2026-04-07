@@ -3,8 +3,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${CLERK_ISSUER_URI}
-          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI}
+          issuer-uri: https://singular-orca-26.clerk.accounts.dev
+          jwk-set-uri: https://singular-orca-26.clerk.accounts.dev/.well-known/jwks.json
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}
@@ -54,15 +54,15 @@ gemini:
   api:
     key: ${GEMINI_API_KEY}
 
+server:
+  error:
+    include-stacktrace: always
+    include-message: always
+
 logging:
   level:
     root: INFO
     org:
-      springframework: DEBUG
       hibernate:
         SQL: DEBUG
-        type:
-          descriptor:
-            sql:
-              BasicBinder: TRACE
-    com.example: DEBUG
+    com.example.mobileApp: DEBUG

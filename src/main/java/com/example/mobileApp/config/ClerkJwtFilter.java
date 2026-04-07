@@ -22,15 +22,23 @@ public class ClerkJwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication instanceof JwtAuthenticationToken jwtAuth) {
-            Jwt jwt = jwtAuth.getToken();
-            log.debug("===== CLERK JWT CLAIMS START =====");
-            jwt.getClaims().forEach((key, value) -> log.debug("{}: {}", key, value));
-            log.debug("===== CLERK JWT CLAIMS END =====");
+            if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+                Jwt jwt = jwtAuth.getToken();
+                log.debug("[BE DEBUG] JWT processed: {}", jwt.getSubject());
+                log.debug("===== CLERK JWT CLAIMS START =====");
+                jwt.getClaims().forEach((key, value) -> log.debug("{}: {}", key, value));
+                log.debug("===== CLERK JWT CLAIMS END =====");
+            }
+
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            log.error("[BE DEBUG] JWT failed: {}", e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"status\": 401, \"message\": \"Unauthorized: " + e.getMessage() + "\"}");
         }
-
-        filterChain.doFilter(request, response);
     }
 }

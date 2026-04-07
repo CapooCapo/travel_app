@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import com.example.mobileApp.dto.UserDTO;
 import com.example.mobileApp.dto.request.RegisterRequest;
 import com.example.mobileApp.dto.response.UserResponse;
+import com.example.mobileApp.dto.response.UserProfileDTO;
 import com.example.mobileApp.entity.User;
 
 @Component
@@ -31,12 +32,40 @@ public class UserMapper {
                 user.getDateOfBirth(),
                 user.getGender() != null ? user.getGender().name() : null,
                 user.getTravelStyle() != null ? user.getTravelStyle().name() : null,
-                user.getImageUrl(),
+                user.getAvatarUrl(),
                 user.getInterests() != null
                         ? user.getInterests().stream()
                                 .map(i -> new UserResponse.Interest(i.getId(), i.getName())) 
                                 .toList()
-                        : List.of());
+                        : List.of(),
+                user.getRole() != null ? user.getRole().name() : null,
+                user.getVerified() != null ? user.getVerified() : false);
+    }
+
+    public UserProfileDTO toUserProfileDTO(User user, boolean isFollowing) {
+        return UserProfileDTO.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .imageUrl(user.getAvatarUrl())
+                .avatarUrl(user.getAvatarUrl())
+                .travelStyle(user.getTravelStyle() != null ? user.getTravelStyle().name() : null)
+                .interests(user.getInterests() != null
+                        ? user.getInterests().stream()
+                                .map(i -> UserProfileDTO.InterestDTO.builder()
+                                        .id(i.getId())
+                                        .name(i.getName())
+                                        .build())
+                                .toList()
+                        : List.of())
+                .followerCount(user.getFollowers() != null ? user.getFollowers().size() : 0)
+                .followingCount(user.getFollowing() != null ? user.getFollowing().size() : 0)
+                .isFollowing(isFollowing)
+                .role(user.getRole() != null ? user.getRole().name() : null)
+                .verified(user.getVerified() != null ? user.getVerified() : false)
+                .build();
     }
 
     public UserDTO toUserDTO(User user) {
@@ -44,13 +73,14 @@ public class UserMapper {
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
-                user.getImageUrl(),
+                user.getAvatarUrl(),
                 user.getTravelStyle() != null ? user.getTravelStyle().name() : null,
                 user.getInterests() != null
                         ? user.getInterests().stream()
                                 .map(com.example.mobileApp.entity.Interest::getName)
                                 .toList()
-                        : List.of()
+                        : List.of(),
+                user.getRole() != null ? user.getRole().name() : null
         );
     }
 }

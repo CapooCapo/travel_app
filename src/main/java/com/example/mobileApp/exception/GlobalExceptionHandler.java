@@ -2,109 +2,105 @@ package com.example.mobileApp.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.mobileApp.dto.response.ApiResponse;
 
-@RestControllerAdvice
+import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.stream.Collectors;
+
+@ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
+    // 1. Authorization (Spring Security 6)
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        log.error("Authorization Denied: ", ex);
+        return buildResponse(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        log.error("Access Denied: ", ex);
+        return buildResponse(HttpStatus.FORBIDDEN, "You do not have access to this resource.");
+    }
+
+    // 2. Validation Errors from DTO (@Valid / @Validated)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
+        log.error("Validation Error: ", ex);
+        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+        return buildResponse(HttpStatus.BAD_REQUEST, errorMessage);
+    }
+
+    // 3. Validation Errors from Path Variable or Request Param
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolationException(ConstraintViolationException ex) {
+        log.error("Constraint Violation: ", ex);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid input data.");
+    }
+
+    // 4. Http Method Not Supported
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
+        log.error("Method Not Supported: ", ex);
+        return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, "HTTP method not supported.");
+    }
+
+    // 5. Payload JSON Not Readable
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMessageNotReadableException(HttpMessageNotReadableException ex) {
+        log.error("Message Not Readable: ", ex);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Required request body is missing or malformed.");
+    }
+
+    // 6. Runtime and Specific Exceptions
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.NOT_FOUND.value())
-                .message(ex.getMessage())
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
+    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        log.error("Resource not found: {}", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ApiResponse<Void>> handleConflict(ConflictException ex) {
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.CONFLICT.value())
-                .message(ex.getMessage())
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(res);
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.error("Invalid argument: {}", ex.getMessage(), ex);
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
-    public ResponseEntity<ApiResponse<Void>> handleBadRequest(RuntimeException ex) {
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(ex.getMessage())
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.badRequest().body(res);
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(ResponseStatusException ex) {
+        log.error("Response status exception: {} - {}", ex.getStatusCode(), ex.getReason(), ex);
+        return buildResponse(HttpStatus.valueOf(ex.getStatusCode().value()), ex.getReason());
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Void>> handleRuntime(RuntimeException ex) {
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(ex.getMessage())
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.badRequest().body(res);
+    // 7. Generic Fallback (500)
+    @ExceptionHandler({RuntimeException.class, Exception.class})
+    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        log.error("❌ [BE INTERNAL ERROR] Unexpected error: ", ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again later.");
     }
 
-    @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException ex) {
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.FORBIDDEN.value())
-                .message(ex.getMessage())
+    // Utility to build consistent response format
+    private ResponseEntity<ApiResponse<Void>> buildResponse(HttpStatus status, String message) {
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .status(status.value())
+                .message(message)
+                .data(null)
                 .timestamp(System.currentTimeMillis())
                 .build();
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
-    }
-
-    @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiResponse<Void>> handleApi(ApiException ex) {
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(ex.getStatus())
-                .message(ex.getMessage())
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.status(ex.getStatus()).body(res);
-    }
-
-    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidation(org.springframework.web.bind.MethodArgumentNotValidException ex) {
-        String msg = ex.getBindingResult().getFieldErrors().stream()
-                .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .collect(java.util.stream.Collectors.joining(", "));
-
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(msg)
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.badRequest().body(res);
-    }
-
-    @ExceptionHandler(java.sql.SQLException.class)
-    public ResponseEntity<ApiResponse<Void>> handleSQLException(java.sql.SQLException ex) {
-        ex.printStackTrace(); 
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .message("Database error: " + ex.getMessage())
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.internalServerError().body(res);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
-        ex.printStackTrace(); 
-
-        ApiResponse<Void> res = ApiResponse.<Void>builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .message("Internal server error")
-                .timestamp(System.currentTimeMillis())
-                .build();
-
-        return ResponseEntity.internalServerError().body(res);
+        return new ResponseEntity<>(response, status);
     }
 }

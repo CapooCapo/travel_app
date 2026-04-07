@@ -21,6 +21,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,7 +31,11 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 
 @Entity
-@Table(name = "locations")
+@Table(name = "locations", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"external_id", "source"})
+}, indexes = {
+    @jakarta.persistence.Index(name = "idx_location_geo", columnList = "geo")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -70,6 +75,12 @@ public class Location {
 
     @Column(name = "external_id")
     private String externalId;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "website")
+    private String website;
 
     @ManyToMany
     @JoinTable(name = "location_interests", 
