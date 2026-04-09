@@ -82,6 +82,6 @@ public class TravelScheduleService {
             throw new RuntimeException("No permission to delete this schedule");
         }
 
-        scheduleRepository.delete(schedule);
+        scheduleRepository.deleteByIdCustom(scheduleId);
     }
 }

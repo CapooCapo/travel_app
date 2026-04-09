@@ -12,5 +12,10 @@ public interface TravelScheduleRepository extends JpaRepository<TravelSchedule, 
 
     List<TravelSchedule> findByUserIdOrderByScheduledDateAsc(Long userId);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Query("DELETE FROM TravelSchedule s WHERE s.id = :id")
+    void deleteByIdCustom(Long id);
+
     void deleteByIdAndUserId(Long id, Long userId);
 }

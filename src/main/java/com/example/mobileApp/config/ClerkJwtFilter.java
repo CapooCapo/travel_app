@@ -22,23 +22,41 @@ public class ClerkJwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+        
+        // Skip check for non-API or permitAll paths
+        if (path.startsWith("/api/users/sync") || 
+            path.startsWith("/api/users/actions/export-data") || 
+            path.startsWith("/api/locations") || 
+            path.startsWith("/api/location-images") || 
+            path.startsWith("/api/events") ||
+            path.startsWith("/actuator")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Only enforce for /api/**
+        if (path.startsWith("/api/")) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                log.warn("[BE DEBUG] Missing or invalid Authorization header for path: {}", path);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"status\": \"error\", \"message\": \"Unauthorized: Missing or invalid token\"}");
+                return;
+            }
+        }
+
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
             if (authentication instanceof JwtAuthenticationToken jwtAuth) {
                 Jwt jwt = jwtAuth.getToken();
-                log.debug("[BE DEBUG] JWT processed: {}", jwt.getSubject());
-                log.debug("===== CLERK JWT CLAIMS START =====");
-                jwt.getClaims().forEach((key, value) -> log.debug("{}: {}", key, value));
-                log.debug("===== CLERK JWT CLAIMS END =====");
+                log.debug("[BE DEBUG] JWT processed for user: {}", jwt.getSubject());
             }
-
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            log.error("[BE DEBUG] JWT failed: {}", e.getMessage());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"status\": 401, \"message\": \"Unauthorized: " + e.getMessage() + "\"}");
+            log.error("[BE DEBUG] Authentication filter error: {}", e.getMessage(), e);
+            throw e;
         }
     }
 }

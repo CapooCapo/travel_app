@@ -10,6 +10,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.mobileApp.dto.response.ApiResponse;
@@ -17,89 +19,99 @@ import com.example.mobileApp.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    // 1. Authorization (Spring Security 6)
     @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
-        log.error("Authorization Denied: ", ex);
+    public ResponseEntity<ApiResponse<Object>> handleAuthorizationDeniedException(AuthorizationDeniedException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.");
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
-        log.error("Access Denied: ", ex);
+    public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.FORBIDDEN, "You do not have access to this resource.");
     }
 
-    // 2. Validation Errors from DTO (@Valid / @Validated)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
-        log.error("Validation Error: ", ex);
+    public ResponseEntity<ApiResponse<Object>> handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
+        logError(ex, request);
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         return buildResponse(HttpStatus.BAD_REQUEST, errorMessage);
     }
 
-    // 3. Validation Errors from Path Variable or Request Param
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleConstraintViolationException(ConstraintViolationException ex) {
-        log.error("Constraint Violation: ", ex);
+    public ResponseEntity<ApiResponse<Object>> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid input data.");
     }
 
-    // 4. Http Method Not Supported
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
-        log.error("Method Not Supported: ", ex);
+    public ResponseEntity<ApiResponse<Object>> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, "HTTP method not supported.");
     }
 
-    // 5. Payload JSON Not Readable
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMessageNotReadableException(HttpMessageNotReadableException ex) {
-        log.error("Message Not Readable: ", ex);
+    public ResponseEntity<ApiResponse<Object>> handleMessageNotReadableException(HttpMessageNotReadableException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.BAD_REQUEST, "Required request body is missing or malformed.");
     }
 
-    // 6. Runtime and Specific Exceptions
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        log.error("Resource not found: {}", ex.getMessage(), ex);
+    public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        log.error("Invalid argument: {}", ex.getMessage(), ex);
+    public ResponseEntity<ApiResponse<Object>> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMethodArgumentTypeMismatchException(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, WebRequest request) {
+        logError(ex, request);
+        String name = ex.getName();
+        String type = ex.getRequiredType().getSimpleName();
+        Object value = ex.getValue();
+        String message = String.format("Parameter '%s' should be of type '%s' (provided value: '%s')", name, type, value);
+        return buildResponse(HttpStatus.BAD_REQUEST, message);
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(ResponseStatusException ex) {
-        log.error("Response status exception: {} - {}", ex.getStatusCode(), ex.getReason(), ex);
+    public ResponseEntity<ApiResponse<Object>> handleResponseStatusException(ResponseStatusException ex, WebRequest request) {
+        logError(ex, request);
         return buildResponse(HttpStatus.valueOf(ex.getStatusCode().value()), ex.getReason());
     }
 
-    // 7. Generic Fallback (500)
     @ExceptionHandler({RuntimeException.class, Exception.class})
-    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
-        log.error("❌ [BE INTERNAL ERROR] Unexpected error: ", ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again later.");
+    public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex, WebRequest request) {
+        logError(ex, request);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + ex.getMessage());
     }
 
-    // Utility to build consistent response format
-    private ResponseEntity<ApiResponse<Void>> buildResponse(HttpStatus status, String message) {
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
-                .status(status.value())
+    private void logError(Exception ex, WebRequest request) {
+        String uri = "unknown";
+        if (request instanceof ServletWebRequest) {
+            uri = ((ServletWebRequest) request).getRequest().getRequestURI();
+        }
+        log.error("❌ [API ERROR] Endpoint: {}, Message: {}", uri, ex.getMessage(), ex);
+    }
+
+    private ResponseEntity<ApiResponse<Object>> buildResponse(HttpStatus status, String message) {
+        ApiResponse<Object> response = ApiResponse.<Object>builder()
+                .status("error")
                 .message(message)
-                .data(null)
-                .timestamp(System.currentTimeMillis())
+                .data(Map.of())
                 .build();
         return new ResponseEntity<>(response, status);
     }

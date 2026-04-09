@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.mobileApp.dto.response.ApiResponse;
-import com.example.mobileApp.dto.response.LocationResponse;
 import com.example.mobileApp.service.BookmarkService;
 
 import lombok.RequiredArgsConstructor;
@@ -44,10 +43,8 @@ public class BookmarkController extends BaseController {
     }
 
     @GetMapping
-    public ApiResponse<List<LocationResponse>> getBookmarks(
+    public ApiResponse<List<com.example.mobileApp.dto.BookmarkDTO>> getBookmarks(
             @CurrentUser Long userId) {
-
-        List<LocationResponse> data = bookmarkService.getBookmarks(userId);
-        return ok(data, "Success");
+        return ok(bookmarkService.getBookmarksByUser(userId), "Success");
     }
 }

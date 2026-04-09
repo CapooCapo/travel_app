@@ -13,6 +13,7 @@ import com.example.mobileApp.dto.response.ReviewResponse;
 import com.example.mobileApp.entity.Event;
 import com.example.mobileApp.entity.Report;
 import com.example.mobileApp.exception.ResourceNotFoundException;
+import com.example.mobileApp.mapper.EventMapper;
 import com.example.mobileApp.mapper.ReviewMapper;
 import com.example.mobileApp.mapper.UserMapper;
 import com.example.mobileApp.repository.EventRepository;
@@ -35,6 +36,7 @@ public class AdminService {
     private final ReportRepository reportRepository;
     private final UserMapper userMapper;
     private final ReviewMapper reviewMapper;
+    private final EventMapper eventMapper;
 
     public Page<UserDTO> getAllUsers(int page, int size) {
         return userRepository.findAll(PageRequest.of(page, size))
@@ -43,7 +45,7 @@ public class AdminService {
 
     public Page<EventResponse> getEventsByStatus(Event.EventStatus status, int page, int size) {
         return eventRepository.findByStatus(status, PageRequest.of(page, size))
-                .map(this::toEventResponse);
+                .map(eventMapper::toResponse);
     }
 
     public Page<ReviewResponse> getAllReviews(int page, int size) {
@@ -53,6 +55,14 @@ public class AdminService {
 
     public Page<ReportDTO> getReports(Report.ReportStatus status, int page, int size) {
         return reportRepository.findByStatus(status, PageRequest.of(page, size))
+                .map(this::toReportDTO);
+    }
+
+    public Page<ReportDTO> getFlaggedReviews(int page, int size) {
+        return reportRepository.findByReportedTypeAndStatus(
+                Report.ReportedType.REVIEW, 
+                Report.ReportStatus.PENDING, 
+                PageRequest.of(page, size))
                 .map(this::toReportDTO);
     }
 
@@ -72,6 +82,23 @@ public class AdminService {
         reportRepository.save(report);
     }
 
+    @Transactional
+    public void moderateReview(Long reviewId, Report.ReportStatus action) {
+        Page<Report> reports = reportRepository.findByReportedTypeAndStatus(
+                Report.ReportedType.REVIEW, 
+                Report.ReportStatus.PENDING, 
+                PageRequest.of(0, 100));
+        
+        reports.stream()
+                .filter(r -> r.getReportedId().equals(reviewId))
+                .forEach(r -> {
+                    r.setStatus(action);
+                    reportRepository.save(r);
+                });
+        
+        log.info("Review {} moderated with action: {}", reviewId, action);
+    }
+
     public DashboardStatsDTO getAnalytics() {
         DashboardStatsDTO stats = new DashboardStatsDTO();
         stats.setTotalUsers(userRepository.count());
@@ -81,28 +108,7 @@ public class AdminService {
         stats.setTotalReports(reportRepository.count());
         stats.setPendingReports(reportRepository.findByStatus(Report.ReportStatus.PENDING, PageRequest.of(0, 1)).getTotalElements());
         
-        // Simulating Top Locations for now
-        // stats.setTopLocations(...);
-
         return stats;
-    }
-
-    private EventResponse toEventResponse(Event e) {
-        try {
-            EventResponse r = new EventResponse();
-            r.setId(e.getId());
-            r.setName(e.getName());
-            r.setDescription(e.getDescription());
-            r.setEventDate(e.getEventDate());
-            if (e.getLocation() != null) {
-                // Potential LazyInitializationException hotspot if not fetched
-                r.setLocationId(e.getLocation().getId());
-            }
-            return r;
-        } catch (Exception ex) {
-            log.error("❌ Error mapping event ID {}: {}", e.getId(), ex.getMessage(), ex);
-            throw ex; // Re-throw to trigger 500 but with detailed log
-        }
     }
 
     private ReportDTO toReportDTO(Report r) {

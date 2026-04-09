@@ -29,25 +29,22 @@ public class ReviewController extends BaseController {
     private final ReviewService reviewService;
 
 
-    @PostMapping("/{id}/reviews")
+    @PostMapping("/{id:[0-9]+}/reviews")
     public ApiResponse<Void> createReview(
             @CurrentUser Long userId,
             @PathVariable Long id,
             @Valid @RequestBody CreateReviewRequest request) {
-
         reviewService.createReview(userId, id, request);
         return ok(null, "Review created");
     }
 
-    @GetMapping("/{id}/reviews")
+    @GetMapping("/{id:[0-9]+}/reviews")
     public ApiResponse<PageResponse<ReviewResponse>> getReviews(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
         Page<ReviewResponse> result =
                 reviewService.getReviews(id, page, size);
-
         return ok(PageResponse.of(result), "Success");
     }
 }

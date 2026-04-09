@@ -3,12 +3,12 @@ package com.example.mobileApp.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.mobileApp.dto.response.LocationResponse;
+import com.example.mobileApp.dto.BookmarkDTO;
 import com.example.mobileApp.entity.Location;
 import com.example.mobileApp.entity.Bookmark;
 import com.example.mobileApp.entity.User;
-import com.example.mobileApp.mapper.LocationMapper;
 import com.example.mobileApp.repository.LocationRepository;
 import com.example.mobileApp.repository.BookmarkRepository;
 import com.example.mobileApp.repository.UserRepository;
@@ -16,16 +16,15 @@ import com.example.mobileApp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
-    private final LocationMapper locationMapper;
 
     public void addBookmark(Long userId, Long locationId) {
-
         if (userId == null) {
             throw new RuntimeException("Unauthorized");
         }
@@ -48,13 +47,29 @@ public class BookmarkService {
         bookmarkRepository.deleteByUserIdAndLocationId(userId, locationId);
     }
 
-    public List<LocationResponse> getBookmarks(Long userId) {
-
-        return bookmarkRepository
-                .findByUserId(userId)
+    public List<BookmarkDTO> getBookmarksByUser(Long userId) {
+        return bookmarkRepository.findByUserId(userId)
                 .stream()
-                .map(Bookmark::getLocation)
-                .map(locationMapper::toResponse) // convert ở đây
+                .map(bookmark -> {
+                    Location loc = bookmark.getLocation();
+                    String firstImage = loc.getImages() != null && !loc.getImages().isEmpty() 
+                        ? loc.getImages().get(0).getImageUrl() 
+                        : null;
+                        
+                    return BookmarkDTO.builder()
+                            .id(bookmark.getId())
+                            .locationId(loc.getId())
+                            .name(loc.getName())
+                            .description(loc.getDescription())
+                            .address(loc.getAddress())
+                            .imageUrl(firstImage)
+                            .latitude(loc.getLatitude())
+                            .longitude(loc.getLongitude())
+                            .category(loc.getInterests() != null && !loc.getInterests().isEmpty() 
+                                ? loc.getInterests().iterator().next().getName() 
+                                : null)
+                            .build();
+                })
                 .toList();
     }
 }

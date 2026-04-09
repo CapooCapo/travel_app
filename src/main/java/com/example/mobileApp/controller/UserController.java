@@ -19,9 +19,18 @@ import com.example.mobileApp.dto.response.UserDataResponse;
 import com.example.mobileApp.dto.response.UserResponse;
 import com.example.mobileApp.dto.UserDTO;
 import com.example.mobileApp.service.UserService;
+import com.example.mobileApp.service.BookmarkService;
+import com.example.mobileApp.service.DownloadTokenService;
 import com.example.mobileApp.security.CurrentUser;
 
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +44,9 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController extends BaseController {
 
     private final UserService userService;
+    private final BookmarkService bookmarkService;
+    private final DownloadTokenService downloadTokenService;
+    private final ObjectMapper objectMapper;
 
     @GetMapping("/me")
     public ApiResponse<com.example.mobileApp.dto.response.UserProfileDTO> getMyProfile(@CurrentUser Long userId) {
@@ -42,16 +54,47 @@ public class UserController extends BaseController {
         return ok(userService.getUserDetailedProfile(userId, userId));
     }
 
-    @GetMapping("/{userId}")
-    public ApiResponse<com.example.mobileApp.dto.response.UserProfileDTO> getUserProfileById(@CurrentUser Long currentUserId, @PathVariable Long userId) {
-        log.info("[BE DEBUG] Fetching profile - targetUserId: {}, requesterId: {}", userId, currentUserId);
-        return ok(userService.getUserDetailedProfile(userId, currentUserId));
+    @GetMapping("/me/bookmarks")
+    public ApiResponse<List<com.example.mobileApp.dto.BookmarkDTO>> getMyBookmarks(@CurrentUser Long userId) {
+        System.out.println(">>> HIT /me/bookmarks");
+        log.info("[BE DEBUG] Fetching bookmarks for user: {}", userId);
+        return ok(bookmarkService.getBookmarksByUser(userId));
     }
 
-    @GetMapping("/profile/{userId}")
-    public ApiResponse<com.example.mobileApp.dto.response.UserProfileDTO> getUserProfileDetailed(@CurrentUser Long currentUserId, @PathVariable Long userId) {
-        log.info("[BE DEBUG] Fetching detailed profile (legacy/explicit) - targetUserId: {}, requesterId: {}", userId, currentUserId);
-        return ok(userService.getUserDetailedProfile(userId, currentUserId));
+    @PostMapping("/actions/export-data-link")
+    public ApiResponse<Map<String, String>> getExportDataLink(@CurrentUser Long userId) {
+        String token = downloadTokenService.generateToken(userId);
+        String relativeUrl = "/api/users/actions/export-data?token=" + token;
+        return ok(Map.of("url", relativeUrl));
+    }
+
+    @GetMapping("/actions/export-data")
+    public ResponseEntity<byte[]> downloadUserData(@RequestParam String token) {
+        Long userId = downloadTokenService.consumeToken(token);
+        if (userId == null) {
+            return ResponseEntity.status(401).build(); // Unauthorized if token invalid/expired
+        }
+
+        try {
+            UserDataResponse data = userService.exportUserData(userId);
+            byte[] jsonBytes = objectMapper.writeValueAsBytes(data);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"user-data.json\"")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .contentLength(jsonBytes.length)
+                    .body(jsonBytes);
+        } catch (Exception e) {
+            log.error("Error generating export file", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping({"/me/data", "/export", "/export-data"}) // Keeping for internal/legacy API use but download happens via browser
+    public ApiResponse<UserDataResponse> exportUserData(
+            @CurrentUser Long userId) {
+        log.info("[BE DEBUG] Exporting data for user: {}", userId);
+        return ok(userService.exportUserData(userId));
     }
 
     @PostMapping("/sync")
@@ -60,6 +103,22 @@ public class UserController extends BaseController {
         return ok(userService.syncClerkUser(jwt));
     }
 
+    // --- Dynamic ID-based Endpoints ---
+
+    @GetMapping("/{userId:[0-9]+}")
+    public ApiResponse<com.example.mobileApp.dto.response.UserProfileDTO> getUserProfileById(@CurrentUser Long currentUserId, @PathVariable("userId") Long userId) {
+        log.info("[BE DEBUG] Fetching profile - targetUserId: {}, requesterId: {}", userId, currentUserId);
+        return ok(userService.getUserDetailedProfile(userId, currentUserId));
+    }
+
+    @GetMapping("/profile/{userId:[0-9]+}")
+    public ApiResponse<com.example.mobileApp.dto.response.UserProfileDTO> getUserProfileDetailed(@CurrentUser Long currentUserId, @PathVariable Long userId) {
+        log.info("[BE DEBUG] Fetching detailed profile (legacy/explicit) - targetUserId: {}, requesterId: {}", userId, currentUserId);
+        return ok(userService.getUserDetailedProfile(userId, currentUserId));
+    }
+
+
+
     @PostMapping("/search")
     public ApiResponse<List<UserDTO>> searchUsers(
             @CurrentUser Long currentUserId,
@@ -67,7 +126,7 @@ public class UserController extends BaseController {
         return ok(userService.searchUsers(request.getQuery(), request.getLimit(), request.getOffset(), currentUserId));
     }
 
-    @PutMapping("/updateProfile")
+    @PutMapping({"/updateProfile", "/me"})
     public ApiResponse<UserResponse> updateProfile(
             @CurrentUser Long userId,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -88,11 +147,7 @@ public class UserController extends BaseController {
         return ok(userService.updateUserInterests(userId, interestIds));
     }
 
-    @GetMapping("/me/data")
-    public ApiResponse<UserDataResponse> exportUserData(
-            @CurrentUser Long userId) {
-        return ok(userService.exportUserData(userId));
-    }
+
 
     @DeleteMapping("/me")
     public ApiResponse<Void> deleteAccount(
@@ -100,14 +155,14 @@ public class UserController extends BaseController {
         userService.deleteAccount(userId);
         return ok(null, "User account deleted successfully");
     }
-    @PostMapping("/{userId}/follow")
+    @PostMapping("/{userId:[0-9]+}/follow")
     public ApiResponse<Void> followUser(@CurrentUser Long currentUserId, @PathVariable Long userId) {
         log.info("[BE DEBUG] User {} following user {}", currentUserId, userId);
         userService.followUser(currentUserId, userId);
         return ok(null, "Successfully followed user");
     }
 
-    @DeleteMapping("/{userId}/follow")
+    @DeleteMapping("/{userId:[0-9]+}/follow")
     public ApiResponse<Void> unfollowUser(@CurrentUser Long currentUserId, @PathVariable Long userId) {
         log.info("[BE DEBUG] User {} unfollowing user {}", currentUserId, userId);
         userService.unfollowUser(currentUserId, userId);

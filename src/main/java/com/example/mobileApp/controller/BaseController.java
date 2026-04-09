@@ -1,41 +1,39 @@
 package com.example.mobileApp.controller;
 
+import java.util.Map;
 import com.example.mobileApp.dto.response.ApiResponse;
 
 public abstract class BaseController {
 
     protected <T> ApiResponse<T> ok(T data) {
         return ApiResponse.<T>builder()
-                .status(200)
+                .status("success")
                 .message("Success")
-                .data(data)
-                .timestamp(System.currentTimeMillis())
+                .data(data != null ? data : (T) Map.of())
                 .build();
     }
 
     protected <T> ApiResponse<T> ok(T data, String message) {
         return ApiResponse.<T>builder()
-                .status(200)
+                .status("success")
                 .message(message)
-                .data(data)
-                .timestamp(System.currentTimeMillis())
+                .data(data != null ? data : (T) Map.of())
                 .build();
     }
 
     protected <T> ApiResponse<T> created(T data, String message) {
         return ApiResponse.<T>builder()
-                .status(201)
+                .status("success")
                 .message(message)
-                .data(data)
-                .timestamp(System.currentTimeMillis())
+                .data(data != null ? data : (T) Map.of())
                 .build();
     }
 
-    protected <T> ApiResponse<T> error(int status, String message) {
+    protected <T> ApiResponse<T> error(String message) {
         return ApiResponse.<T>builder()
-                .status(status)
+                .status("error")
                 .message(message)
-                .timestamp(System.currentTimeMillis())
+                .data((T) Map.of())
                 .build();
     }
 }

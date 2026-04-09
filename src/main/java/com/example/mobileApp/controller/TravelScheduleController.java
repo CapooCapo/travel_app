@@ -23,6 +23,10 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/schedules")
 @RequiredArgsConstructor
+/**
+ * Requires JWT authentication via Clerk.
+ * Protection is enforced in SecurityConfig.
+ */
 public class TravelScheduleController extends BaseController {
 
     private final TravelScheduleService scheduleService;

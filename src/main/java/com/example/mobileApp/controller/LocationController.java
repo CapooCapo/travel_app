@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.mobileApp.dto.request.CreateLocationRequest;
 import com.example.mobileApp.dto.response.ApiResponse;
+import com.example.mobileApp.dto.response.PageResponse;
 import com.example.mobileApp.dto.response.LocationResponse;
 import com.example.mobileApp.dto.response.AiRecommendationResponse;
 import com.example.mobileApp.service.LocationService;
@@ -37,7 +38,7 @@ public class LocationController extends BaseController {
     private final LocationService locationService;
 
     @GetMapping
-    public ApiResponse<Page<LocationResponse>> getLocations(
+    public ApiResponse<PageResponse<LocationResponse>> getLocations(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Double rating,
@@ -46,15 +47,15 @@ public class LocationController extends BaseController {
 
         if (keyword != null || category != null || rating != null) {
             Pageable pageable = PageRequest.of(page, size);
-            return ok(locationService.search(keyword, category, rating, pageable));
+            return ok(PageResponse.of(locationService.search(keyword, category, rating, pageable)));
         }
-        return ok(locationService.getLocations(page, size));
+        return ok(PageResponse.of(locationService.getLocations(page, size)));
     }
 
 
 
     @GetMapping("/nearby")
-    public ResponseEntity<ApiResponse<Page<LocationResponse>>> getNearbyLocations(
+    public ResponseEntity<ApiResponse<PageResponse<LocationResponse>>> getNearbyLocations(
             @RequestParam Double lat,
             @RequestParam Double lng,
             @RequestParam(defaultValue = "0") int page,
@@ -65,7 +66,7 @@ public class LocationController extends BaseController {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(2, TimeUnit.MINUTES))
-                .body(ok(data));
+                .body(ok(PageResponse.of(data)));
     }
 
     @PostMapping
@@ -76,20 +77,20 @@ public class LocationController extends BaseController {
     }
 
     @PostMapping("/by-interests")
-    public ApiResponse<Page<LocationResponse>> getByInterests(
+    public ApiResponse<PageResponse<LocationResponse>> getByInterests(
             @RequestBody Set<Long> interestIds,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        return ok(locationService.getLocationsByInterest(interestIds, page, size));
+        return ok(PageResponse.of(locationService.getLocationsByInterest(interestIds, page, size)));
     }
 
     @GetMapping("/popular")
-    public ApiResponse<Page<LocationResponse>> getPopular(
+    public ApiResponse<PageResponse<LocationResponse>> getPopular(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        return ok(locationService.getPopularLocations(page, size));
+        return ok(PageResponse.of(locationService.getPopularLocations(page, size)));
     }
 
     @PostMapping("/ai-recommend")

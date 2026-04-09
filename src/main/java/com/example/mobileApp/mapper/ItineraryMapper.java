@@ -57,7 +57,7 @@ public class ItineraryMapper {
                     .orElse(null);
 
             if (event != null) {
-                builder.name(event.getName());
+                builder.name(event.getTitle());
 
                 if (event.getLocation() != null) {
                     builder.latitude(event.getLocation().getLatitude())

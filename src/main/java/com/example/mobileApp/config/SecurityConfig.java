@@ -28,6 +28,8 @@ public class SecurityConfig {
     private String jwkSetUri;
 
     private final ClerkJwtFilter clerkJwtFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final com.example.mobileApp.repository.UserRepository userRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,16 +43,20 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/users/actions/export-data").permitAll()
                         .requestMatchers("/api/users/sync").permitAll() 
                         .requestMatchers("/api/locations/**").permitAll()
                         .requestMatchers("/api/location-images/**").permitAll()
                         .requestMatchers("/api/events/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/schedules/**").authenticated()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                             .decoder(jwtDecoder())
-                            .jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                            .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .authenticationEntryPoint(restAuthenticationEntryPoint))
                 .addFilterBefore(clerkJwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -68,7 +74,23 @@ public class SecurityConfig {
         grantedAuthoritiesConverter.setAuthoritiesClaimName("role");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            var authorities = new java.util.ArrayList<>(grantedAuthoritiesConverter.convert(jwt));
+            
+            // Fallback: Fetch role from DB if not in JWT
+            try {
+                String email = jwt.getClaimAsString("email");
+                if (email != null) {
+                    userRepository.findByEmail(email).ifPresent(user -> {
+                        authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+                    });
+                }
+            } catch (Exception e) {
+                // Ignore errors to allow request to proceed with existing authorities
+            }
+            
+            return authorities;
+        });
         return jwtAuthenticationConverter;
     }
 

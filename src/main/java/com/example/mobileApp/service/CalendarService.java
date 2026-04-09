@@ -45,7 +45,7 @@ public class CalendarService {
             } else if (item.getType() == ItemType.EVENT) {
                 Event event = eventRepository.findById(item.getReferenceId()).orElse(null);
                 if (event != null) {
-                    title = event.getName();
+                    title = event.getTitle();
                     if (event.getLocation() != null) {
                         locationName = event.getLocation().getName();
                     }

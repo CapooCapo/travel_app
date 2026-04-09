@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class ApiResponse<T> {
-    private int status;
+    private String status;
     private String message;
     private T data;
-    private long timestamp;
 }

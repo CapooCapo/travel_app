@@ -29,7 +29,7 @@ public class MessagingController extends BaseController {
         return ok(messagingService.getChats(userId));
     }
 
-    @GetMapping("/rooms/{id}")
+    @GetMapping("/rooms/{id:[0-9]+}")
     public ApiResponse<ChatDTO> getChatRoomById(@PathVariable Long id) {
         log.info("[BE DEBUG] Fetching chat room by id: {}", id);
         return ok(messagingService.getChatById(id));
@@ -47,7 +47,7 @@ public class MessagingController extends BaseController {
         return ok(messagingService.createGroupChat(userId, request));
     }
 
-    @GetMapping("/rooms/{chatRoomId}/messages")
+    @GetMapping("/rooms/{chatRoomId:[0-9]+}/messages")
     public ApiResponse<List<MessageDTO>> getChatMessages(
             @PathVariable Long chatRoomId,
             @RequestParam(defaultValue = "1") int page) {

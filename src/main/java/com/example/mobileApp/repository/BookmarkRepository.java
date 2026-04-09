@@ -20,6 +20,14 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     List<Bookmark> findAllByUserId(Long userId);
 
     void deleteByUserId(Long userId);
+    
+    @Query("""
+        SELECT l FROM Bookmark b
+        JOIN b.location l
+        WHERE b.user.id = :userId
+    """)
+    List<com.example.mobileApp.entity.Location> getSavedPlaces(@Param("userId") Long userId);
+    
 
     @Query("""
                 SELECT new com.example.mobileApp.dto.response.BookmarkResponse(

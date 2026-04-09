@@ -22,10 +22,9 @@ public class LocationImageController extends BaseController {
 
     private final LocationImageService imageService;
 
-    @GetMapping("/{id}/images")
+    @GetMapping("/{id:[0-9]+}/images")
     public ApiResponse<List<LocationImageResponse>> getImages(
             @PathVariable Long id) {
-
         return ok(imageService.getImages(id));
     }
 }
