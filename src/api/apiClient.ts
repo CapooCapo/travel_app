@@ -1,4 +1,4 @@
-import http, { setClerkTokenGetter } from '../utils/http';
+import http, { setClerkTokenGetter, setOnUnauthorized } from '../utils/http';
 import { apiRequest } from './client';
 
 /**
@@ -9,7 +9,7 @@ export const apiClient = http;
 /**
  * setClerkTokenGetter links Clerk auth with Axios interceptors
  */
-export { setClerkTokenGetter };
+export { setClerkTokenGetter, setOnUnauthorized };
 
 /**
  * apiRequest contains all structured API methods

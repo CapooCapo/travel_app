@@ -26,51 +26,69 @@ export function useAdminDashboard() {
       [tab]: { ...prev[tab], loading: true, error: null },
     }));
 
-    try {
-      let result;
-      switch (tab) {
-        case "events":
-          result = await apiRequest.getEvents("PENDING");
-          setData((prev) => ({
-            ...prev,
-            events: { data: result.data.content || [], loading: false, error: null, errorStatus: 200 },
-          }));
-          break;
-        case "users":
-          result = await apiRequest.getUsers();
-          setData((prev) => ({
-            ...prev,
-            users: { data: result.data.content || [], loading: false, error: null, errorStatus: 200 },
-          }));
-          break;
-        case "reports":
-          result = await apiRequest.getReports("PENDING");
-          setData((prev) => ({
-            ...prev,
-            reports: { data: result.data.content || [], loading: false, error: null, errorStatus: 200 },
-          }));
-          break;
-        case "analytics":
-          result = await apiRequest.getAnalytics();
-          setData((prev) => ({
-            ...prev,
-            analytics: { data: result.data || null, loading: false, error: null, errorStatus: 200 },
-          }));
-          break;
+    const executeFetch = async () => {
+      let result: any;
+      try {
+        switch (tab) {
+          case "events":
+            result = await apiRequest.getEvents("PENDING");
+            console.log("[ADMIN DEBUG] Events result:", JSON.stringify(result, null, 2));
+            setData((prev) => ({
+              ...prev,
+              events: { 
+                  data: Array.isArray(result) ? result : (result?.content || []), 
+                  loading: false, error: null, errorStatus: null 
+              },
+            }));
+            break;
+          case "users":
+            result = await apiRequest.getUsers();
+            console.log("[ADMIN DEBUG] Users result:", JSON.stringify(result, null, 2));
+            setData((prev) => ({
+              ...prev,
+              users: { 
+                  data: Array.isArray(result) ? result : (result?.content || []), 
+                  loading: false, error: null, errorStatus: null 
+              },
+            }));
+            break;
+          case "reports":
+            result = await apiRequest.getReports("PENDING");
+            console.log("[ADMIN DEBUG] Reports result:", JSON.stringify(result, null, 2));
+            setData((prev) => ({
+              ...prev,
+              reports: { 
+                  data: Array.isArray(result) ? result : (result?.content || []), 
+                  loading: false, error: null, errorStatus: null 
+              },
+            }));
+            break;
+          case "analytics":
+            result = await apiRequest.getAnalytics();
+            console.log("[ADMIN DEBUG] Analytics result:", JSON.stringify(result, null, 2));
+            setData((prev) => ({
+              ...prev,
+              analytics: { data: result || null, loading: false, error: null, errorStatus: null },
+            }));
+            break;
+        }
+      } catch (e: any) {
+        console.error(`❌ [ADMIN ERROR] ${tab}:`, e);
+        const status = e?.response?.status || 500;
+        const message = e?.response?.data?.message || e?.message || `Failed to load ${tab}`;
+        setData((prev) => ({
+          ...prev,
+          [tab]: { 
+              ...prev[tab], 
+              loading: false, 
+              error: message,
+              errorStatus: status
+          },
+        }));
       }
-    } catch (e: any) {
-      console.error(`❌ [ADMIN ERROR] ${tab}:`, e);
-      const status = e?.response?.status || 500;
-      setData((prev) => ({
-        ...prev,
-        [tab]: { 
-            ...prev[tab], 
-            loading: false, 
-            error: e?.message || `Failed to load ${tab}`,
-            errorStatus: status
-        },
-      }));
-    }
+    };
+
+    executeFetch();
   }, []);
 
   useEffect(() => {

@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./Home.Style";
 import { useHome } from "./useHome";
 import { COLORS } from "../../../constants/theme";
-import { EventDTO } from "../../../dto/event/event.DTO";
+import { EventResponse } from "../../../dto/event/event.DTO";
 import { LinearGradient } from 'expo-linear-gradient';
 import { AiRecommendationDTO } from "../../../dto/ai/ai.DTO";
 import { getPlaceImage } from "../../../utils/imageUtils";
@@ -52,14 +52,14 @@ const HomeScreen = ({ navigation }: any) => {
         />
     );
 
-    const renderEventCard = ({ item }: { item: EventDTO }) => (
+    const renderEventCard = ({ item }: { item: EventResponse }) => (
         <TouchableOpacity
             style={styles.eventCard}
-            onPress={() => navigateToEventDetail(item.id)}
+            onPress={() => navigateToEventDetail(item)}
             activeOpacity={0.8}
         >
             <Image
-                source={{ uri: item.imageUrl ?? "https://via.placeholder.com/80" }}
+                source={{ uri: (item.images && item.images.length > 0) ? item.images[0] : "https://via.placeholder.com/80" }}
                 style={styles.eventImage}
                 resizeMode="cover"
             />
@@ -68,7 +68,7 @@ const HomeScreen = ({ navigation }: any) => {
                 <Text style={styles.eventMeta}>{item.address}</Text>
                 <View style={styles.eventBadge}>
                     <Text style={styles.eventBadgeText}>
-                        {item.isFree ? "FREE" : `$${item.price}`}
+                        {(item.price === null || item.price <= 0) ? "FREE" : `$${item.price}`}
                     </Text>
                 </View>
             </View>

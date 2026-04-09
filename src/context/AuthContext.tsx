@@ -2,7 +2,7 @@ import React, { createContext, useEffect, ReactNode, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
-import { apiRequest, setClerkTokenGetter } from '../api/apiClient';
+import { apiRequest, setClerkTokenGetter, setOnUnauthorized } from '../api/apiClient';
 import { userApi } from '../api/user.api';
 
 /**
@@ -50,12 +50,13 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   const [isBackendSynced, setIsBackendSynced] = React.useState(false);
   const [localAvatarUrl, setLocalAvatarUrl] = React.useState<string | null>(null);
 
-  // Initialize global API interceptor with Clerk token getter
+  // Initialize global API interceptor with Clerk token getter and 401 handler
   useEffect(() => {
     if (isLoaded) {
       setClerkTokenGetter(getToken);
+      setOnUnauthorized(signOut);
     }
-  }, [isLoaded, getToken]);
+  }, [isLoaded, getToken, signOut]);
 
   /**
    * Sync Flow: Automatically sync user profile to Spring Boot backend
@@ -128,7 +129,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{ 
       user, isSignedIn, isLoaded, isBackendSynced, 
       getToken, signOut, syncUser, updateAvatar,
-      avatarUrl 
+      avatarUrl
     }}>
       {children}
     </AuthContext.Provider>

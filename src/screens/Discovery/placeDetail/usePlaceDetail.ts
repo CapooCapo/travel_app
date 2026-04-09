@@ -5,12 +5,12 @@ import { reviewService } from "../../../services/review.service";
 import { eventService } from "../../../services/event.service";
 import { PlaceDTO } from "../../../dto/discovery/place.DTO";
 import { ReviewDTO } from "../../../dto/review/review.DTO";
-import { EventDTO } from "../../../dto/event/event.DTO";
+import { EventResponse } from "../../../dto/event/event.DTO";
 
 export function usePlaceDetail(navigation: any, placeId: number) {
   const [place,         setPlace]         = useState<PlaceDTO | null>(null);
   const [reviews,       setReviews]       = useState<ReviewDTO[]>([]);
-  const [events,        setEvents]        = useState<EventDTO[]>([]);
+  const [events,        setEvents]        = useState<EventResponse[]>([]);
   const [isLoading,     setIsLoading]     = useState(true);
   const [isBookmarked,  setIsBookmarked]  = useState(false);
   const [activeTab,     setActiveTab]     = useState<"info" | "reviews" | "events">("info");
@@ -37,7 +37,7 @@ export function usePlaceDetail(navigation: any, placeId: number) {
         setReviews(reviewRes.value?.reviews ?? []);
       }
       if (eventRes.status === "fulfilled") {
-        setEvents(eventRes.value?.events ?? []);
+        setEvents(eventRes.value?.content ?? []);
       }
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Failed to load place");
@@ -70,7 +70,7 @@ export function usePlaceDetail(navigation: any, placeId: number) {
     navigation.navigate("WriteReview", { locationId: placeId });
 
   // Navigate to event detail — pass entire event object (BE không có GET /events/{id})
-  const navigateToEventDetail = (event: EventDTO) =>
+  const navigateToEventDetail = (event: EventResponse) =>
     navigation.navigate("EventDetail", { event });
 
   const goBack = () => navigation.goBack();

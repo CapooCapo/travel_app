@@ -17,19 +17,21 @@ import { SearchBar } from "../../../components/Common/SearchBar";
 
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-const ExploreScreen = ({ navigation }: any) => {
+const ExploreScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const {
     places, isLoading, keyword, setKeyword,
     selectedCategory, setSelectedCategory,
     recentSearches, handleSearch, handleLoadMore,
     navigateToDetail, loadRecentSearches, fetchPlaces,
+    isBookmarksMode, setIsBookmarksMode,
   } = useExplore(navigation);
 
   useEffect(() => {
+    const isSaved = route.params?.bookmarks === true;
+    setIsBookmarksMode(isSaved);
     loadRecentSearches();
-    fetchPlaces(true);
-  }, []);
+  }, [route.params?.bookmarks]);
 
   const renderCard = ({ item }: { item: PlaceDTO }) => (
     <PlaceCard
@@ -51,43 +53,59 @@ const ExploreScreen = ({ navigation }: any) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Explore</Text>
+        {isBookmarksMode && (
+          <TouchableOpacity 
+            onPress={() => {
+              setIsBookmarksMode(false);
+              navigation.setParams({ bookmarks: false });
+            }}
+            style={{ marginRight: 12 }}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+        )}
+        <Text style={styles.headerTitle}>
+          {isBookmarksMode ? "Saved Places" : "Explore"}
+        </Text>
       </View>
 
-      {/* Search Bar */}
-      <SearchBar
-        value={keyword}
-        onChangeText={setKeyword}
-        onClear={() => { setKeyword(""); fetchPlaces(true); }}
-        onSubmitEditing={handleSearch}
-        placeholder="Search locations…"
-        style={{ marginBottom: 16 }}
-      />
+      {/* Search Bar & Category Chips - Only show in normal mode */}
+      {!isBookmarksMode && (
+        <>
+          <SearchBar
+            value={keyword}
+            onChangeText={setKeyword}
+            onClear={() => { setKeyword(""); fetchPlaces(true); }}
+            onSubmitEditing={handleSearch}
+            placeholder="Search locations…"
+            style={{ marginBottom: 16 }}
+          />
 
-      {/* Category Chips */}
-      <FlatList
-        data={CATEGORIES}
-        horizontal
-        keyExtractor={(c) => c}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRow}
-        renderItem={({ item: cat }) => {
-          const active = selectedCategory === cat;
-          return (
-            <TouchableOpacity
-              style={[styles.chip, active && styles.chipActive]}
-              onPress={() => {
-                setSelectedCategory(cat === selectedCategory ? "" : cat);
-                fetchPlaces(true);
-              }}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
+          <FlatList
+            data={CATEGORIES}
+            horizontal
+            keyExtractor={(c) => c}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+            renderItem={({ item: cat }) => {
+              const active = selectedCategory === cat;
+              return (
+                <TouchableOpacity
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => {
+                    setSelectedCategory(cat === selectedCategory ? "" : cat);
+                    fetchPlaces(true);
+                  }}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </>
+      )}
 
       {/* Recent Searches */}
       {showRecent && (

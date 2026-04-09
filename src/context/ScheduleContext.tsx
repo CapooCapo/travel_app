@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '../api/client';
+import { useAuth } from '@clerk/clerk-expo';
 import { TravelScheduleDTO, CreateTravelScheduleRequest } from '../dto/schedule/schedule.DTO';
 import { LocalNotificationService } from '../services/LocalNotification.Service';
 
@@ -28,13 +29,15 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
     setError(null);
     try {
       const response = await apiRequest.getSchedules();
-      if (response.data.status === 200) {
-        setSchedules(response.data.data);
+      const resData = response?.data;
+      if (resData?.status === 200) {
+        setSchedules(resData?.data || []);
       } else {
-        setError(response.data.message || 'Failed to fetch schedules');
+        setError(resData?.message || 'Failed to fetch schedules');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while fetching schedules');
+      console.error('[ScheduleContext] fetchSchedules error:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while fetching schedules');
     } finally {
       setIsLoading(false);
     }
@@ -45,13 +48,15 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
     setError(null);
     try {
       const response = await apiRequest.getCalendar();
-      if (response.data.status === 200) {
-        setCalendarEvents(response.data.data);
+      const resData = response?.data;
+      if (resData?.status === 200) {
+        setCalendarEvents(resData?.data || []);
       } else {
-        setError(response.data.message || 'Failed to fetch calendar');
+        setError(resData?.message || 'Failed to fetch calendar');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while fetching calendar');
+      console.error('[ScheduleContext] fetchCalendar error:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while fetching calendar');
     } finally {
       setIsLoading(false);
     }
@@ -62,16 +67,19 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
     setError(null);
     try {
       const response = await apiRequest.createSchedule(req);
-      if (response.data.status === 201 || response.data.status === 200) {
-        const newSchedule = response.data.data;
-        setSchedules(prev => [...prev, newSchedule]);
-        // Schedule local notification
-        LocalNotificationService.scheduleTravelReminder(newSchedule);
+      const resData = response?.data;
+      if (resData?.status === 201 || resData?.status === 200) {
+        const newSchedule = resData?.data;
+        if (newSchedule) {
+          setSchedules(prev => [...prev, newSchedule]);
+          LocalNotificationService.scheduleTravelReminder(newSchedule);
+        }
       } else {
-        setError(response.data.message || 'Failed to add schedule');
+        setError(resData?.message || 'Failed to add schedule');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while adding schedule');
+      console.error('[ScheduleContext] addSchedule error:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while adding schedule');
       throw err;
     } finally {
       setIsLoading(false);
@@ -83,13 +91,15 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
     setError(null);
     try {
       const response = await apiRequest.updateSchedule(id, req);
-      if (response.data.status === 200) {
+      const resData = response?.data;
+      if (resData?.status === 200) {
         await fetchSchedules();
       } else {
-        setError(response.data.message || 'Failed to update schedule');
+        setError(resData?.message || 'Failed to update schedule');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while updating schedule');
+      console.error('[ScheduleContext] updateSchedule error:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while updating schedule');
       throw err;
     } finally {
       setIsLoading(false);
@@ -101,23 +111,27 @@ export const ScheduleProvider = ({ children }: { children: React.ReactNode }) =>
     setError(null);
     try {
       const response = await apiRequest.deleteSchedule(id);
-      if (response.data.status === 200) {
+      const resData = response?.data;
+      if (resData?.status === 200) {
         setSchedules(prev => prev.filter(s => s.id !== id));
-        // Note: For full cancellation, we would need to track notification IDs
-        // linked to schedule IDs.
       } else {
-        setError(response.data.message || 'Failed to delete schedule');
+        setError(resData?.message || 'Failed to delete schedule');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while deleting schedule');
+      console.error('[ScheduleContext] deleteSchedule error:', err);
+      setError(err.response?.data?.message || err.message || 'An error occurred while deleting schedule');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const { isLoaded, isSignedIn } = useAuth();
+
   useEffect(() => {
-    fetchSchedules();
-  }, [fetchSchedules]);
+    if (isLoaded && isSignedIn) {
+      fetchSchedules();
+    }
+  }, [isLoaded, isSignedIn, fetchSchedules]);
 
   return (
     <ScheduleContext.Provider

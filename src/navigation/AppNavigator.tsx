@@ -25,6 +25,7 @@ import PlaceDetailScreen     from "../screens/Discovery/placeDetail/PlaceDetail.
 // ─── Events ───────────────────────────────────────────────────────────────
 import EventListScreen       from "../screens/Event/eventList/EventList.Screen";
 import EventDetailScreen     from "../screens/Event/eventDetail/EventDetail.Screen";
+import CreateEventScreen     from "../screens/Event/createEvent/CreateEvent.Screen";
 
 // ─── Travel Planning ──────────────────────────────────────────────────────
 import ItineraryScreen       from "../screens/TravelPlanning/itinerary/Itinerary.Screen";
@@ -56,7 +57,7 @@ import AdminDashboardScreen  from "../screens/Admin/dashboard/AdminDashboard.Scr
 
 // ─── Theme ────────────────────────────────────────────────────────────────
 import { COLORS } from "../constants/theme";
-import { EventDTO } from "../dto/event/event.DTO";
+import { EventResponse } from "../dto/event/event.DTO";
 
 // ────────────────────────────────────────────────────────────────────────────
 //  Route param types (khớp với BE data model)
@@ -76,8 +77,9 @@ export type RootStackParamList = {
   // Discovery
   PlaceDetail: { placeId: number; initialTab?: "info" | "reviews" | "events" };
 
-  // Events — truyền toàn bộ EventDTO vì BE không có GET /events/{id}
-  EventDetail: { event: EventDTO };
+  // Events — truyền toàn bộ EventResponse vì BE không có GET /events/{id}
+  EventDetail: { event: EventResponse };
+  CreateEvent: { event?: EventResponse };
 
   // Review — locationId (path param cho BE)
   WriteReview: { locationId: number };
@@ -222,6 +224,10 @@ export default function AppNavigator() {
             <Stack.Screen name="EventDetail"
               component={EventDetailScreen}
               options={{ animation: "slide_from_right" }}
+            />
+            <Stack.Screen name="CreateEvent"
+              component={CreateEventScreen}
+              options={{ animation: "slide_from_bottom" }}
             />
             <Stack.Screen name="WriteReview"
               component={WriteReviewScreen}

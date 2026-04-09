@@ -20,8 +20,8 @@ const ProfileScreen = ({ navigation }: any) => {
         gender, setGender,
         selectedInterestIds, setSelectedInterestIds,
         travelStyles, genders, masterInterests,
-        handleSave, handleSignOut, loadBeProfile,
-        isAdmin, navigateToAdmin,
+        handleSave, handleSignOut, handleDeleteAccount, handleExportData, loadBeProfile,
+        navigateToAdmin,
         navigateToItineraries, navigateToBookmarks,
     } = useProfile(navigation);
 
@@ -38,7 +38,10 @@ const ProfileScreen = ({ navigation }: any) => {
         <View style={[styles.container, { paddingTop: insets.top }]}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+            >
                 {/* ── Header ── */}
                 <View style={styles.headerBg}>
                     {!isEditing && (
@@ -174,17 +177,17 @@ const ProfileScreen = ({ navigation }: any) => {
                                 <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
                             </TouchableOpacity>
                         ))}
-                        {isAdmin && (
-                            <TouchableOpacity style={styles.menuItem} onPress={navigateToAdmin}>
-                                <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.primary} />
-                                <Text style={styles.menuItemText}>Dashmin Hub</Text>
-                                <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
-                            </TouchableOpacity>
-                        )}
+                        <TouchableOpacity style={styles.menuItem} onPress={navigateToAdmin}>
+                            <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.primary} />
+                            <Text style={styles.menuItemText}>Dashmin Hub</Text>
+                            <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
+                        </TouchableOpacity>
                     </View>
                 )}
+            </ScrollView>
 
-                {/* ── Save / Cancel ── */}
+            {/* ── Fixed Footer Actions ── */}
+            <View style={[styles.footer, { paddingBottom: insets.bottom || 16 }]}>
                 {isEditing ? (
                     <>
                         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
@@ -193,19 +196,50 @@ const ProfileScreen = ({ navigation }: any) => {
                                 : <Text style={styles.saveBtnText}>Save Changes</Text>
                             }
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.signOutBtn} onPress={() => {
-                            setIsEditing(false);
-                            loadBeProfile(); // Trả lại data ban đầu nếu Hủy
-                        }}>
+                        <TouchableOpacity 
+                            style={[styles.signOutBtn, { borderTopWidth: 0, marginTop: 8 }]} 
+                            onPress={() => {
+                                setIsEditing(false);
+                                loadBeProfile();
+                            }}
+                        >
                             <Text style={[styles.signOutText, { color: COLORS.muted }]}>Cancel</Text>
                         </TouchableOpacity>
                     </>
                 ) : (
-                    <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-                        <Text style={styles.signOutText}>Sign Out</Text>
-                    </TouchableOpacity>
+                    <>
+                        <TouchableOpacity 
+                            style={[styles.signOutBtn, { borderTopWidth: 0 }]} 
+                            onPress={handleSignOut}
+                        >
+                            <Text style={styles.signOutText}>Sign Out</Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.gdprContainer}>
+                            <TouchableOpacity 
+                                style={styles.gdprBtn} 
+                                onPress={handleExportData}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? (
+                                    <ActivityIndicator size="small" color={COLORS.primary} />
+                                ) : (
+                                    <Text style={[styles.gdprText, { color: COLORS.primary }]}>Export Data</Text>
+                                )}
+                            </TouchableOpacity>
+
+                            <View style={styles.divider} />
+
+                            <TouchableOpacity 
+                                style={styles.gdprBtn} 
+                                onPress={handleDeleteAccount}
+                            >
+                                <Text style={[styles.gdprText, { color: COLORS.danger }]}>Delete Account</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
                 )}
-            </ScrollView>
+            </View>
         </View>
     );
 };

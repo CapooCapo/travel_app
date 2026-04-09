@@ -1,20 +1,54 @@
-import { apiRequest } from "../api/client";
-import { EventDTO, mapEvent } from "../dto/event/event.DTO";
+import { eventApi } from "../api/event.api";
+import { EventResponse, EventFilterParams, EventCreateRequest } from "../dto/event/event.DTO";
 
-/**
- * BE chỉ có: GET /api/events/location/{locationId}
- * Không có endpoint list toàn bộ events hay tạo event.
- */
 export const eventService = {
-
-  /** GET /api/events/location/{locationId} */
-  async getEventsByLocation(locationId: number, page = 0, size = 10): Promise<{
-    events: EventDTO[];
-    totalPages: number;
-  }> {
-    const res = await apiRequest.getEventsByLocation(locationId, page, size);
-    const pageData = res.data?.data;
-    const events = (pageData?.content ?? []).map(mapEvent);
-    return { events, totalPages: pageData?.totalPages ?? 0 };
+  async getEvents(params: EventFilterParams) {
+    const res = await eventApi.getEvents(params);
+    return res;
   },
+
+  async getEventById(id: number) {
+    return await eventApi.getEventById(id);
+  },
+
+  async createEvent(req: EventCreateRequest) {
+    return await eventApi.createEvent(req);
+  },
+
+  async updateEvent(id: number, req: EventCreateRequest) {
+    return await eventApi.updateEvent(id, req);
+  },
+
+  async deleteEvent(id: number) {
+    return await eventApi.deleteEvent(id);
+  },
+
+  async getMyEvents() {
+    return await eventApi.getMyEvents();
+  },
+
+  // Bookmarks
+  async bookmarkEvent(id: number) {
+    return await eventApi.bookmarkEvent(id);
+  },
+
+  async unbookmarkEvent(id: number) {
+    return await eventApi.unbookmarkEvent(id);
+  },
+
+  async getMyBookmarks(page = 0, size = 10) {
+    return await eventApi.getMyBookmarks(page, size);
+  },
+
+  async getBookmarkedIds() {
+    return await eventApi.getBookmarkedIds();
+  },
+
+  async getEventsByLocation(locationId: number, pageNum = 0, pageSize = 10) {
+    return await eventApi.getEventsByLocation(locationId, pageNum, pageSize);
+  },
+
+  async getCategories() {
+    return await eventApi.getCategories();
+  }
 };

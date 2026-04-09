@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { Alert, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { apiRequest } from "../../../api/client";
 import { useAuth } from "../../../hooks/useAuth";
@@ -44,26 +44,23 @@ export function useProfile(navigation: any) {
   const loadBeProfile = async () => {
     setIsLoadingBe(true);
     try {
-      const res = await apiRequest.getMe();
-
-      // res.data     = Res<UserDTO> = { status, message, data: UserDTO }
-      // res.data.data = UserDTO thật
-      const wrapped = res.data as Res<UserDTO>;
-      const userData = wrapped.data;
-      if (!userData) return;
+      const userData = await apiRequest.getMe();
+      if (!userData) {
+        console.warn("[useProfile] No user data returned from backend.");
+        return;
+      }
 
       setBeUser(userData);
       console.log("[useProfile] Backend user data loaded:", { 
           id: userData.id, 
-          role: userData.role, 
           verified: userData.verified 
       });
       setFullName(userData.fullName || user?.fullName || "");
       setTravelStyle((userData.travelStyle as typeof TRAVEL_STYLES[number]) ?? "SOLO");
       setGender((userData.gender as typeof GENDERS[number]) ?? "OTHER");
 
-      // userData.interests = InterestItem[] — .id có sẵn
-      if (Array.isArray(userData.interests)) {
+      // Safely process interests
+      if (userData.interests && Array.isArray(userData.interests)) {
         const ids = userData.interests
           .map((i) => i?.id != null ? Number(i.id) : null)
           .filter((id): id is number => id !== null);
@@ -121,6 +118,59 @@ export function useProfile(navigation: any) {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action is permanent and cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete My Account",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsSaving(true);
+              await apiRequest.deleteAccount();
+              await signOut();
+            } catch (e: any) {
+              Alert.alert("Error", e?.message || "Account deletion failed");
+            } finally {
+              setIsSaving(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleExportData = async () => {
+    try {
+      setIsSaving(true);
+      
+      // 1. Get signed link from BE
+      const relativeUrl = await apiRequest.getExportDataLink();
+      
+      // 2. Build full download URL
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.72:8080";
+      const downloadUrl = `${baseUrl}${relativeUrl}`;
+
+      console.log("[useProfile] Opening download link:", downloadUrl);
+
+      // 3. Open in browser
+      await Linking.openURL(downloadUrl);
+      
+      Alert.alert(
+        "Export Started",
+        "Your data export has been triggered in the browser. Please check your downloads folder."
+      );
+    } catch (e: any) {
+      console.error("[useProfile] Export error:", e);
+      Alert.alert("Export Error", e?.message || "Failed to start data export");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const displayName = beUser?.fullName ?? user?.fullName ?? "Traveler";
   const displayEmail = beUser?.email ?? user?.email ?? user?.primaryEmailAddress?.emailAddress ?? "";
   const displayAvatar = beUser?.avatarUrl ?? user?.avatarUrl ?? user?.imageUrl;
@@ -147,10 +197,14 @@ export function useProfile(navigation: any) {
     masterInterests: MASTER_INTERESTS, // Export để render UI
     handleSave,
     handleSignOut,
+    handleDeleteAccount,
+    handleExportData,
     loadBeProfile,
-    isAdmin: beUser?.role === "ADMIN",
     navigateToAdmin: () => navigation.navigate("AdminDashboard"),
     navigateToItineraries: () => navigation.navigate("Itinerary"),
-    navigateToBookmarks:   () => navigation.navigate("Explore"),
+    navigateToBookmarks:   () => navigation.navigate("MainTabs", { 
+      screen: "Explore",
+      params: { bookmarks: true }
+    }),
   };
 }

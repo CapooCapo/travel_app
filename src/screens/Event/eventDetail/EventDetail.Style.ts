@@ -34,6 +34,18 @@ export const styles = StyleSheet.create({
   // ─── Content ──────────────────────────────────────────────────────────────
   content: { padding: SIZES.padding },
   title:   { ...FONTS.h1, color: COLORS.text, marginBottom: 14 },
+  categoryRow: { marginBottom: 15 },
+  category: {
+    ...FONTS.body2,
+    color: COLORS.primary,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    backgroundColor: "rgba(255, 125, 0, 0.1)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start'
+  },
 
   // Countdown
   countdownBox: {
@@ -86,4 +98,9 @@ export const styles = StyleSheet.create({
     flexDirection: "row", gap: 8,
   },
   primaryBtnText: { ...FONTS.body1, color: "#fff", fontWeight: "700" },
+  navigateBtn: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

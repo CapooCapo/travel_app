@@ -4,6 +4,7 @@ import { Alert } from "react-native";
 // ─── Tích hợp Clerk Token ──────────────────────────────────────────────────
 type GetTokenOptions = { template?: string; skipCache?: boolean };
 let clerkTokenGetter: ((options?: GetTokenOptions) => Promise<string | null>) | null = null;
+let onUnauthorizedCallback: (() => Promise<void>) | null = null;
 
 /**
  * Hàm này dùng để liên kết Clerk getToken với Axios.
@@ -11,6 +12,13 @@ let clerkTokenGetter: ((options?: GetTokenOptions) => Promise<string | null>) | 
  */
 export const setClerkTokenGetter = (fn: (options?: GetTokenOptions) => Promise<string | null>) => {
   clerkTokenGetter = fn;
+};
+
+/**
+ * Hàm này dùng để liên kết callback khi token hết hạn hoặc lỗi 401.
+ */
+export const setOnUnauthorized = (fn: () => Promise<void>) => {
+  onUnauthorizedCallback = fn;
 };
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
@@ -24,40 +32,27 @@ const http = axios.create({
 });
 
 const logDebugRequest = (config: any) => {
-  const isSearchOrAi = config.url?.includes('/api/users/search') || config.url?.includes('/api/locations/ai-recommend');
-  if (isSearchOrAi) {
-    console.log('[FE DEBUG] Request:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      headers: config.headers,
-      payload: config.data
-    });
-  }
+  console.log(`[HTTP REQUEST] → ${config.method?.toUpperCase()} ${config.url}`, {
+    auth: !!config.headers.Authorization,
+    headers: { ...config.headers, Authorization: config.headers.Authorization ? 'Bearer [PRESENT]' : 'NONE' },
+    data: config.data
+  });
 };
 
 const logDebugResponse = (response: any) => {
-  const isSearchOrAi = response.config.url?.includes('/api/users/search') || response.config.url?.includes('/api/locations/ai-recommend');
-  if (isSearchOrAi) {
-    console.log('[FE DEBUG] Response:', {
-      status: response.status,
-      data: response.data
-    });
-  }
+  console.log(`[HTTP RESPONSE] ← ${response.status} ${response.config.url}`, {
+    data: response.data
+  });
 };
 
 const logDebugError = (error: any) => {
-  const isSearchOrAi = error.config?.url?.includes('/api/users/search') || error.config?.url?.includes('/api/locations/ai-recommend');
-  const is500 = error.response?.status === 500;
-  
-  if (isSearchOrAi || is500) {
-    console.error(`[FE DEBUG] ${is500 ? 'BACKEND 500 ERROR' : 'Error'}:`, {
-      method: error.config?.method?.toUpperCase(),
-      url: error.config?.url,
-      status: error.response?.status || 'No Status',
-      data: error.response?.data || 'No Data',
-      message: error.message
-    });
-  }
+  console.error('[HTTP ERROR] ✖', {
+    url: error.config?.url,
+    method: error.config?.method?.toUpperCase(),
+    status: error.response?.status,
+    message: error.message,
+    responseData: error.response?.data,
+  });
 };
 
 /**
@@ -69,41 +64,38 @@ const showErrorAlert = (error: any) => {
   const backendMessage = data?.message;
 
   let title = "Error";
-  let message = backendMessage || "Unable to connect to the server. Please try again later.";
+  let displayMessage = backendMessage || error.message || "An unexpected error occurred.";
 
-  switch (status) {
-    case 400:
-      title = "Bad Request";
-      break;
-    case 403:
-      title = "Forbidden";
-      break;
-    case 500:
-      title = "Server Error";
-      message = backendMessage || "An internal server error occurred.";
-      break;
-    case 401:
-      // 401 thường được xử lý riêng (ví dụ redirect về login)
-      return; 
-    default:
-      if (!error.response) {
-        message = "Unable to connect to the server. Please try again later.";
-      }
+  if (status === 401) {
+    title = "Session Expired";
+    displayMessage = "Please login again to continue.";
+  } else if (status === 403) {
+    title = "Access Denied";
+    displayMessage = "You do not have permission to perform this action.";
+  } else if (status >= 500) {
+    title = "Server Error";
+    displayMessage = "Server encountered an error. Please try again later.";
   }
 
-  Alert.alert(title, message, [{ text: "OK" }]);
+  Alert.alert(title, displayMessage, [{ text: "OK" }]);
 };
 
 // Request Interceptor: Inject Clerk Token & Log Payload
 http.interceptors.request.use(
   async (config) => {
-    if (clerkTokenGetter) {
-      const token = await clerkTokenGetter({ template: 'jwt-template-account' });
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      } else {
-        console.error("[HTTP] Clerk token is null. Request aborted.");
-        return Promise.reject(new Error("TOKEN_NULL"));
+    // Tự động đính kèm token nếu có getter (chỉ cho app API)
+    const isExternal = config.url?.startsWith('http') && !config.url?.startsWith(BASE_URL);
+    
+    if (!isExternal && clerkTokenGetter) {
+      try {
+        const token = await clerkTokenGetter({ template: 'jwt-template-account' });
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        } else {
+          console.warn("[HTTP AUTH] No token found for protected endpoint:", config.url);
+        }
+      } catch (err) {
+        console.error("[HTTP AUTH] Failed to retrieve Clerk token:", err);
       }
     }
 
@@ -122,12 +114,23 @@ http.interceptors.response.use(
   async (error) => {
     logDebugError(error);
     
-    // Hiển thị Alert cho các lỗi quy chuẩn
+    const status = error.response && error.response.status;
+
+    if (status === 401) {
+      console.warn("[HTTP AUTH] 401 Unauthorized! Triggering logout callback...");
+      
+      // Hiển thị Alert trước khi dọn dẹp state
+      showErrorAlert(error);
+
+      if (onUnauthorizedCallback) {
+        await onUnauthorizedCallback();
+      }
+      return Promise.reject(error);
+    }
+    
+    // Hiển thị Alert cho các lỗi khác (403, 500, etc.)
     showErrorAlert(error);
 
-    if (error.response && error.response.status === 401) {
-      console.warn("[HTTP] 401 Unauthorized detected. User may need to sign in again.");
-    }
     return Promise.reject(error);
   }
 );

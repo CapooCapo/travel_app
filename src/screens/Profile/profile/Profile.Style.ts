@@ -82,10 +82,36 @@ export const styles = StyleSheet.create({
   saveBtnText: { ...FONTS.body1, color: "#fff", fontWeight: "700" },
 
   signOutBtn: {
-    marginHorizontal: SIZES.padding, marginTop: 12, marginBottom: 32,
     backgroundColor: COLORS.surface, borderRadius: SIZES.radius,
     paddingVertical: 14, alignItems: "center",
     borderWidth: 1, borderColor: COLORS.danger + "66",
   },
   signOutText: { ...FONTS.body1, color: COLORS.danger, fontWeight: "600" },
+
+  footer: {
+    paddingHorizontal: SIZES.padding,
+    paddingTop: 16,
+    backgroundColor: COLORS.bg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  gdprContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    justifyContent: "center",
+  },
+  gdprBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  gdprText: {
+    ...FONTS.body2,
+    fontWeight: "600",
+  },
+  divider: {
+    width: 1,
+    height: 14,
+    backgroundColor: COLORS.muted + "44",
+  },
 });

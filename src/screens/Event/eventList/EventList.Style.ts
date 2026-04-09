@@ -85,4 +85,22 @@ export const styles = StyleSheet.create({
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 60 },
   emptyText:      { ...FONTS.body1, color: COLORS.muted, marginTop: 8 },
   footerLoader:   { paddingVertical: 16, alignItems: "center" },
+
+  fab: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: COLORS.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 999,
+  },
 });

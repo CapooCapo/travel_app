@@ -1,59 +1,48 @@
-/**
- * Khớp BE EventResponse:
- * { id, name, description, eventDate, locationId }
- *
- * Lưu ý: BE không có endpoint list toàn bộ events.
- * Events luôn gắn với location: GET /api/events/location/{locationId}
- */
 export type EventResponse = {
   id: number;
-  name: string;
+  title: string;
   description: string;
-  eventDate: string;       // LocalDateTime → ISO string
+  startTime: string;
+  endTime: string;
+  price: number;
+  status: 'INCOMING' | 'ONGOING' | 'COMPLETED';
+  adminStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   locationId: number;
+  address: string;
+  category: string;
+  createdBy: number;
+  images: string[];
+  isBookmarked: boolean;
+  latitude?: number;
+  longitude?: number;
 };
 
-/**
- * EventDTO — kiểu dùng nội bộ FE, map từ EventResponse.
- * title = name, startDate = eventDate (BE chưa có endDate).
- */
-export type EventDTO = {
-  id: number;
-  title: string;           // mapped từ name
-  description: string;
-  startDate: string;       // mapped từ eventDate
-  endDate?: string;        // BE chưa có — optional
-  locationId: number;
-  address?: string;        // lấy từ location parent nếu cần
-  imageUrl?: string;
+export type EventFilterParams = {
+  keyword?: string;
+  category?: string;
   isFree?: boolean;
-  price?: number;
-  status?: 'incoming' | 'ongoing' | 'completed';
-  organizerId?: number;
-  organizerName?: string;
-  isBookmarked?: boolean;
-};
-
-export type EventListRequest = {
+  minPrice?: number;
+  maxPrice?: number;
+  startDate?: string;
+  endDate?: string;
+  status?: string; // lifecycle status
+  lat?: number;
+  lng?: number;
+  radius?: number;
   page?: number;
   size?: number;
 };
 
-/** Helper: map BE EventResponse → FE EventDTO */
-export function mapEvent(e: EventResponse): EventDTO {
-  return {
-    id:           e.id,
-    title:        e.name,
-    description:  e.description,
-    startDate:    e.eventDate,
-    locationId: e.locationId,
-    status:       resolveStatus(e.eventDate),
-  };
-}
-
-function resolveStatus(eventDate: string): EventDTO['status'] {
-  const now  = Date.now();
-  const date = new Date(eventDate).getTime();
-  if (date > now) return 'incoming';
-  return 'ongoing';
-}
+export type EventCreateRequest = {
+  title: string;
+  categoryId: number;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  price?: number;
+  locationId?: number;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  images?: string[];
+};

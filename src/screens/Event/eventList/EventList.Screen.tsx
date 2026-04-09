@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./EventList.Style";
 import { useEventList, LocationWithEvents } from "./useEventList";
 import { COLORS } from "../../../constants/theme";
-import { EventDTO } from "../../../dto/event/event.DTO";
+import { EventResponse } from "../../../dto/event/event.DTO";
 
 // ─── Photo pool (same as Home/Explore) ───────────────────────────────────────
 const PHOTO_POOLS: Record<string, string[]> = {
@@ -31,7 +31,7 @@ function getPlaceImage(name: string, category?: string): string {
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
-function StatusBadge({ status }: { status?: EventDTO["status"] }) {
+function StatusBadge({ status }: { status?: EventResponse["status"] }) {
   if (!status) return null;
   const colors: Record<string, string> = {
     incoming:  COLORS.primary,
@@ -69,7 +69,7 @@ const EventListScreen = ({ navigation }: any) => {
       <View style={styles.cardOverlay} />
 
       {/* Event count badge */}
-      {item.eventsLoaded && (
+      {item.eventsLoaded && item.events && (
         <View style={styles.eventCountBadge}>
           <Ionicons name="calendar" size={11} color="#fff" />
           <Text style={styles.eventCountText}>
@@ -143,7 +143,7 @@ const EventListScreen = ({ navigation }: any) => {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading && locations.length === 0}
+            refreshing={isLoading && (!locations || locations.length === 0)}
             onRefresh={refresh}
             tintColor={COLORS.primary}
           />
@@ -164,6 +164,19 @@ const EventListScreen = ({ navigation }: any) => {
           ) : null
         }
       />
+
+      {/* Floating Action Button for Creating Events */}
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => {
+          console.log("Create Event button pressed");
+          navigation.navigate("CreateEvent");
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={32} color="#fff" />
+      </TouchableOpacity>
+      {(() => { console.log("Create Event button rendered"); return null; })()}
     </View>
   );
 };

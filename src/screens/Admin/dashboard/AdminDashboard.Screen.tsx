@@ -6,7 +6,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAdminDashboard, AdminTab } from "./useAdminDashboard";
-import { useProfile } from "../../Profile/profile/useProfile";
 import { COLORS, SIZES, FONTS } from "../../../constants/theme";
 
 const styles = StyleSheet.create({
@@ -126,23 +125,10 @@ const SkeletonItem = () => {
 
 const AdminDashboardScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
-  const { isAdmin } = useProfile(navigation);
   const {
     sections, activeTab, setActiveTab,
     fetchSection, handleApprove, handleReject, handleResolveReport,
   } = useAdminDashboard();
-
-  if (!isAdmin) {
-    return (
-      <View style={[styles.container, styles.centerView]}>
-        <Ionicons name="lock-closed-outline" size={80} color={COLORS.muted} />
-        <Text style={styles.restrictedTitle}>Access Denied</Text>
-        <Text style={styles.restrictedDesc}>
-            You do not have administrator permissions to view this page.
-        </Text>
-      </View>
-    );
-  }
 
   const renderSectionContent = () => {
     const section = sections[activeTab];
@@ -169,7 +155,7 @@ const AdminDashboardScreen = ({ navigation }: any) => {
       );
     }
 
-    if (section.errorStatus) {
+    if (section.errorStatus && section.errorStatus >= 400) {
       return (
         <View style={styles.centerView}>
           <Ionicons name="alert-circle-outline" size={60} color={COLORS.danger} />
@@ -187,7 +173,7 @@ const AdminDashboardScreen = ({ navigation }: any) => {
 
     return (
       <FlatList
-        data={section.data}
+        data={Array.isArray(section.data) ? section.data : []}
         renderItem={activeTab === "events" ? renderEventCard : activeTab === "users" ? renderUserCard : renderReportCard}
         keyExtractor={(item) => `admin-${activeTab}-${item.id}`}
         contentContainerStyle={styles.listContent}
@@ -209,64 +195,73 @@ const AdminDashboardScreen = ({ navigation }: any) => {
     );
   };
 
-  const renderEventCard = ({ item }: { item: any }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{item.name}</Text>
-        <Text style={[styles.tag, styles.tagPending]}>Pending</Text>
+  const renderEventCard = ({ item }: { item: any }) => {
+    console.log("[ADMIN DEBUG] Rendering Event Card:", item?.id, item?.name);
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{item?.name || "Unnamed Event"}</Text>
+          <Text style={[styles.tag, styles.tagPending]}>{item?.status || "Pending"}</Text>
+        </View>
+        <Text style={styles.cardMeta}>📍 {item?.locationId ? "Location Set" : "No Location"}</Text>
+        <Text style={styles.cardMeta} numberOfLines={2}>📝 {item?.description || "No description provided."}</Text>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.primaryBtn} onPress={() => {
+              handleApprove(item?.id).catch(err => Alert.alert("Error", err.message));
+          }}>
+            <Ionicons name="checkmark" size={18} color="#fff" />
+            <Text style={styles.btnText}>Approve</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.dangerBtn} onPress={() => {
+              handleReject(item?.id).catch(err => Alert.alert("Error", err.message));
+          }}>
+            <Ionicons name="close" size={18} color={COLORS.danger} />
+            <Text style={styles.btnTextDanger}>Reject</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <Text style={styles.cardMeta}>📍 {item.locationId ? "Location Set" : "No Location"}</Text>
-      <Text style={styles.cardMeta} numberOfLines={2}>📝 {item.description}</Text>
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => {
-            handleApprove(item.id).catch(err => Alert.alert("Error", err.message));
-        }}>
-          <Ionicons name="checkmark" size={18} color="#fff" />
-          <Text style={styles.btnText}>Approve</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.dangerBtn} onPress={() => {
-            handleReject(item.id).catch(err => Alert.alert("Error", err.message));
-        }}>
-          <Ionicons name="close" size={18} color={COLORS.danger} />
-          <Text style={styles.btnTextDanger}>Reject</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
-  const renderUserCard = ({ item }: { item: any }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{item.fullName}</Text>
-        <Text style={[styles.tag, styles.tagSuccess]}>{item.role}</Text>
+  const renderUserCard = ({ item }: { item: any }) => {
+    console.log("[ADMIN DEBUG] Rendering User Card:", item?.id, item?.email);
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{item?.fullName || item?.username || "Unknown"}</Text>
+          <Text style={[styles.tag, styles.tagSuccess]}>{item?.role || "USER"}</Text>
+        </View>
+        <Text style={styles.cardMeta}>📧 {item?.email || "No email"}</Text>
+        <Text style={styles.cardMeta}>🗺️ Style: {item?.travelStyle || "None"}</Text>
       </View>
-      <Text style={styles.cardMeta}>📧 {item.email}</Text>
-      <Text style={styles.cardMeta}>🗺️ Style: {item.travelStyle || "None"}</Text>
-    </View>
-  );
+    );
+  };
 
-  const renderReportCard = ({ item }: { item: any }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>Report: {item.reportedType}</Text>
-        <Text style={[styles.tag, styles.tagPending]}>{item.status}</Text>
+  const renderReportCard = ({ item }: { item: any }) => {
+    console.log("[ADMIN DEBUG] Rendering Report Card:", item?.id, item?.reportedType);
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Report: {item?.reportedType || "N/A"}</Text>
+          <Text style={[styles.tag, styles.tagPending]}>{item?.status || "PENDING"}</Text>
+        </View>
+        <Text style={styles.cardMeta}>⚠️ Reason: {item?.reason || "No reason given"}</Text>
+        <Text style={styles.cardMeta}>👤 Reporter: {item?.reporterName || "Anonymous"}</Text>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.secondaryBtn} onPress={() => {
+              handleResolveReport(item?.id, "RESOLVED").catch(err => Alert.alert("Error", err.message));
+          }}>
+            <Text style={styles.btnTextOutline}>Resolve</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.dangerBtn} onPress={() => {
+              handleResolveReport(item?.id, "DISMISSED").catch(err => Alert.alert("Error", err.message));
+          }}>
+            <Text style={styles.btnTextDanger}>Dismiss</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <Text style={styles.cardMeta}>⚠️ Reason: {item.reason}</Text>
-      <Text style={styles.cardMeta}>👤 Reporter: {item.reporterName}</Text>
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.secondaryBtn} onPress={() => {
-            handleResolveReport(item.id, "RESOLVED").catch(err => Alert.alert("Error", err.message));
-        }}>
-          <Text style={styles.btnTextOutline}>Resolve</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.dangerBtn} onPress={() => {
-            handleResolveReport(item.id, "DISMISSED").catch(err => Alert.alert("Error", err.message));
-        }}>
-          <Text style={styles.btnTextDanger}>Dismiss</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

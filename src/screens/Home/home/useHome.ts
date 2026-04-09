@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useContext } from "react";
 import { discoveryService } from "../../../services/discovery.service";
 import { eventService } from "../../../services/event.service";
 import { debugService } from "../../../services/debug.service";
-import { EventDTO } from "../../../dto/event/event.DTO";
+import { EventResponse } from "../../../dto/event/event.DTO";
 import * as Location from "expo-location";
 import { AiRecommendationDTO } from "../../../dto/ai/ai.DTO";
 import { AuthContext } from "../../../context/AuthContext";
@@ -10,7 +10,7 @@ import { AuthContext } from "../../../context/AuthContext";
 export function useHome(navigation: any) {
   const { user } = useContext(AuthContext);
   const [featuredPlaces, setFeaturedPlaces] = useState<AiRecommendationDTO[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<EventDTO[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // State mới để báo cáo tiến trình
@@ -63,17 +63,19 @@ export function useHome(navigation: any) {
 
       setFeaturedPlaces(places ?? []);
 
-      if (places?.length > 0) {
-        setLoadingStep("📅 Loading nearby events...");
-        try {
-          // Lấy locationId từ phần tử đầu tiên của mảng AI trả về
-          const eventRes = await eventService.getEventsByLocation(
-            places[0].locationId,
-          );
-          setUpcomingEvents(eventRes.events ?? []);
-        } catch {
-            setUpcomingEvents([]);
-        }
+      setLoadingStep("📅 Loading nearby events...");
+      try {
+        const eventRes = await eventService.getEvents({
+          lat: latitude,
+          lng: longitude,
+          radius: 50, // 50km radius for Home screen
+        });
+        const events = eventRes.content ?? [];
+        setUpcomingEvents(events);
+        console.log(`[Home] Fetched ${events.length} nearby events (up to 50km)`);
+      } catch (err) {
+        console.error("[Home] Fetch events error:", err);
+        setUpcomingEvents([]);
       }
     } catch (error) {
       console.error("Load data error:", error);
@@ -97,8 +99,8 @@ export function useHome(navigation: any) {
     navigateToEventList: () => navigation.navigate("Events"),
     navigateToPlaceDetail: (placeId: number) =>
       navigation.navigate("PlaceDetail", { placeId }),
-    navigateToEventDetail: (eventId: number) =>
-      navigation.navigate("EventDetail", { eventId }),
+    navigateToEventDetail: (event: EventResponse) =>
+      navigation.navigate("EventDetail", { event, eventId: event.id }),
     navigateToItinerary: () => navigation.navigate("Itinerary"),
     navigateToAdmin: () => navigation.navigate("AdminDashboard"),
   };

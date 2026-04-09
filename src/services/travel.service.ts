@@ -39,10 +39,12 @@ export async function getNearbyLocations(
 
   try {
     const res = await apiRequest.getNearbyLocations(resolvedLat, resolvedLng);
-    const locations = res.data.data.content;
+    const locations = res?.data?.data?.content || [];
 
-    // Lưu cache offline (ép kiểu nếu cần vì OfflineLocation có thể khác nhẹ)
-    await saveOffline(locations as unknown as OfflineLocation[]);
+    // Lưu cache offline
+    if (locations.length > 0) {
+      await saveOffline(locations as unknown as OfflineLocation[]);
+    }
 
     return { data: locations, source: "online" };
   } catch (e) {
@@ -68,7 +70,7 @@ export const travelService = {
   getItineraries: async (): Promise<ItineraryDTO[]> => {
     try {
       const res = await apiRequest.getItineraries();
-      return res.data.data;
+      return res?.data?.data || [];
     } catch (e) {
       console.error("getItineraries error:", e);
       return [];
@@ -79,40 +81,56 @@ export const travelService = {
   getItineraryById: async (id: number): Promise<ItineraryDTO | null> => {
     try {
       const res = await apiRequest.getItineraryById(id);
-      return res.data.data;
+      return res?.data?.data || null;
     } catch (e) {
       console.error("getItineraryById error:", e);
       return null;
     }
   },
 
-  // 🔹 Tạo mới lịch trình
   createItinerary: async (
     req: CreateItineraryRequest
-  ): Promise<ItineraryDTO> => {
-    const res = await apiRequest.createItinerary(req);
-    return res.data.data;
+  ): Promise<ItineraryDTO | null> => {
+    try {
+      const res = await apiRequest.createItinerary(req);
+      return res?.data?.data || null;
+    } catch (e) {
+      console.error("createItinerary error:", e);
+      return null;
+    }
   },
 
-  // 🔹 Thêm địa điểm vào lịch trình
   addItineraryItem: async (
     itineraryId: number,
     req: AddPlanItemRequest
   ): Promise<void> => {
-    await apiRequest.addItineraryItem(itineraryId, req);
+    try {
+      await apiRequest.addItineraryItem(itineraryId, req);
+    } catch (e) {
+      console.error("addItineraryItem error:", e);
+      throw e; // Rethrow to let UI handle the alert
+    }
   },
 
-  // 🔹 Xóa địa điểm khỏi lịch trình
   deleteItineraryItem: async (
     itineraryId: number,
     itemId: number
   ): Promise<void> => {
-    await apiRequest.deleteItineraryItem(itineraryId, itemId);
+    try {
+      await apiRequest.deleteItineraryItem(itineraryId, itemId);
+    } catch (e) {
+      console.error("deleteItineraryItem error:", e);
+      throw e;
+    }
   },
 
-  // 🔹 Chia sẻ lịch trình
-  shareItinerary: async (id: number): Promise<string> => {
-    const res = await apiRequest.shareItinerary(id);
-    return res.data.data;
+  shareItinerary: async (id: number): Promise<string | null> => {
+    try {
+      const res = await apiRequest.shareItinerary(id);
+      return res?.data?.data || null;
+    } catch (e) {
+      console.error("shareItinerary error:", e);
+      return null;
+    }
   },
 };

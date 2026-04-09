@@ -18,10 +18,10 @@ import { Alert } from "react-native";
 import { discoveryService } from "../../../services/discovery.service";
 import { eventService } from "../../../services/event.service";
 import { PlaceDTO } from "../../../dto/discovery/place.DTO";
-import { EventDTO } from "../../../dto/event/event.DTO";
+import { EventResponse, EventFilterParams, EventCreateRequest } from "../../../dto/event/event.DTO";
 
 export type LocationWithEvents = PlaceDTO & {
-  events: EventDTO[];
+  events: EventResponse[];
   eventsLoaded: boolean;
 };
 
@@ -83,11 +83,14 @@ export function useEventList(navigation: any) {
 
       results.forEach((r, idx) => {
         if (r.status === "fulfilled") {
-          updated[reset ? idx : prev.length - items.length + idx] = {
-            ...updated[reset ? idx : prev.length - items.length + idx],
-            events: r.value.events,
-            eventsLoaded: true,
-          };
+          const targetIndex = reset ? idx : prev.length - items.length + idx;
+          if (updated[targetIndex]) {
+            updated[targetIndex] = {
+              ...updated[targetIndex],
+              events: r.value?.content || [],
+              eventsLoaded: true,
+            };
+          }
         }
       });
       return [...updated];
@@ -103,7 +106,7 @@ export function useEventList(navigation: any) {
     navigation.navigate("PlaceDetail", { placeId, initialTab: "events" });
 
   // Navigate to EventDetail (pass event object — BE không có GET /events/{id})
-  const navigateToEventDetail = (event: EventDTO) =>
+  const navigateToEventDetail = (event: EventResponse) =>
     navigation.navigate("EventDetail", { event });
 
   return {
