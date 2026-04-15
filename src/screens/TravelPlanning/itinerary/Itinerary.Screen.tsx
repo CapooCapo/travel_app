@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View, Text, FlatList, TouchableOpacity,
   ActivityIndicator, RefreshControl, StatusBar,
@@ -16,6 +17,12 @@ const ItineraryScreen = ({ navigation }: any) => {
     itineraries, isLoading,
     handleShare, navigateToDetail, navigateToCreate, loadItineraries,
   } = useItinerary(navigation);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadItineraries();
+    }, [])
+  );
 
   const renderCard = ({ item }: { item: ItineraryDTO }) => {
     const totalItems = (item.days || []).reduce((sum, d) => sum + d.items.length, 0);

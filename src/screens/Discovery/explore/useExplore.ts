@@ -18,11 +18,21 @@ export function useExplore(navigation: any) {
   
   const [isLoading,         setIsLoading]        = useState(false);
   const [keyword,           setKeyword]          = useState("");
-  const [selectedCategory,  setSelectedCategory] = useState("");
+  const [debouncedKeyword,  setDebouncedKeyword] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedRadius,    setSelectedRadius]   = useState<number | null>(null);
   const [page,              setPage]             = useState(0);
   const [totalPages,        setTotalPages]       = useState(1);
   const [recentSearches,    setRecentSearches]   = useState<string[]>([]);
   const [isBookmarksMode,   setIsBookmarksMode]  = useState(false);
+
+  // 300ms Debounce for keyword
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedKeyword(keyword);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keyword]);
 
   // Derived state for the UI
   const places = isBookmarksMode ? savedPlaces : explorePlaces;
@@ -33,51 +43,49 @@ export function useExplore(navigation: any) {
     setRecentSearches(searches);
   };
 
-  // Automatically fetch data when mode or filters change
+  // Automatically fetch data when filters or debounced keyword changes
   useEffect(() => {
-    fetchPlaces(true);
-  }, [isBookmarksMode, keyword, selectedCategory]);
+    if (!isBookmarksMode) {
+      fetchPlaces(true);
+    }
+  }, [debouncedKeyword, selectedCategories, selectedRadius, isBookmarksMode]);
 
   const fetchPlaces = useCallback(
     async (reset = false) => {
-      // If we are already loading and it's NOT a reset (mode change/filter change), skip
       if (isLoading && !reset) return;
       
       setIsLoading(true);
-
       const currentPage = reset ? 0 : page;
 
       try {
         if (isBookmarksMode) {
-          // ─── SAVED PLACES MODE ───
-          console.log("[useExplore] Fetching Bookmarks...");
           const bookmarkedPlaces = await discoveryService.getBookmarks();
-          console.log("SavedPlaces:", bookmarkedPlaces); // Debug log as requested
-          
           setSavedPlaces(bookmarkedPlaces);
           setTotalPages(1);
           setPage(1);
         } else {
-          // ─── EXPLORE MODE (Proximity Filtering) ───
-          let res;
-          
+          let lat: number | undefined;
+          let lng: number | undefined;
+
+          // Only request location if radius is active OR we want nearby default
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status === "granted") {
-            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-            const { latitude, longitude } = loc.coords;
-
-            console.log(`[useExplore] Fetching Nearby (Explore): ${latitude}, ${longitude}`);
-            const nearbyRes = await discoveryService.getNearby(latitude, longitude); 
-            res = { places: nearbyRes, totalPages: 1 };
-          } else {
-            console.warn("[useExplore] Location denied. Falling back to global search.");
-            res = await discoveryService.getLocations({
-              keyword: keyword.trim() || undefined,
-              category: selectedCategory || undefined,
-              page: currentPage,
-              size: PAGE_SIZE,
+            const loc = await Location.getCurrentPositionAsync({ 
+                accuracy: Location.Accuracy.Balanced 
             });
+            lat = loc.coords.latitude;
+            lng = loc.coords.longitude;
           }
+
+          const res = await discoveryService.getLocations({
+            keyword: debouncedKeyword.trim() || undefined,
+            categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+            lat,
+            lng,
+            radius: selectedRadius || undefined,
+            page: currentPage,
+            size: PAGE_SIZE,
+          });
 
           const newPlaces = res.places ?? [];
           setExplorePlaces(reset ? newPlaces : (prev) => [...prev, ...newPlaces]);
@@ -86,7 +94,6 @@ export function useExplore(navigation: any) {
         }
       } catch (e: any) {
         console.error("[useExplore] Fetch error:", e);
-        // Avoid alerting on rapid switching errors if they are just cancelled requests
         if (e?.message !== "Canceled") {
             Alert.alert("Error", e?.message || "Failed to load places");
         }
@@ -94,19 +101,12 @@ export function useExplore(navigation: any) {
         setIsLoading(false);
       }
     },
-    [keyword, selectedCategory, isBookmarksMode, page, isLoading]
+    [debouncedKeyword, selectedCategories, selectedRadius, isBookmarksMode, page, isLoading]
   );
 
   const handleSearch = async () => {
     if (keyword.trim()) {
       await offlineStorage.saveRecentSearch(keyword.trim());
-    }
-    setPage(0);
-    // Clear only the active mode's state
-    if (isBookmarksMode) {
-      setSavedPlaces([]);
-    } else {
-      setExplorePlaces([]);
     }
     fetchPlaces(true);
   };
@@ -119,12 +119,14 @@ export function useExplore(navigation: any) {
     navigation.navigate("PlaceDetail", { placeId });
 
   return {
-    places, // Computed result for UI
+    places,
     isLoading,
     keyword,
     setKeyword,
-    selectedCategory,
-    setSelectedCategory,
+    selectedCategories,
+    setSelectedCategories,
+    selectedRadius,
+    setSelectedRadius,
     recentSearches,
     hasMore,
     isBookmarksMode,

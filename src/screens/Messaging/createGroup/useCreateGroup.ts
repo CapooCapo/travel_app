@@ -16,7 +16,7 @@ export function useCreateGroup(navigation: any) {
     if (searchKeyword.trim().length > 1) {
       const delayDebounceFn = setTimeout(() => {
         handleSearch(searchKeyword);
-      }, 500);
+      }, 300);
       return () => clearTimeout(delayDebounceFn);
     } else {
       setSearchResults([]);
@@ -27,7 +27,7 @@ export function useCreateGroup(navigation: any) {
     setIsSearching(true);
     try {
       const res = await socialService.searchUsers(query, 20, 0);
-      setSearchResults(res.data || []);
+      setSearchResults(res || []);
     } catch (e) {
       setSearchResults([]);
     } finally {

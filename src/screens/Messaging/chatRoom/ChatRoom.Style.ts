@@ -81,5 +81,50 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
+  locationCard: {
+    width: width * 0.6,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  locationImage: {
+    width: '100%',
+    height: 120,
+    backgroundColor: COLORS.surface,
+  },
+  locationInfo: {
+    padding: 10,
+  },
+  locationName: {
+    ...FONTS.body1,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  locationAddress: {
+    ...FONTS.body2,
+    color: COLORS.muted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
+  
+  systemMessageContainer: {
+    alignSelf: 'center',
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  systemMessageText: {
+    ...FONTS.body2,
+    color: COLORS.muted,
+    fontSize: 12,
+    textAlign: 'center',
+  },
 });

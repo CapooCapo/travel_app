@@ -1,4 +1,5 @@
 import { apiRequest } from "../api/client";
+import { unwrapResponse } from "../utils/responseHandler";
 import {
   PlaceDTO,
   mapLocation,
@@ -17,21 +18,21 @@ export const discoveryService = {
     params: LocationListRequest,
   ): Promise<{ places: PlaceDTO[]; totalPages: number }> {
     try {
-      const page = await apiRequest.getLocations(params);
+      const page = unwrapResponse(await apiRequest.getLocations(params));
       const places = (page?.content ?? []).map((a: LocationResponse) => mapLocation(a));
       return { places, totalPages: page?.totalPages ?? 0 };
     } catch (e) {
-      console.error("getLocations error:", e);
+      console.error("[DiscoveryService] getLocations error:", e);
       return { places: [], totalPages: 0 };
     }
   },
 
   async getPopular(page = 0, size = 10): Promise<PlaceDTO[]> {
     try {
-      const data = await apiRequest.getPopularLocations(page, size);
+      const data = unwrapResponse(await apiRequest.getPopularLocations(page, size));
       return (data?.content ?? []).map((a: LocationResponse) => mapLocation(a));
     } catch (e) {
-      console.error("getPopular error:", e);
+      console.error("[DiscoveryService] getPopular error:", e);
       return [];
     }
   },
@@ -45,27 +46,28 @@ export const discoveryService = {
 
       if (attrRes.status === "rejected") return null;
 
-      const location = attrRes.value;
+      const location = unwrapResponse(attrRes.value);
       if (!location) return null;
 
-      const images =
-        imgRes.status === "fulfilled"
-          ? (imgRes.value ?? []).map((i: any) => i.imageUrl)
-          : [];
+      let images: string[] = [];
+      if (imgRes.status === "fulfilled") {
+        const iData = unwrapResponse(imgRes.value);
+        images = (iData ?? []).map((i: any) => i.imageUrl);
+      }
 
       return mapLocation(location, images);
     } catch (e) {
-      console.error("getLocationById error:", e);
+      console.error("[DiscoveryService] getLocationById error:", e);
       return null;
     }
   },
 
-  getNearby: async (lat: number, lng: number) => {
+  async getNearby(lat: number, lng: number): Promise<PlaceDTO[]> {
     try {
-      const data = await apiRequest.getNearbyLocations(lat, lng);
-      return data?.content || [];
+      const data = unwrapResponse(await apiRequest.getNearbyLocations(lat, lng));
+      return (data?.content || []).map((a: any) => mapLocation(a));
     } catch (error) {
-      console.error("Discovery Service Error:", error);
+      console.error("[DiscoveryService] getNearby error:", error);
       return [];
     }
   },
@@ -73,54 +75,49 @@ export const discoveryService = {
   /** GET /api/location-images/{id}/images */
   async getImages(locationId: number): Promise<string[]> {
     try {
-      const images = await apiRequest.getLocationImages(locationId);
-      return (images ?? []).map((i) => i.imageUrl);
+      const images = unwrapResponse(await apiRequest.getLocationImages(locationId));
+      return (images ?? []).map((i: any) => i.imageUrl);
     } catch (e) {
-      console.error("getImages error:", e);
+      console.error("[DiscoveryService] getImages error:", e);
       return [];
     }
   },
 
   // ─── Bookmarks ──────────────────────────────────────────────────────────
 
-  /** POST /api/bookmarks/{locationId} */
   async addBookmark(locationId: number): Promise<void> {
-    await apiRequest.addBookmark(locationId);
+    const res = await apiRequest.addBookmark(locationId);
+    unwrapResponse(res);
   },
 
-  /** DELETE /api/bookmarks/{locationId} */
   async removeBookmark(locationId: number): Promise<void> {
-    await apiRequest.removeBookmark(locationId);
+    const res = await apiRequest.removeBookmark(locationId);
+    unwrapResponse(res);
   },
 
-  /** GET /api/bookmarks */
   async getBookmarks(): Promise<PlaceDTO[]> {
     try {
-      const list = await apiRequest.getBookmarks();
+      const list = unwrapResponse(await apiRequest.getBookmarks());
       return (list ?? []).map((a: LocationResponse) => mapLocation(a));
     } catch (e) {
-      console.error("getBookmarks error:", e);
+      console.error("[DiscoveryService] getBookmarks error:", e);
       return [];
     }
   },
 
-  /** Toggle helper — gọi add hoặc remove tuỳ trạng thái */
   async toggleBookmark(
     locationId: number,
     currentlyBookmarked: boolean,
   ): Promise<boolean> {
     if (currentlyBookmarked) {
-      await apiRequest.removeBookmark(locationId);
+      await this.removeBookmark(locationId);
       return false;
     } else {
-      await apiRequest.addBookmark(locationId);
+      await this.addBookmark(locationId);
       return true;
     }
   },
-  /** 
-   * POST /api/locations/ai-recommend
-   * Handles AI-based recommendations with offline caching and image enrichment.
-   */
+
   async getAiRecommendations(lat: number, lng: number, userId: number): Promise<AiRecommendationDTO[]> {
     const netInfo = await NetInfo.fetch();
 
@@ -130,26 +127,27 @@ export const discoveryService = {
 
     try {
       await AsyncStorage.removeItem(CACHE_KEY);
-      const data: AiRecommendationDTO[] = await apiRequest.getAiRecommendations(lat, lng, userId) || [];
+      const data = unwrapResponse(await apiRequest.getAiRecommendations(lat, lng, userId));
       
-      if (data.length === 0) return [];
+      const recommendations: AiRecommendationDTO[] = data || [];
+      if (recommendations.length === 0) return [];
 
-      const enriched = await this.enrichWithImages(data);
+      const enriched = await this.enrichWithImages(recommendations);
       await this.saveToCache(enriched);
       return enriched;
 
     } catch (error) {
+      console.error("[DiscoveryService] getAiRecommendations error:", error);
       return this.getCachedRecommendations();
     }
   },
 
-  /** Helper to fetch images for recommendation items in parallel */
   async enrichWithImages(data: AiRecommendationDTO[]): Promise<AiRecommendationDTO[]> {
     return Promise.all(
       data.map(async (item) => {
         try {
-          const imageList = await apiRequest.getLocationImages(item.locationId) || [];
-          const imageUrls = imageList
+          const imageList = unwrapResponse(await apiRequest.getLocationImages(item.locationId));
+          const imageUrls = (imageList || [])
             .map((i: any) => i.imageUrl ?? i.url ?? i.image ?? null)
             .filter(Boolean) as string[];
           
@@ -174,10 +172,10 @@ export const discoveryService = {
 
   async searchLocations(keyword: string): Promise<PlaceDTO[]> {
     try {
-      const page = await apiRequest.searchLocations(keyword);
+      const page = unwrapResponse(await apiRequest.searchLocations(keyword));
       return (page?.content ?? []).map((a: LocationResponse) => mapLocation(a));
     } catch (e) {
-      console.error("searchLocations error:", e);
+      console.error("[DiscoveryService] searchLocations error:", e);
       return [];
     }
   },

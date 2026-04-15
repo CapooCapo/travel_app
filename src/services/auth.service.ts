@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { IAuthService } from './interfaces/IAuthService';
 import { apiRequest } from '../api/apiClient';
+import { unwrapResponse } from '../utils/responseHandler';
 
 /**
  * Ensures the browser session is properly handled for OAuth
@@ -85,7 +86,8 @@ export const useAuthService = (): IAuthService => {
    */
   const syncUserWithBackend = useCallback(async () => {
     try {
-      await apiRequest.syncUser();
+      const res = await apiRequest.syncUser();
+      unwrapResponse(res);
     } catch (error) {
       console.error('[AuthService] Backend Sync Error:', error);
       throw error;

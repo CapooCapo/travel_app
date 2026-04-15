@@ -9,8 +9,10 @@ import { styles } from "./PlaceDetail.Style";
 import { usePlaceDetail } from "./usePlaceDetail";
 import { COLORS, SIZES, FONTS } from "../../../constants/theme";
 import { ReviewDTO } from "../../../dto/review/review.DTO";
-import { EventDTO } from "../../../dto/event/event.DTO";
+import { EventResponse } from "../../../dto/event/event.DTO";
 import AddToItineraryModal from "../../../components/AddToItineraryModal";
+import SelectChatModal from "../../../components/SelectChatModal";
+import { shareService } from "../../../services/share.service";
 
 const TABS = ["info", "reviews", "events"] as const;
 
@@ -18,6 +20,8 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
   const { placeId } = route.params;
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = React.useState(false);
+  const [shareModalVisible, setShareModalVisible] = React.useState(false);
+
   const {
     place, reviews, events, isLoading,
     isBookmarked, activeTab, setActiveTab,
@@ -37,6 +41,30 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
   const openDirections = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`;
     Linking.openURL(url);
+  };
+
+  const handleInternalShare = async (chatId: number) => {
+    if (!place) return;
+    const success = await shareService.shareToChat(chatId, {
+      id: place.id,
+      name: place.name,
+      type: 'place',
+      imageUrl: place.imageUrls?.[0],
+      latitude: place.latitude,
+      longitude: place.longitude,
+      address: place.address
+    });
+    if (success) setShareModalVisible(false);
+  };
+
+  const handleExternalShare = () => {
+    if (!place) return;
+    shareService.shareExternal({
+      id: place.id,
+      name: place.name,
+      type: 'place',
+      description: place.description
+    });
   };
 
   const renderStars = (rating: number) => (
@@ -73,7 +101,7 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
     </View>
   );
 
-  const renderEvent = (item: EventDTO) => (
+  const renderEvent = (item: EventResponse) => (
     <TouchableOpacity
       key={item.id}
       onPress={() => navigateToEventDetail(item)}
@@ -101,12 +129,12 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
         <Text style={{ color: COLORS.text, fontWeight: "700", marginBottom: 2 }}
           numberOfLines={1}>{item.title}</Text>
         <Text style={{ color: COLORS.muted, fontSize: 12 }}>
-          {new Date(item.startDate).toLocaleDateString()} ·{" "}
+          {new Date(item.startTime).toLocaleDateString()} ·{" "}
           <Text style={{
-            color: item.status === "incoming" ? COLORS.primary :
-              item.status === "ongoing" ? "#00c864" : COLORS.muted,
+            color: item.status === "INCOMING" ? COLORS.primary :
+              item.status === "ONGOING" ? "#00c864" : COLORS.muted,
             fontWeight: "600", textTransform: "capitalize",
-          }}>{item.status}</Text>
+          }}>{item.status.toLowerCase()}</Text>
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
@@ -225,13 +253,16 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
       {/* Floating Action Footer */}
       <View style={{
         padding: SIZES.padding,
-        paddingBottom: Math.max(insets.bottom, SIZES.padding),
+        paddingBottom: Math.max(insets.bottom, 12),
         backgroundColor: COLORS.card,
         borderTopWidth: 1,
         borderColor: COLORS.border,
+        flexDirection: "row",
+        gap: 10,
       }}>
         <TouchableOpacity
           style={{
+            flex: 1,
             backgroundColor: COLORS.primary,
             borderRadius: 12,
             height: 50,
@@ -244,8 +275,40 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
         >
           <Ionicons name="calendar-outline" size={20} color="#fff" />
           <Text style={{ ...FONTS.body1, color: "#fff", fontWeight: "700" }}>
-            Add to Itinerary
+            Add Plans
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 12,
+            backgroundColor: COLORS.surface,
+            borderWidth: 1,
+            borderColor: COLORS.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onPress={() => setShareModalVisible(true)}
+        >
+          <Ionicons name="chatbubble-outline" size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 12,
+            backgroundColor: COLORS.surface,
+            borderWidth: 1,
+            borderColor: COLORS.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onPress={handleExternalShare}
+        >
+          <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
@@ -258,6 +321,12 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
           setModalVisible(false);
           // Optional: Show toast or alert
         }}
+      />
+
+      <SelectChatModal
+        visible={shareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+        onSelectChat={handleInternalShare}
       />
     </View>
   );

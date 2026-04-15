@@ -9,6 +9,7 @@ import { styles } from "./ChatRoom.Style";
 import { useChatRoom } from "./useChatRoom";
 import { COLORS } from "../../../constants/theme";
 import { MessageDTO } from "../../../dto/messaging/message.DTO";
+import LocationMessage from "./components/LocationMessage";
 
 // Hard-coded placeholder for current user id — replace with Clerk user id in real app
 const MY_USER_ID = 1;
@@ -18,8 +19,8 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const {
     messages, isLoading, inputText, setInputText,
-    isSending, pinnedMessage, listRef,
-    handleSend, handlePinMessage, goBack,
+    isSending, pinnedMessage, listRef, userId,
+    handleSend, handleSendLocation, handlePinMessage, goBack,
   } = useChatRoom(navigation, chatRoomId);
 
   const renderMessageContent = (item: MessageDTO, isMe: boolean) => {
@@ -37,6 +38,11 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
         />
       );
     }
+
+    if (item.type === "LOCATION") {
+      return <LocationMessage message={item} isMe={isMe} />;
+    }
+
     return (
       <Text style={isMe ? styles.bubbleOutText : styles.bubbleInText}>
         {item.content}
@@ -45,7 +51,15 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
   };
 
   const renderMessage = ({ item }: { item: MessageDTO }) => {
-    const isMe = item.senderId === MY_USER_ID;
+    if (item.type === "SYSTEM") {
+      return (
+        <View style={styles.systemMessageContainer}>
+          <Text style={styles.systemMessageText}>{item.content}</Text>
+        </View>
+      );
+    }
+
+    const isMe = item.senderId === userId;
 
     if (isMe) {
       return (
@@ -74,7 +88,9 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
           delayLongPress={600}
           activeOpacity={0.9}
         >
-          <Text style={styles.bubbleSenderName}>{item.senderName || "User"}</Text>
+          {chatType === "GROUP" && (
+            <Text style={styles.bubbleSenderName}>{item.senderName || "User"}</Text>
+          )}
           <View style={styles.bubbleIn}>
             {renderMessageContent(item, false)}
             <Text style={styles.bubbleInTime}>
@@ -151,6 +167,15 @@ const ChatRoomScreen = ({ navigation, route }: any) => {
             returnKeyType="default"
           />
         </View>
+        
+        <TouchableOpacity
+          style={[styles.sendBtn, { marginRight: 4, backgroundColor: 'transparent' }]}
+          onPress={handleSendLocation}
+          disabled={isSending}
+        >
+          <Ionicons name="location" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[
             styles.sendBtn,

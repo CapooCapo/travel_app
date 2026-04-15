@@ -45,13 +45,15 @@ export type PlaceDTO = {
 
 // ─── Request / Response wrappers ─────────────────────────────────────────────
 
-export type LocationListRequest = {
+export interface LocationListRequest {
   keyword?: string;
-  category?: string;
-  rating?: number;
+  categories?: string[];
+  lat?: number;
+  lng?: number;
+  radius?: number;
   page?: number;
-  size?: number;             // BE dùng "size", không phải "limit"
-};
+  size?: number;
+}
 
 /** Dùng tên cũ để không phải đổi tất cả service calls */
 export type PlaceListRequest = LocationListRequest;

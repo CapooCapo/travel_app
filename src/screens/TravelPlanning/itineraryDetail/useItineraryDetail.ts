@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Alert } from "react-native";
+import { Alert, Share } from "react-native";
 import { travelService } from "../../../services/travel.service";
 import { ItineraryDTO, DayPlanDTO, DayPlanItemDTO } from "../../../dto/travel/travel.DTO";
 
@@ -53,6 +53,37 @@ export function useItineraryDetail(navigation: any, itineraryId: number) {
     ]);
   };
 
+  const deleteItinerary = async () => {
+    Alert.alert("Delete Itinerary", "Are you sure you want to delete this full itinerary?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive", onPress: async () => {
+          try {
+            await travelService.deleteItinerary(itineraryId);
+            navigation.goBack();
+          } catch {
+            Alert.alert("Error", "Could not delete itinerary");
+          }
+        }
+      }
+    ]);
+  };
+
+  const handleShare = async () => {
+    if (!itinerary) return;
+    try {
+      const shareUrl = await travelService.shareItinerary(itineraryId);
+      await Share.share({
+        message: `Check out my itinerary: ${itinerary.title}\n${shareUrl}`,
+        url: shareUrl, // iOS only
+        title: itinerary.title
+      });
+    } catch (error) {
+      console.error("[useItineraryDetail] Share Error:", error);
+      Alert.alert("Error", "Could not share itinerary");
+    }
+  };
+
   const moveItem = (dayIndex: number, itemIndex: number, direction: "up" | "down") => {
     if (!itinerary) return;
     
@@ -93,6 +124,8 @@ export function useItineraryDetail(navigation: any, itineraryId: number) {
     isLoading,
     loadItinerary,
     removeItem,
+    deleteItinerary,
+    handleShare,
     moveItem,
     goBack,
     handleAddNewStop

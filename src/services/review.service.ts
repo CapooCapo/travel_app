@@ -13,10 +13,17 @@ export const reviewService = {
     reviews: ReviewDTO[];
     totalPages: number;
   }> {
-    const res = await apiRequest.getReviews(locationId, page, size);
-    const pageData = res.data?.data;
-    const reviews = (pageData?.content ?? []).map(mapReview);
-    return { reviews, totalPages: pageData?.totalPages ?? 0 };
+    try {
+      const res = await apiRequest.getReviews(locationId, page, size);
+      if (res.status !== "success" && res.status !== 200) throw new Error(res.message);
+      
+      const pageData = res.data;
+      const reviews = (pageData?.content ?? []).map(mapReview);
+      return { reviews, totalPages: pageData?.totalPages ?? 0 };
+    } catch (e) {
+      console.error("reviewService.getReviews error:", e);
+      return { reviews: [], totalPages: 0 };
+    }
   },
 
   /** POST /api/locations/{locationId}/reviews */
@@ -28,6 +35,7 @@ export const reviewService = {
   ): Promise<void> {
     if (!content.trim()) throw new Error("Review content is required");
     if (rating < 1 || rating > 5) throw new Error("Rating must be between 1 and 5");
-    await apiRequest.createReview(locationId, rating, content.trim(), imageUrl);
+    const res = await apiRequest.createReview(locationId, rating, content.trim(), imageUrl);
+    if (res.status !== "success" && res.status !== 200) throw new Error(res.message);
   },
 };

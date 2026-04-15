@@ -4,6 +4,8 @@ import { messagingService } from "../../../services/messaging.service";
 import { MessageDTO } from "../../../dto/messaging/message.DTO";
 import { Client } from "@stomp/stompjs";
 import { useAuth } from "@clerk/clerk-expo";
+import * as Location from 'expo-location';
+import { Alert } from "react-native";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
 const WS_URL = BASE_URL.replace(/^http/, "ws") + "/ws";
@@ -14,12 +16,22 @@ export function useChatRoom(navigation: any, chatRoomId: number) {
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [pinnedMessage, setPinnedMessage] = useState<MessageDTO | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const listRef = useRef<FlatList>(null);
   const [stompClient, setStompClient] = useState<Client | null>(null);
   
   const { getToken } = useAuth();
 
   useEffect(() => {
+    const init = async () => {
+      try {
+        const me = await messagingService.getMe(); // Custom method to get own ID
+        if (me?.id) setUserId(me.id);
+      } catch (e) {
+        console.warn("Could not get own userId for chat:", e);
+      }
+    };
+    init();
     loadMessages();
     loadChat();
 
@@ -138,10 +150,62 @@ export function useChatRoom(navigation: any, chatRoomId: number) {
     }
   };
 
+  const handleSendLocation = async () => {
+    if (isSending) return;
+    
+    setIsSending(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to share your location.');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      // Reverse geocode to get address
+      let addressStr = "Shared Location";
+      try {
+        let rev = await Location.reverseGeocodeAsync({ latitude, longitude });
+        if (rev && rev.length > 0) {
+          const first = rev[0];
+          addressStr = [first.name, first.street, first.city].filter(Boolean).join(", ");
+        }
+      } catch (e) {
+        console.warn("Reverse geocode failed:", e);
+      }
+
+      const sent = await messagingService.sendMessage({
+        chatRoomId: chatRoomId,
+        content: "Shared a location",
+        type: "LOCATION",
+        latitude,
+        longitude,
+        placeName: addressStr
+      });
+
+      if (sent) {
+        setMessages((prev) => {
+          if (prev.some(m => m.id === sent.id)) return prev;
+          return [...prev, sent];
+        });
+        setTimeout(() => {
+          listRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Failed to send location:", error);
+      Alert.alert('Error', 'Failed to share location. Please try again.');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return {
     messages, isLoading, inputText, setInputText,
     isSending, pinnedMessage, listRef,
-    handleSend, handlePinMessage,
+    handleSend, handleSendLocation, handlePinMessage, userId,
     goBack: () => navigation.goBack(),
   };
 }

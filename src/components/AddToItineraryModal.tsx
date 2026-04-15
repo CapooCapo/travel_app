@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
 import {
   Modal, View, Text, TouchableOpacity,
-  ActivityIndicator, FlatList, TextInput, Alert, StyleSheet
+  ActivityIndicator, FlatList, TextInput, Alert, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SIZES, FONTS } from "../constants/theme";
 import { travelService } from "../services/travel.service";
+import { itineraryService } from "../services/itinerary.service";
 import { ItineraryDTO } from "../dto/travel/travel.DTO";
+import CalendarRangePicker from "./Common/CalendarRangePicker";
 
 export type ItemToAdd = {
   id: number;
@@ -31,15 +35,19 @@ export default function AddToItineraryModal({
 
   // Selection state
   const [selectedItinId, setSelectedItinId] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [startTime, setStartTime] = useState<string>(""); // e.g., "09:00"
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [tempTime, setTempTime] = useState(new Date());
 
   useEffect(() => {
     if (visible) {
       loadItineraries();
       // Reset state
       setSelectedItinId(null);
-      setSelectedDate("");
+      setStartDate("");
+      setEndDate("");
       setStartTime("");
     }
   }, [visible]);
@@ -68,24 +76,34 @@ export default function AddToItineraryModal({
     return dates;
   };
 
+  const onTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setTempTime(selectedDate);
+      const hours = selectedDate.getHours().toString().padStart(2, '0');
+      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+      setStartTime(`${hours}:${minutes}`);
+    }
+  };
+
   const handleSave = async (override = false) => {
-    if (!item || !selectedItinId || !selectedDate) {
-      Alert.alert("Missing Info", "Please select an itinerary and date.");
+    if (!item || !selectedItinId || !startDate) {
+      Alert.alert("Missing Info", "Please select an itinerary and date range.");
       return;
     }
 
     const itin = itineraries.find(i => i.id === selectedItinId);
     if (!itin) return;
 
-    // Check for conflict
+    // Check for conflict (simplified for ranges)
     if (!override && startTime) {
-      const dayData = (itin.days || []).find(d => d.date.startsWith(selectedDate));
+      const dayData = (itin.days || []).find(d => d.date.startsWith(startDate));
       if (dayData) {
         const conflict = dayData.items.find(i => i.startTime === startTime);
         if (conflict) {
           Alert.alert(
             "Time Conflict",
-            "This time slot is already taken. Proceed anyway?",
+            "This time slot is already taken on the start date. Proceed anyway?",
             [
               { text: "Cancel", style: "cancel" },
               { text: "Proceed", onPress: () => handleSave(true) }
@@ -97,15 +115,18 @@ export default function AddToItineraryModal({
     }
 
     try {
-      await travelService.addItineraryItem(selectedItinId, {
+      await itineraryService.addItem({
         itineraryId: selectedItinId,
-        date: selectedDate,
+        startDate: startDate,
+        endDate: endDate || startDate,
+        date: startDate,
         type: item.type === "place" ? "PLACE" : "EVENT",
-        referenceId: item.id,
+        locationId: item.type === "place" ? item.id : undefined,
+        eventId: item.type === "event" ? item.id : undefined,
+        referenceId: item.id, // Explicitly pass referenceId (Builder will sanitize if locationId is present)
         startTime: startTime || undefined,
         note: ""
       });
-      // Mock update locally to prevent immediate re-fetching issues, or assume BE handles it
       onSuccess();
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Failed to add to itinerary");
@@ -116,113 +137,125 @@ export default function AddToItineraryModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Add to Itinerary</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={24} color={COLORS.muted} />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <TouchableOpacity 
+          style={styles.overlay} 
+          activeOpacity={1} 
+          onPress={onClose}
+        >
+          <View style={styles.sheet} onStartShouldSetResponder={() => true}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Add to Itinerary</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color={COLORS.muted} />
+              </TouchableOpacity>
+            </View>
 
-          {isLoading ? (
-            <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 30 }} />
-          ) : (
-            <>
-              <Text style={styles.itemRef}>Adding: {item?.name}</Text>
+            {isLoading ? (
+              <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 30 }} />
+            ) : (
+              <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 20 }}
+              >
+                <Text style={styles.itemRef}>Adding: {item?.name}</Text>
 
-              {/* Step 1: Pick Itinerary */}
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>1. Select Trip</Text>
-                <TouchableOpacity
-                  style={styles.addBtn}
-                  onPress={() => {
-                    onClose();
-                    navigation.navigate("CreatePlan", { autoAddPlace: item });
-                  }}
-                >
-                  <Ionicons name="add-circle" size={22} color={COLORS.primary} />
-                  <Text style={styles.addBtnText}>New</Text>
-                </TouchableOpacity>
-              </View>
-              {itineraries.length === 0 ? (
-                <Text style={styles.emptyText}>No itineraries found. Create one first!</Text>
-              ) : (
-                <View style={styles.listWrapperVertical}>
-                  <FlatList
-                    data={itineraries}
-                    showsVerticalScrollIndicator={false}
-                    keyExtractor={i => i.id.toString()}
-                    renderItem={({ item: i }) => (
-                      <TouchableOpacity
-                        style={[styles.chipVertical, selectedItinId === i.id && styles.chipActive]}
-                        onPress={() => {
-                          setSelectedItinId(i.id);
-                          setSelectedDate(""); // reset date on changing trip
-                        }}
-                      >
-                        <Text style={[styles.chipText, selectedItinId === i.id && styles.chipTextActive]}>
-                          {i.title}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  />
+                {/* Step 1: Pick Itinerary */}
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>1. Select Trip</Text>
+                  <TouchableOpacity
+                    style={styles.addBtn}
+                    onPress={() => {
+                      onClose();
+                      navigation.navigate("CreatePlan", { autoAddPlace: item });
+                    }}
+                  >
+                    <Ionicons name="add-circle" size={22} color={COLORS.primary} />
+                    <Text style={styles.addBtnText}>New</Text>
+                  </TouchableOpacity>
                 </View>
-              )}
-
-              {/* Step 2: Pick Date */}
-              {selectedItin && (
-                <>
-                  <Text style={styles.label}>2. Select Date</Text>
-                  <View style={styles.listWrapper}>
+                {itineraries.length === 0 ? (
+                  <Text style={styles.emptyText}>No itineraries found. Create one first!</Text>
+                ) : (
+                  <View style={styles.listWrapperVertical}>
                     <FlatList
-                      data={getAvailableDates(selectedItin)}
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      keyExtractor={d => d}
-                      renderItem={({ item: d }) => (
+                      data={itineraries}
+                      scrollEnabled={false} // Disable FlatList scroll to let parent ScrollView handle it
+                      keyExtractor={i => i.id.toString()}
+                      renderItem={({ item: i }) => (
                         <TouchableOpacity
-                          style={[styles.chip, selectedDate === d && styles.chipActive]}
-                          onPress={() => setSelectedDate(d)}
+                          style={[styles.chipVertical, selectedItinId === i.id && styles.chipActive]}
+                          onPress={() => {
+                            setSelectedItinId(i.id);
+                            setStartDate(""); // reset date on changing trip
+                            setEndDate("");
+                          }}
                         >
-                          <Text style={[styles.chipText, selectedDate === d && styles.chipTextActive]}>
-                            {new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          <Text style={[styles.chipText, selectedItinId === i.id && styles.chipTextActive]}>
+                            {i.title}
                           </Text>
                         </TouchableOpacity>
                       )}
                     />
                   </View>
-                </>
-              )}
+                )}
 
-              {/* Step 3: Pick Time (Optional) */}
-              {selectedItin && selectedDate && (
-                <View style={{ width: "100%", alignItems: "stretch" }}>
-                  <Text style={styles.label}>3. Start Time (Optional)</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    placeholder="HH:MM(e.g.09)"
-                    placeholderTextColor={COLORS.muted}
-                    value={startTime}
-                    onChangeText={setStartTime}
-                    maxLength={5}
-                    keyboardType="numeric"
-                  />
-                </View>
-              )}
+                {/* Step 2: Pick Date */}
+                {selectedItin && (
+                  <View style={{ marginBottom: 20 }}>
+                    <Text style={styles.label}>2. Select Date Range</Text>
+                    <CalendarRangePicker
+                      minDate={selectedItin.startDate}
+                      onSelectRange={(start, end) => {
+                        setStartDate(start);
+                        setEndDate(end);
+                      }}
+                    />
+                  </View>
+                )}
 
-              {/* Footer */}
-              <TouchableOpacity
-                style={[styles.saveBtn, (!selectedItinId || !selectedDate) && styles.saveBtnDisabled]}
-                disabled={!selectedItinId || !selectedDate}
-                onPress={() => handleSave(false)}
-              >
-                <Text style={styles.saveBtnText}>Save Itinerary Item</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </View>
+                {/* Step 3: Pick Time (Optional) */}
+                {selectedItin && startDate && (
+                  <View style={{ width: "100%", alignItems: "stretch" }}>
+                    <Text style={styles.label}>3. Start Time (Optional)</Text>
+                    <TouchableOpacity 
+                      style={styles.timeInput}
+                      onPress={() => setShowTimePicker(true)}
+                    >
+                      <Text style={{ color: startTime ? COLORS.text : COLORS.muted }}>
+                        {startTime || "Select time"}
+                      </Text>
+                      <Ionicons name="time-outline" size={20} color={COLORS.muted} />
+                    </TouchableOpacity>
+
+                    {showTimePicker && (
+                      <DateTimePicker
+                        value={tempTime}
+                        mode="time"
+                        is24Hour={true}
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={onTimeChange}
+                      />
+                    )}
+                  </View>
+                )}
+
+                {/* Footer */}
+                <TouchableOpacity
+                  style={[styles.saveBtn, (!selectedItinId || !startDate) && styles.saveBtnDisabled]}
+                  disabled={!selectedItinId || !startDate}
+                  onPress={() => handleSave(false)}
+                >
+                  <Text style={styles.saveBtnText}>Save Itinerary Item</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -238,7 +271,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: SIZES.radius + 10,
     padding: SIZES.padding,
     paddingBottom: SIZES.padding * 2,
-    maxHeight: "85%",
+    maxHeight: "90%",
     width: "100%",
     alignItems: "stretch"
   },
@@ -262,7 +295,7 @@ const styles = StyleSheet.create({
   },
   addBtnText: { ...FONTS.body2, color: COLORS.primary, fontWeight: "600" },
   listWrapper: { marginBottom: 14 },
-  listWrapperVertical: { marginBottom: 14, maxHeight: 180 },
+  listWrapperVertical: { marginBottom: 14 },
   chip: {
     paddingHorizontal: 16, paddingVertical: 10,
     borderRadius: 8,
@@ -287,6 +320,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
     borderRadius: 8,
     padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     ...FONTS.body1,
     color: COLORS.text,
     marginBottom: 20,

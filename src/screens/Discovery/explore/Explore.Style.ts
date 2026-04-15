@@ -27,21 +27,22 @@ export const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, ...FONTS.body1, color: COLORS.text },
 
-  // ─── Category chips ────────────────────────────────────────────────────────
-  chipRow: { paddingHorizontal: SIZES.padding, paddingBottom: 20, gap: 8 },
-  chip: {
-    height: 40,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 20,
+  filterBtn: {
+    marginLeft: 12,
+    marginRight: SIZES.padding,
+    width: 46,
+    height: 46,
+    borderRadius: SIZES.radius,
     backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginRight: 8,
   },
-  chipActive:     { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipText:       { ...FONTS.body2, color: COLORS.muted, textTransform: "capitalize" },
-  chipTextActive: { color: "#fff", fontWeight: "700" },
+  filterBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
 
   // ─── Place card ───────────────────────────────────────────────────────────
   listContent: { paddingBottom: 24 },
@@ -90,4 +91,15 @@ export const styles = StyleSheet.create({
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 60 },
   emptyText:      { ...FONTS.body1, color: COLORS.muted, marginTop: 8 },
   footerLoader:   { paddingVertical: 16, alignItems: "center" },
+
+  loadingOverlay: {
+    paddingVertical: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    ...FONTS.body2,
+    color: COLORS.muted,
+    marginTop: 8,
+  },
 });

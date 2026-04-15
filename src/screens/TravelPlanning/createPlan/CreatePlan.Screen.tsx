@@ -21,6 +21,41 @@ const styles = StyleSheet.create({
     ...FONTS.body1, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, marginBottom: 16,
   },
   textArea: { height: 90, textAlignVertical: "top" },
+  calendarContainer: {
+    marginBottom: 20,
+    backgroundColor: '#F9F9F9',
+    borderRadius: 16,
+    padding: 10,
+  },
+  rangeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    marginTop: 10,
+    padding: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  dateBlock: {
+    alignItems: 'center',
+  },
+  dateLabel: {
+    fontSize: 10,
+    color: '#999',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  dateValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  clearBtn: {
+    marginLeft: 20,
+    padding: 8,
+  },
   row: { flexDirection: "row", gap: 10 },
   halfInput: {
     flex: 1, backgroundColor: COLORS.surface, borderRadius: SIZES.radius,
@@ -89,12 +124,12 @@ const CreatePlanScreen = ({ navigation, route }: any) => {
           onChangeText={setDescription} placeholder="What's this trip about?"
           placeholderTextColor={COLORS.muted} multiline numberOfLines={3} />
 
-        <Text style={styles.label}>Select Dates *</Text>
-        <View style={styles.calendarWrapper}>
+        <View style={styles.calendarContainer}>
+          <Text style={styles.label}>Select Date Range *</Text>
           <Calendar
-            onDayPress={onDayPress}
             markedDates={markedDates}
             markingType={'period'}
+            onDayPress={onDayPress}
             theme={{
               backgroundColor: COLORS.card,
               calendarBackground: COLORS.card,
@@ -136,6 +171,20 @@ const CreatePlanScreen = ({ navigation, route }: any) => {
       </ScrollView>
     </View>
   );
+};
+
+const getDatesBetween = (startDate: string, endDate: string) => {
+  const dates: any = {};
+  let start = new Date(startDate);
+  const end = new Date(endDate);
+  while (start <= end) {
+    const dateString = start.toISOString().split('T')[0];
+    if (dateString !== startDate && dateString !== endDate) {
+      dates[dateString] = { color: '#E3F2FD', textColor: '#007AFF' };
+    }
+    start.setDate(start.getDate() + 1);
+  }
+  return dates;
 };
 
 export default CreatePlanScreen;

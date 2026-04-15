@@ -6,6 +6,7 @@ import { socialApi } from "./social.api";
 import { travelApi } from "./travel.api";
 import { chatApi } from "./chat.api";
 import { adminApi } from "./admin.api";
+import { skillApi } from "./skill.api";
 
 export const apiRequest = {
   ...authApi,
@@ -16,4 +17,5 @@ export const apiRequest = {
   ...travelApi,
   ...chatApi,
   ...adminApi,
+  ...skillApi,
 };

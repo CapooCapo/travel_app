@@ -9,19 +9,19 @@ import { styles } from "./Explore.Style";
 import { useExplore, CATEGORIES } from "./useExplore";
 import { COLORS } from "../../../constants/theme";
 import { PlaceDTO } from "../../../dto/discovery/place.DTO";
-import { getPlaceImage } from "../../../utils/imageUtils";
 import { PlaceCard } from "../../../components/Discovery/PlaceCard";
 import { SearchBar } from "../../../components/Common/SearchBar";
-
-// Local PHOTO_POOLS and getPlaceImage have been moved to src/utils/imageUtils.ts
-
+import FilterModal from "../../../components/Discovery/FilterModal";
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 const ExploreScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
+  const [isFilterVisible, setIsFilterVisible] = React.useState(false);
+
   const {
     places, isLoading, keyword, setKeyword,
-    selectedCategory, setSelectedCategory,
+    selectedCategories, setSelectedCategories,
+    selectedRadius, setSelectedRadius,
     recentSearches, handleSearch, handleLoadMore,
     navigateToDetail, loadRecentSearches, fetchPlaces,
     isBookmarksMode, setIsBookmarksMode,
@@ -69,43 +69,49 @@ const ExploreScreen = ({ navigation, route }: any) => {
         </Text>
       </View>
 
-      {/* Search Bar & Category Chips - Only show in normal mode */}
+      {/* Search Bar & Filter Button - Only show in normal mode */}
       {!isBookmarksMode && (
-        <>
-          <SearchBar
-            value={keyword}
-            onChangeText={setKeyword}
-            onClear={() => { setKeyword(""); fetchPlaces(true); }}
-            onSubmitEditing={handleSearch}
-            placeholder="Search locations…"
-            style={{ marginBottom: 16 }}
-          />
-
-          <FlatList
-            data={CATEGORIES}
-            horizontal
-            keyExtractor={(c) => c}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}
-            renderItem={({ item: cat }) => {
-              const active = selectedCategory === cat;
-              return (
-                <TouchableOpacity
-                  style={[styles.chip, active && styles.chipActive]}
-                  onPress={() => {
-                    setSelectedCategory(cat === selectedCategory ? "" : cat);
-                    fetchPlaces(true);
-                  }}
-                >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              );
-            }}
-          />
-        </>
+        <View style={{ marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <SearchBar
+                value={keyword}
+                onChangeText={setKeyword}
+                onClear={() => { setKeyword(""); fetchPlaces(true); }}
+                onSubmitEditing={handleSearch}
+                placeholder="Search locations…"
+                style={{ marginHorizontal: 0, marginLeft: 20 }}
+              />
+            </View>
+            <TouchableOpacity 
+              onPress={() => setIsFilterVisible(true)}
+              style={[
+                styles.filterBtn, 
+                (selectedCategories.length > 0 || selectedRadius) && styles.filterBtnActive
+              ]}
+            >
+              <Ionicons 
+                name="options-outline" 
+                size={22} 
+                color={(selectedCategories.length > 0 || selectedRadius) ? "#000" : COLORS.text} 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
+
+      <FilterModal
+        isVisible={isFilterVisible}
+        onClose={() => setIsFilterVisible(false)}
+        categories={CATEGORIES}
+        initialCategories={selectedCategories}
+        initialRadius={selectedRadius}
+        onApply={(filters) => {
+          setSelectedCategories(filters.categories);
+          setSelectedRadius(filters.radius);
+          fetchPlaces(true);
+        }}
+      />
 
       {/* Recent Searches */}
       {showRecent && (
@@ -126,6 +132,14 @@ const ExploreScreen = ({ navigation, route }: any) => {
         </View>
       )}
 
+      {/* Global Loading Overlay */}
+      {isLoading && places.length === 0 && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Searching locations...</Text>
+        </View>
+      )}
+
       {/* Results */}
       <FlatList
         data={places}
@@ -140,13 +154,6 @@ const ExploreScreen = ({ navigation, route }: any) => {
             <View style={styles.emptyContainer}>
               <Ionicons name="search-outline" size={48} color={COLORS.muted} />
               <Text style={styles.emptyText}>No locations found</Text>
-            </View>
-          ) : null
-        }
-        ListFooterComponent={
-          isLoading ? (
-            <View style={styles.footerLoader}>
-              <ActivityIndicator color={COLORS.primary} />
             </View>
           ) : null
         }

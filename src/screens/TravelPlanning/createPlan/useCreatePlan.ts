@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { travelService } from "../../../services/travel.service";
+import { itineraryService } from "../../../services/itinerary.service";
 import { COLORS } from "../../../constants/theme";
 
 export function useCreatePlan(navigation: any, route: any) {
@@ -69,7 +70,7 @@ export function useCreatePlan(navigation: any, route: any) {
     if (!canSubmit || isLoading) return;
     setIsLoading(true);
     try {
-      const newItin = await travelService.createItinerary({
+      const newItin = await itineraryService.createItinerary({
         title: title.trim(),
         description: description.trim() || undefined,
         startDate,
@@ -77,10 +78,12 @@ export function useCreatePlan(navigation: any, route: any) {
       });
 
       // AUTOMATE ADDITION IF REQUESTED
-      if (autoAddPlace && newItin.id) {
-        await travelService.addItineraryItem(newItin.id, {
+      if (autoAddPlace && newItin?.id) {
+        await itineraryService.addItem({
           itineraryId: newItin.id,
           date: startDate,
+          startDate: startDate,
+          endDate: endDate || startDate,
           type: autoAddPlace.type === "place" ? "PLACE" : "EVENT",
           referenceId: autoAddPlace.id,
           note: "Automatically added"

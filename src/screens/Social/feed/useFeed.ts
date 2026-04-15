@@ -14,6 +14,7 @@ export function useFeed(navigation: any) {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<UserDTO[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 
   useEffect(() => {
     if (searchKeyword.trim().length > 1) {
@@ -30,9 +31,11 @@ export function useFeed(navigation: any) {
   const handleSearch = async (query: string) => {
     setIsSearching(true);
     try {
-      const res = await socialService.searchUsers(query, 20, 0);
-      setSearchResults(res.data || []);
+      console.log(`[useFeed] Searching for: ${query}`);
+      const data = await socialService.searchUsers(query, 20, 0);
+      setSearchResults(data ?? []); // data is already the naked array from service
     } catch (e: any) {
+      console.error("[useFeed] Search Error:", e);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -48,20 +51,24 @@ export function useFeed(navigation: any) {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => { loadFeed(true); }, []);
+  useEffect(() => { loadFeed(true); }, [selectedTypes]);
 
   const loadFeed = useCallback(async (reset = false) => {
     if (isLoading && !reset) return;
     setIsLoading(true);
     try {
       const currentPage = reset ? 1 : page;
-      const res = await socialService.getFeed(currentPage);
-      const items = res?.items ?? [];
-      setFeedItems(reset ? items : (prev) => [...prev, ...items]);
+      console.log(`[useFeed] Loading feed page: ${currentPage}, types: ${selectedTypes}`);
+      const data = await socialService.getFeed(currentPage, selectedTypes.length > 0 ? selectedTypes : undefined);
+      
+      // Handle both array and PageRes object
+      const items = (data as any)?.content ?? (Array.isArray(data) ? data : []);
+      
+      setFeedItems(reset ? items : (prev) => [...(prev ?? []), ...items]);
       setPage(currentPage + 1);
       setHasMore(items.length >= 10);
-    } catch {
-      // Silently fail — feed is non-critical
+    } catch (err: any) {
+      console.error("[useFeed] Load Feed Error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +93,7 @@ export function useFeed(navigation: any) {
     feedItems, isLoading,
     searchKeyword, setSearchKeyword,
     searchResults, isSearching,
+    selectedTypes, setSelectedTypes,
     handleLoadMore, navigateToTarget, navigateToUser,
     refresh: () => {
       setSearchKeyword("");

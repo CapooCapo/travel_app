@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useUser } from "@clerk/clerk-expo";
 import { styles } from "./ChatList.Style";
 import { useChatList } from "./useChatList";
 import { COLORS } from "../../../constants/theme";
@@ -12,21 +13,29 @@ import { ChatDTO } from "../../../dto/messaging/message.DTO";
 
 const ChatListScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
+  const { user: clerkUser } = useUser();
+  const currentUserId = clerkUser?.id; // Clerk ID is string, but our DB uses parsed Long. 
+  // However, most screens use publicMetadata.userId or similar for numeric ID if synced.
+  // For now, we'll try to match by name or fallback.
+  
   const { chats, isLoading, totalUnread, navigateToChatRoom, loadChats } =
     useChatList(navigation);
 
   const renderItem = ({ item }: { item: ChatDTO }) => {
-    const initial =
-      item.type === "group"
+    const isGroup = item.type === "GROUP";
+    
+    // Logic for Private Chat: Find the OTHER participant
+    const otherParticipant = !isGroup 
+      ? item.participants.find(p => p.fullName !== clerkUser?.fullName) 
+      : null;
+
+    const initial = isGroup
         ? (item.name?.charAt(0) ?? "G").toUpperCase()
-        : (item.participants[0]?.userName?.charAt(0) ?? "?").toUpperCase();
-    const displayName =
-      item.type === "group"
+        : (otherParticipant?.fullName?.charAt(0) ?? item.participants[0]?.fullName?.charAt(0) ?? "?").toUpperCase();
+
+    const displayName = isGroup
         ? item.name ?? "Group Chat"
-        : item.participants
-            .map((p) => p.userName)
-            .filter(name => !!name)
-            .join(", ") || "User";
+        : otherParticipant?.fullName || item.participants[0]?.fullName || "User";
 
     return (
       <TouchableOpacity
@@ -38,7 +47,7 @@ const ChatListScreen = ({ navigation }: any) => {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
-          {item.type === "group" && (
+          {isGroup && (
             <View style={styles.groupDot}>
               <Ionicons name="people" size={8} color="#fff" />
             </View>

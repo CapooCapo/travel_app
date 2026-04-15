@@ -5,23 +5,23 @@ import { UpdateUserRequest, UserDTO } from "../dto/auth/user.DTO";
 export const userApi = {
   getMe() {
     return http.get<Res<UserDTO>>("/api/users/me")
-      .then(res => res.data.data);
+      .then(res => res.data);
   },
   updateProfile(req: UpdateUserRequest) {
     return http.put<Res<UserDTO>>("/api/users/updateProfile", req)
-      .then(res => res.data.data);
+      .then(res => res.data);
   },
   updateInterests(interestIds: number[]) {
     return http.put<Res<UserDTO>>("/api/users/me/interests", interestIds)
-      .then(res => res.data.data);
+      .then(res => res.data);
   },
   updateAvatar(avatarUrl: string) {
     return http.put<Res<UserDTO>>("/api/users/avatar", { avatarUrl })
-      .then(res => res.data.data);
+      .then(res => res.data);
   },
   exportData() {
     return http.get<Res<any>>("/api/users/export-data")
-      .then(res => res.data.data);
+      .then(res => res.data);
   },
   exportUserData() {
     return http.get("/api/users/me/data")
@@ -29,7 +29,7 @@ export const userApi = {
   },
   getUserProfile(userId: number) {
     return http.get<Res<UserDTO>>(`/api/users/profile/${userId}`)
-      .then(res => res.data.data);
+      .then(res => res.data);
   },
   deleteAccount() {
     return http.delete<Res<void>>("/api/users/me")
@@ -37,6 +37,6 @@ export const userApi = {
   },
   getExportDataLink() {
     return http.post<Res<{ url: string }>>("/api/users/actions/export-data-link")
-      .then(res => res.data.data.url);
+      .then(res => res.data);
   },
 };

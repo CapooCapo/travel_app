@@ -5,26 +5,37 @@ export type MessageDTO = {
   senderName: string;
   senderAvatar?: string;
   content: string;
-  type: 'TEXT' | 'IMAGE' | 'EMOJI' | 'LOCATION';
+  type: 'TEXT' | 'IMAGE' | 'EMOJI' | 'LOCATION' | 'SYSTEM';
   imageUrl?: string;
   latitude?: number;
   longitude?: number;
+  address?: string;
   createdAt: string;
   isRead: boolean;
 };
 
+export interface SendLocationMessageRequest extends SendMessageRequest {
+  type: 'LOCATION';
+  latitude: number;
+  longitude: number;
+  placeName: string;
+  placeId?: string;
+}
+
 export type SendMessageRequest = {
   chatRoomId: number;
   content: string;
-  type: 'TEXT' | 'IMAGE' | 'EMOJI' | 'LOCATION';
+  type: 'TEXT' | 'IMAGE' | 'EMOJI' | 'LOCATION' | 'SYSTEM';
   imageUrl?: string;
   latitude?: number;
   longitude?: number;
+  placeName?: string;
+  placeId?: string;
 };
 
 export type ChatDTO = {
   id: number;
-  type: 'one_to_one' | 'group';
+  type: 'PRIVATE' | 'GROUP';
   name?: string;
   participants: ChatParticipantDTO[];
   lastMessage?: MessageDTO;
@@ -34,8 +45,8 @@ export type ChatDTO = {
 };
 
 export type ChatParticipantDTO = {
-  userId: number;
-  userName: string;
+  id: number;
+  fullName: string;
   avatarUrl?: string;
   role: 'member' | 'organizer';
 };

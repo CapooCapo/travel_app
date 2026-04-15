@@ -15,7 +15,8 @@ const ItineraryDetailScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const {
     itinerary, isLoading,
-    removeItem, moveItem, goBack, handleAddNewStop
+    removeItem, deleteItinerary, handleShare,
+    moveItem, goBack, handleAddNewStop
   } = useItineraryDetail(navigation, itineraryId);
 
   if (isLoading) {
@@ -55,7 +56,7 @@ const ItineraryDetailScreen = ({ navigation, route }: any) => {
 
           <View style={styles.cardIconBox}>
             <Ionicons
-              name={item.type === "place" ? "map-outline" : "calendar-outline"}
+              name={item.type === "PLACE" ? "map-outline" : "calendar-outline"}
               size={20}
               color={COLORS.primary}
             />
@@ -139,6 +140,15 @@ const ItineraryDetailScreen = ({ navigation, route }: any) => {
           <TouchableOpacity style={styles.iconBtn} onPress={goBack}>
             <Ionicons name="arrow-back" size={20} color={COLORS.text} />
           </TouchableOpacity>
+          
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity style={styles.iconBtn} onPress={handleShare}>
+              <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn} onPress={deleteItinerary}>
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={styles.pageTitle}>{itinerary.title}</Text>

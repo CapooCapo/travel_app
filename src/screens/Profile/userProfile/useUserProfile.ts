@@ -20,7 +20,7 @@ export function useUserProfile(userId: number, navigation: any) {
     try {
       const data = await socialService.getUserProfile(userId);
       setUser(data);
-      if (data.isFollowing !== undefined) {
+      if (data?.isFollowing !== undefined) {
         setIsFollowing(data.isFollowing);
       }
     } catch (error: any) {

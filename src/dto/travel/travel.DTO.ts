@@ -36,8 +36,12 @@ export type CreateItineraryRequest = {
 
 export type AddPlanItemRequest = {
   itineraryId: number;
-  date: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
   type: 'PLACE' | 'EVENT';
+  locationId?: number;
+  eventId?: number;
   referenceId: number;
   startTime?: string;
   endTime?: string;

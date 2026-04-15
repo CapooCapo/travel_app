@@ -1,108 +1,75 @@
-import { apiRequest } from '../api/client';
-import {
-  ItineraryDTO,
-  CreateItineraryRequest,
-  AddPlanItemRequest,
-} from '../dto/travel/travel.DTO';
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
-
-// ─── NOTIFICATION SETUP ──────────────────────────────────────────────────────
-
-export async function registerForPushNotifications(): Promise<string | null> {
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let finalStatus = existing;
-
-  if (existing !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== 'granted') return null;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('itinerary', {
-      name: 'Itinerary Reminders',
-      importance: Notifications.AndroidImportance.HIGH,
-    });
-  }
-
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
-  return token;
-}
+import { apiRequest } from "../api/client";
+import { unwrapResponse } from "../utils/responseHandler";
+import { 
+  ItineraryDTO, 
+  CreateItineraryRequest, 
+  AddItineraryItemRequest, 
+  ItineraryItemResponse 
+} from "../dto/itinerary.dto";
 
 /**
- * Schedule a local notification 1 day before itinerary start.
- * Cancels any previous notification with the same identifier.
+ * Senior Architect Implementation of Itinerary Service.
+ * Centralizes payload sanitization to ensure XOR compliance before API calls.
  */
-export async function scheduleItineraryReminder(
-  itinerary: ItineraryDTO,
-): Promise<void> {
-  const identifier = `itinerary-${itinerary.id}`;
-
-  // Cancel old notification if exists
-  await Notifications.cancelScheduledNotificationAsync(identifier).catch(
-    () => {},
-  );
-
-  const startDate = new Date(itinerary.startDate);
-  const triggerDate = new Date(startDate);
-  triggerDate.setDate(triggerDate.getDate() - 1);
-  triggerDate.setHours(8, 0, 0, 0); // 8:00 AM the day before
-
-  if (triggerDate <= new Date()) return; // Already past
-
-  await Notifications.scheduleNotificationAsync({
-    identifier,
-    content: {
-      title: '🗺️ Chuyến đi sắp đến!',
-      body: `Ngày mai bạn bắt đầu "${itinerary.title}". Hãy chuẩn bị sẵn sàng nhé!`,
-      data: { itineraryId: itinerary.id },
-      sound: true,
-    },
-    trigger: {
-      date: triggerDate,
-      channelId: 'itinerary',
-    },
-  });
-}
-
-export async function cancelItineraryReminder(itineraryId: number): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync(
-    `itinerary-${itineraryId}`,
-  ).catch(() => {});
-}
-
-// ─── API WRAPPERS ─────────────────────────────────────────────────────────────
-
 export const itineraryService = {
-  async getAll(): Promise<ItineraryDTO[]> {
+  
+  async getItineraries(): Promise<ItineraryDTO[]> {
     const res = await apiRequest.getItineraries();
-    return res.data.data ?? [];
+    return unwrapResponse(res) || [];
   },
 
-  async getById(id: number): Promise<ItineraryDTO> {
+  async getItineraryById(id: number): Promise<ItineraryDTO | null> {
     const res = await apiRequest.getItineraryById(id);
-    return res.data.data;
+    return unwrapResponse(res);
   },
 
-  async create(req: CreateItineraryRequest): Promise<ItineraryDTO> {
+  async createItinerary(req: CreateItineraryRequest): Promise<ItineraryDTO | null> {
     const res = await apiRequest.createItinerary(req);
-    const itinerary = res.data.data;
-    await scheduleItineraryReminder(itinerary);
-    return itinerary;
+    return unwrapResponse(res);
   },
 
-  async addItem(itineraryId: number, req: AddPlanItemRequest): Promise<void> {
-    await apiRequest.addItineraryItem(itineraryId, req);
+  /**
+   * Refactored: Implementation of the Sanitization Builder Pattern.
+   * Ensures the strict XOR rule (exactly one ID) is respected by pruning identifiers.
+   */
+  async addItem(req: AddItineraryItemRequest): Promise<ItineraryItemResponse | null> {
+    // 🧱 Build sanitized payload
+    const payload = { ...req };
+    
+    // 🛡️ XOR Sanitization Rule:
+    // If we have a system locationId, we MUST NOT send referenceId or eventId.
+    // If we have an eventId, we MUST NOT send locationId or referenceId.
+    // This complies with backend constraint: itinerary_items_strict_xor_check
+    if (payload.locationId) {
+      console.log(`[ItineraryService] Sanitizing for locationId: ${payload.locationId}`);
+      delete payload.referenceId;
+      delete payload.eventId;
+    } else if (payload.eventId) {
+      console.log(`[ItineraryService] Sanitizing for eventId: ${payload.eventId}`);
+      delete payload.locationId;
+      delete payload.referenceId;
+    } else if (payload.referenceId) {
+      console.log(`[ItineraryService] Sanitizing for referenceId: ${payload.referenceId}`);
+      delete payload.locationId;
+      delete payload.eventId;
+    }
+
+    const res = await apiRequest.addItineraryItem(req.itineraryId, payload);
+    return unwrapResponse(res);
   },
 
   async deleteItem(itineraryId: number, itemId: number): Promise<void> {
-    await apiRequest.deleteItineraryItem(itineraryId, itemId);
+    const res = await apiRequest.deleteItineraryItem(itineraryId, itemId);
+    unwrapResponse(res);
   },
 
-  async share(id: number): Promise<string> {
-    const res = await apiRequest.shareItinerary(id);
-    return res.data.data;
+  async deleteItinerary(id: number): Promise<void> {
+    const res = await apiRequest.deleteItinerary(id);
+    unwrapResponse(res);
   },
+
+  async shareItinerary(id: number): Promise<string | null> {
+    const res = await apiRequest.shareItinerary(id);
+    return unwrapResponse(res);
+  }
 };

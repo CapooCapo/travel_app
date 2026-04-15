@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Alert, Share } from "react-native";
-import { travelService } from "../../../services/travel.service";
+import { itineraryService } from "../../../services/itinerary.service";
 import { ItineraryDTO } from "../../../dto/travel/travel.DTO";
 
 export function useItinerary(navigation: any) {
@@ -8,37 +8,57 @@ export function useItinerary(navigation: any) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadItineraries();
+    fetchData();
   }, []);
 
-  const loadItineraries = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await travelService.getItineraries();
-      setItineraries(res ?? []);
-    } catch {
-      // Silent fallback
+      const data = await itineraryService.getItineraries();
+      setItineraries(data);
+    } catch (e) {
+      console.error("fetchItineraries error:", e);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleShare = async (id: number) => {
+  const deleteItinerary = (id: number) => {
+    Alert.alert("Delete", "Are you sure?", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        onPress: async () => {
+          try {
+            await itineraryService.deleteItinerary(id);
+            setItineraries((prev) => prev.filter((it) => it.id !== id));
+          } catch (e) {
+            Alert.alert("Error", "Failed to delete");
+          }
+        },
+      },
+    ]);
+  };
+
+  const shareItinerary = async (id: number) => {
     try {
-      const url = await travelService.shareItinerary(id);
-      await Share.share({ message: `Check out my travel plan on ExploreEase!\n${url}` });
-    } catch (e: any) {
-      Alert.alert("Error", e?.message || "Failed to share");
+      const shareUrl = await itineraryService.shareItinerary(id);
+      if (shareUrl) {
+        await Share.share({ message: `Check out my trip: ${shareUrl}` });
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to share");
     }
   };
 
-  const navigateToDetail = (id: number) =>
-    navigation.navigate("ItineraryDetail", { itineraryId: id });
-
-  const navigateToCreate = () => navigation.navigate("CreatePlan");
-
   return {
-    itineraries, isLoading,
-    handleShare, navigateToDetail, navigateToCreate, loadItineraries,
+    itineraries,
+    isLoading,
+    fetchData,
+    deleteItinerary,
+    shareItinerary,
+    goBack: () => navigation.goBack(),
+    goToCreate: () => navigation.navigate("CreatePlan"),
+    goToDetail: (id: number) => navigation.navigate("ItineraryDetail", { id }),
   };
 }

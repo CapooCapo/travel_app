@@ -41,7 +41,8 @@ const logDebugRequest = (config: any) => {
 
 const logDebugResponse = (response: any) => {
   console.log(`[HTTP RESPONSE] ← ${response.status} ${response.config.url}`, {
-    data: response.data
+    data: response.data,
+    full_res: response // In ra full response để debug cấu trúc lồng nhau (data.data)
   });
 };
 
@@ -52,6 +53,7 @@ const logDebugError = (error: any) => {
     status: error.response?.status,
     message: error.message,
     responseData: error.response?.data,
+    raw_error: error // In ra full error để kiểm tra các trường bị undefined
   });
 };
 
@@ -61,12 +63,17 @@ const logDebugError = (error: any) => {
 const showErrorAlert = (error: any) => {
   const status = error.response?.status;
   const data = error.response?.data;
+  
+  // Safe access to backend message
   const backendMessage = data?.message;
 
   let title = "Error";
   let displayMessage = backendMessage || error.message || "An unexpected error occurred.";
 
-  if (status === 401) {
+  if (!error.response) {
+    title = "Network Error";
+    displayMessage = "Cannot connect to server. Please check your internet connection.";
+  } else if (status === 401) {
     title = "Session Expired";
     displayMessage = "Please login again to continue.";
   } else if (status === 403) {

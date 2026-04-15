@@ -10,6 +10,8 @@ const TYPE_META: Record<string, { icon: string; color: string }> = {
   event_join: { icon: "calendar",        color: COLORS.primary },
   bookmark:   { icon: "bookmark",        color: "#00c864" },
   review:     { icon: "chatbubble",      color: "#7c6af7" },
+  follow:     { icon: "person-add",      color: "#3498db" },
+  event:      { icon: "calendar",        color: COLORS.primary },
 };
 
 interface FeedItemProps {

@@ -6,7 +6,7 @@
  * xem notification.service.ts để biết cách xử lý.
  */
 export type Res<T> = {
-  status: number;
+  status: string | number; // BE sends String "success", but some FE code might expect number
   message: string;
   data: T;
   timestamp?: number;

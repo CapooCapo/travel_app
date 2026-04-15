@@ -1,54 +1,66 @@
 import { eventApi } from "../api/event.api";
-import { EventResponse, EventFilterParams, EventCreateRequest } from "../dto/event/event.DTO";
+import { unwrapResponse } from "../utils/responseHandler";
+import { EventFilterParams, EventCreateRequest } from "../dto/event/event.DTO";
 
 export const eventService = {
   async getEvents(params: EventFilterParams) {
     const res = await eventApi.getEvents(params);
-    return res;
+    return unwrapResponse(res);
   },
 
   async getEventById(id: number) {
-    return await eventApi.getEventById(id);
+    const res = await eventApi.getEventById(id);
+    return unwrapResponse(res);
   },
 
   async createEvent(req: EventCreateRequest) {
-    return await eventApi.createEvent(req);
+    const res = await eventApi.createEvent(req);
+    return unwrapResponse(res);
   },
 
   async updateEvent(id: number, req: EventCreateRequest) {
-    return await eventApi.updateEvent(id, req);
+    const res = await eventApi.updateEvent(id, req);
+    return unwrapResponse(res);
   },
 
   async deleteEvent(id: number) {
-    return await eventApi.deleteEvent(id);
+    const res = await eventApi.deleteEvent(id);
+    return unwrapResponse(res);
   },
 
   async getMyEvents() {
-    return await eventApi.getMyEvents();
+    const res = await eventApi.getMyEvents();
+    return unwrapResponse(res);
   },
 
   // Bookmarks
   async bookmarkEvent(id: number) {
-    return await eventApi.bookmarkEvent(id);
+    const res = await eventApi.bookmarkEvent(id);
+    return unwrapResponse(res);
   },
 
   async unbookmarkEvent(id: number) {
-    return await eventApi.unbookmarkEvent(id);
+    const res = await eventApi.unbookmarkEvent(id);
+    return unwrapResponse(res);
   },
 
   async getMyBookmarks(page = 0, size = 10) {
-    return await eventApi.getMyBookmarks(page, size);
+    const res = await eventApi.getMyBookmarks(page, size);
+    return unwrapResponse(res);
   },
 
   async getBookmarkedIds() {
-    return await eventApi.getBookmarkedIds();
+    const res = await eventApi.getBookmarkedIds();
+    return unwrapResponse(res);
   },
 
   async getEventsByLocation(locationId: number, pageNum = 0, pageSize = 10) {
-    return await eventApi.getEventsByLocation(locationId, pageNum, pageSize);
+    const res = await eventApi.getEventsByLocation(locationId, pageNum, pageSize);
+    return unwrapResponse(res);
   },
 
   async getCategories() {
-    return await eventApi.getCategories();
+    const res = await eventApi.getCategories();
+    return unwrapResponse(res);
   }
 };

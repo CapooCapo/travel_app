@@ -6,6 +6,7 @@ import {
 } from "../storage/offline.storage";
 import { Res, PageRes } from "../dto/format";
 import { LocationResponse } from "../dto/discovery/place.DTO";
+import { unwrapResponse } from "../utils/responseHandler";
 import {
   ItineraryDTO,
   CreateItineraryRequest,
@@ -39,7 +40,8 @@ export async function getNearbyLocations(
 
   try {
     const res = await apiRequest.getNearbyLocations(resolvedLat, resolvedLng);
-    const locations = res?.data?.data?.content || [];
+    const pageData = unwrapResponse(res);
+    const locations = pageData?.content || [];
 
     // Lưu cache offline
     if (locations.length > 0) {
@@ -70,7 +72,7 @@ export const travelService = {
   getItineraries: async (): Promise<ItineraryDTO[]> => {
     try {
       const res = await apiRequest.getItineraries();
-      return res?.data?.data || [];
+      return unwrapResponse(res) || [];
     } catch (e) {
       console.error("getItineraries error:", e);
       return [];
@@ -81,7 +83,7 @@ export const travelService = {
   getItineraryById: async (id: number): Promise<ItineraryDTO | null> => {
     try {
       const res = await apiRequest.getItineraryById(id);
-      return res?.data?.data || null;
+      return unwrapResponse(res);
     } catch (e) {
       console.error("getItineraryById error:", e);
       return null;
@@ -93,7 +95,7 @@ export const travelService = {
   ): Promise<ItineraryDTO | null> => {
     try {
       const res = await apiRequest.createItinerary(req);
-      return res?.data?.data || null;
+      return unwrapResponse(res);
     } catch (e) {
       console.error("createItinerary error:", e);
       return null;
@@ -105,10 +107,23 @@ export const travelService = {
     req: AddPlanItemRequest
   ): Promise<void> => {
     try {
-      await apiRequest.addItineraryItem(itineraryId, req);
+      // 🛡️ Pre-flight Payload Sanitization
+      // The database enforces a strict XOR constraint (only ONE type of ID allowed).
+      // If we have a system locationId, we MUST NOT send referenceId.
+      const sanitizedReq = { ...req };
+      if (sanitizedReq.locationId) {
+        delete sanitizedReq.referenceId;
+        delete sanitizedReq.eventId;
+      } else if (sanitizedReq.eventId) {
+        delete sanitizedReq.locationId;
+        delete sanitizedReq.referenceId;
+      }
+
+      const res = await apiRequest.addItineraryItem(itineraryId, sanitizedReq);
+      unwrapResponse(res);
     } catch (e) {
       console.error("addItineraryItem error:", e);
-      throw e; // Rethrow to let UI handle the alert
+      throw e;
     }
   },
 
@@ -117,9 +132,20 @@ export const travelService = {
     itemId: number
   ): Promise<void> => {
     try {
-      await apiRequest.deleteItineraryItem(itineraryId, itemId);
+      const res = await apiRequest.deleteItineraryItem(itineraryId, itemId);
+      unwrapResponse(res);
     } catch (e) {
       console.error("deleteItineraryItem error:", e);
+      throw e;
+    }
+  },
+
+  deleteItinerary: async (id: number): Promise<void> => {
+    try {
+      const res = await apiRequest.deleteItinerary(id);
+      unwrapResponse(res);
+    } catch (e) {
+      console.error("deleteItinerary error:", e);
       throw e;
     }
   },
@@ -127,10 +153,20 @@ export const travelService = {
   shareItinerary: async (id: number): Promise<string | null> => {
     try {
       const res = await apiRequest.shareItinerary(id);
-      return res?.data?.data || null;
+      return unwrapResponse(res);
     } catch (e) {
       console.error("shareItinerary error:", e);
       return null;
+    }
+  },
+
+  updateItineraryDescription: async (id: number, description: string): Promise<void> => {
+    try {
+      const res = await apiRequest.updateItineraryDescription(id, description);
+      unwrapResponse(res);
+    } catch (e) {
+      console.error("updateItineraryDescription error:", e);
+      throw e;
     }
   },
 };
