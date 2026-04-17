@@ -21,7 +21,8 @@ export const setOnUnauthorized = (fn: () => Promise<void>) => {
   onUnauthorizedCallback = fn;
 };
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
+// const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.202.49.66:8080";
 
 const http = axios.create({
   baseURL: BASE_URL,

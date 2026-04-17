@@ -24,7 +24,7 @@ export interface CreateItineraryRequest {
  */
 export interface AddItineraryItemRequest {
   itineraryId: number;
-  type: 'PLACE' | 'EVENT';
+  type: 'LOCATION' | 'EVENT';
   date: string;
   startDate: string;
   endDate: string;

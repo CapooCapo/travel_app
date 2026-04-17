@@ -54,11 +54,10 @@ export function useItinerary(navigation: any) {
   return {
     itineraries,
     isLoading,
-    fetchData,
+    loadItineraries: fetchData,
     deleteItinerary,
-    shareItinerary,
-    goBack: () => navigation.goBack(),
-    goToCreate: () => navigation.navigate("CreatePlan"),
-    goToDetail: (id: number) => navigation.navigate("ItineraryDetail", { id }),
+    handleShare: shareItinerary,
+    navigateToCreate: () => navigation.navigate("CreatePlan"),
+    navigateToDetail: (id: number) => navigation.navigate("ItineraryDetail", { itineraryId: id }),
   };
 }

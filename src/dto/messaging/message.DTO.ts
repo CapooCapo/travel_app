@@ -10,6 +10,7 @@ export type MessageDTO = {
   latitude?: number;
   longitude?: number;
   address?: string;
+  placeName?: string;
   createdAt: string;
   isRead: boolean;
 };

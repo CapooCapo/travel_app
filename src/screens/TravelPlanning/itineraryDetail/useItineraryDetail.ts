@@ -12,6 +12,9 @@ export function useItineraryDetail(navigation: any, itineraryId: number) {
   }, [itineraryId]);
 
   const loadItinerary = async () => {
+    // Guard: never fire if itineraryId is undefined / 0 / NaN
+    if (!itineraryId) return;
+
     setIsLoading(true);
     try {
       const res = await travelService.getItineraryById(itineraryId);

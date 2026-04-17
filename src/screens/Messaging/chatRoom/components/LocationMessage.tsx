@@ -11,7 +11,9 @@ interface LocationMessageProps {
 }
 
 const LocationMessage: React.FC<LocationMessageProps> = ({ message, isMe }) => {
-  const { latitude, longitude, address } = message;
+  const { latitude, longitude, address, placeName } = message;
+  const displayTitle = placeName || address || 'Shared Location';
+  const displaySubtitle = address && placeName ? address : (latitude ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` : '');
 
   const openInMaps = () => {
     if (!latitude || !longitude) return;
@@ -21,10 +23,10 @@ const LocationMessage: React.FC<LocationMessageProps> = ({ message, isMe }) => {
       android: 'geo:0,0?q=',
     });
     const latLng = `${latitude},${longitude}`;
-    const label = address || 'Shared Location';
+    const label = placeName || address || 'Shared Location';
     const url = Platform.select({
-      ios: `${scheme}${label}@${latLng}`,
-      android: `${scheme}${latLng}(${label})`,
+      ios: `${scheme}${encodeURIComponent(label)}@${latLng}`,
+      android: `${scheme}${latLng}(${encodeURIComponent(label)})`,
     });
 
     if (url) {
@@ -41,19 +43,21 @@ const LocationMessage: React.FC<LocationMessageProps> = ({ message, isMe }) => {
       onPress={openInMaps}
       activeOpacity={0.8}
     >
-      <View style={{ height: 120, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name="map" size={40} color={isMe ? COLORS.primary : COLORS.muted} />
-        <Text style={{ marginTop: 8, color: isMe ? COLORS.primary : COLORS.muted, fontSize: 12 }}>
+      <View style={{ height: 100, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+        <Ionicons name="map" size={32} color={isMe ? COLORS.primary : COLORS.muted} />
+        <Text style={{ marginTop: 4, color: isMe ? COLORS.primary : COLORS.muted, fontSize: 10 }}>
           Tap to view on Map
         </Text>
       </View>
       <View style={styles.locationInfo}>
-        <Text style={[styles.locationName, { color: isMe ? (COLORS.text === '#fff' ? '#fff' : COLORS.text) : COLORS.text }]}>
-           Shared Location
+        <Text style={[styles.locationName, { color: isMe ? (COLORS.text === '#fff' ? '#fff' : COLORS.text) : COLORS.text }]} numberOfLines={1}>
+           {displayTitle}
         </Text>
-        <Text style={[styles.locationAddress, { color: isMe ? (COLORS.text === '#fff' ? 'rgba(255,255,255,0.7)' : COLORS.muted) : COLORS.muted }]} numberOfLines={2}>
-          {address || `${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
-        </Text>
+        {displaySubtitle ? (
+          <Text style={[styles.locationAddress, { color: isMe ? (COLORS.text === '#fff' ? 'rgba(255,255,255,0.7)' : COLORS.muted) : COLORS.muted }]} numberOfLines={1}>
+            {displaySubtitle}
+          </Text>
+        ) : null}
       </View>
     </TouchableOpacity>
   );

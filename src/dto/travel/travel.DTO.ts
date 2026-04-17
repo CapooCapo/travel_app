@@ -1,6 +1,6 @@
 export type DayPlanItemDTO = {
   id: number;
-  type: 'PLACE' | 'EVENT';
+  type: 'LOCATION' | 'EVENT';
   referenceId: number;
   name: string;
   address: string;
@@ -39,7 +39,7 @@ export type AddPlanItemRequest = {
   date?: string;
   startDate?: string;
   endDate?: string;
-  type: 'PLACE' | 'EVENT';
+  type: 'LOCATION' | 'EVENT';
   locationId?: number;
   eventId?: number;
   referenceId: number;

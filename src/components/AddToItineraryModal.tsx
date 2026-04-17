@@ -120,10 +120,9 @@ export default function AddToItineraryModal({
         startDate: startDate,
         endDate: endDate || startDate,
         date: startDate,
-        type: item.type === "place" ? "PLACE" : "EVENT",
-        locationId: item.type === "place" ? item.id : undefined,
-        eventId: item.type === "event" ? item.id : undefined,
-        referenceId: item.id, // Explicitly pass referenceId (Builder will sanitize if locationId is present)
+        type: item.type === "place" ? "LOCATION" : "EVENT",
+        // Backend only accepts referenceId — map the item's id here directly
+        referenceId: item.id,
         startTime: startTime || undefined,
         note: ""
       });
