@@ -40,7 +40,9 @@ public class ChatMessage {
     public enum MessageType {
         TEXT,
         IMAGE,
-        EMOJI
+        EMOJI,
+        LOCATION,
+        SYSTEM
     }
 
     public enum MessageStatus {
