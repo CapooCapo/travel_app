@@ -71,6 +71,10 @@ export type CreateLocationRequest = {
   description: string;
   latitude: number;
   longitude: number;
+  externalId?: string;
+  source?: string;
+  phone?: string;
+  website?: string;
 };
 
 /** Helper: map BE LocationResponse → FE PlaceDTO */

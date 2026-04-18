@@ -1,12 +1,15 @@
+import { CreateLocationRequest } from "../discovery/place.DTO";
+
 export type DayPlanItemDTO = {
   id: number;
   type: 'LOCATION' | 'EVENT';
-  referenceId: number;
+  locationId: number | null;
+  eventId: number | null;
   name: string;
   address: string;
-  startTime?: string;
-  endTime?: string;
-  note?: string;
+  startTime: string | null;
+  endTime: string | null;
+  note: string | null;
   order: number;
   orderIndex: number;
 };
@@ -36,14 +39,13 @@ export type CreateItineraryRequest = {
 
 export type AddPlanItemRequest = {
   itineraryId: number;
-  date?: string;
-  startDate?: string;
-  endDate?: string;
+  date: string;
   type: 'LOCATION' | 'EVENT';
   locationId?: number;
   eventId?: number;
-  referenceId: number;
+  locationData?: CreateLocationRequest;
   startTime?: string;
   endTime?: string;
   note?: string;
+  overrideConflict?: boolean;
 };

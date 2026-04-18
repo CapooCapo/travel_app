@@ -47,7 +47,7 @@ const WriteReviewScreen = ({ navigation, route }: any) => {
     try {
       // reviewService.createReview(locationId, rating, content, imageUrl?)
       await reviewService.createReview(locationId, rating, content.trim());
-      Alert.alert("Review Submitted ✅", "Thank you for your feedback!", [
+      Alert.alert("Success ✅", "Your review has been saved!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {

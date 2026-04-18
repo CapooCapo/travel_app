@@ -54,7 +54,7 @@ export type UserDTO = {
   travelStyle?: string;
   avatarUrl?: string;
   interests?: InterestItem[]; 
-  followerCount?: number;
+  followersCount?: number;
   followingCount?: number;
   isFollowing?: boolean;
   role?: string;

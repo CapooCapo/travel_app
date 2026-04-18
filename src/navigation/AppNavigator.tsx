@@ -15,6 +15,18 @@ import OtpVerificationScreen from "../screens/Auth/otpVerification/OtpVerificati
 import ResetPasswordScreen   from "../screens/Auth/resetPassword/ResetPassword.Screen";
 import SyncLoadingScreen    from "../screens/Auth/syncLoading/SyncLoading.Screen";
 
+// ─── Deep Linking ─────────────────────────────────────────────────────────────
+const linking = {
+  prefixes: ["app://", "travelapp://"],
+  config: {
+    screens: {
+      PlaceDetail: "location/:placeId",
+      EventDetail: "event/:eventId",
+      UserProfile: "user/:userId",
+    },
+  },
+};
+
 // ─── Home ─────────────────────────────────────────────────────────────────
 import HomeScreen            from "../screens/Home/home/Home.Screen";
 
@@ -197,7 +209,7 @@ export default function AppNavigator() {
   if (!isLoaded) return null;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         id="root-stack"
         screenOptions={{ headerShown: false }}

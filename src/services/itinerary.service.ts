@@ -3,9 +3,10 @@ import { unwrapResponse } from "../utils/responseHandler";
 import { 
   ItineraryDTO, 
   CreateItineraryRequest, 
-  AddItineraryItemRequest, 
-  ItineraryItemResponse 
-} from "../dto/itinerary.dto";
+  AddPlanItemRequest, 
+  DayPlanItemDTO as ItineraryItemResponse 
+} from "../dto/travel/travel.DTO";
+import { locationService } from "./location.service";
 
 /**
  * Senior Architect Implementation of Itinerary Service.
@@ -16,6 +17,10 @@ export const itineraryService = {
   async getItineraries(): Promise<ItineraryDTO[]> {
     const res = await apiRequest.getItineraries();
     return unwrapResponse(res) || [];
+  },
+
+  async loadItineraries(): Promise<ItineraryDTO[]> {
+    return this.getItineraries();
   },
 
   async getItineraryById(id: number): Promise<ItineraryDTO | null> {
@@ -31,27 +36,36 @@ export const itineraryService = {
   /**
    * Refactored: Implementation of the Sanitization Builder Pattern.
    * Ensures the strict XOR rule (exactly one ID) is respected by pruning identifiers.
+   * 🚀 AUTO-SYNC: If locationId is missing but locationData is present, it syncs first.
    */
-  async addItem(req: AddItineraryItemRequest): Promise<ItineraryItemResponse | null> {
-    // 🧱 Build sanitized payload
-    const payload = { ...req };
-    
-    // 🛡️ XOR Sanitization Rule:
-    // If we have a system locationId, we MUST NOT send referenceId or eventId.
-    // If we have an eventId, we MUST NOT send locationId or referenceId.
-    // This complies with backend constraint: itinerary_items_strict_xor_check
-    if (payload.locationId) {
-      console.log(`[ItineraryService] Sanitizing for locationId: ${payload.locationId}`);
-      delete payload.referenceId;
-      delete payload.eventId;
-    } else if (payload.eventId) {
-      console.log(`[ItineraryService] Sanitizing for eventId: ${payload.eventId}`);
-      delete payload.locationId;
-      delete payload.referenceId;
-    } else if (payload.referenceId) {
-      console.log(`[ItineraryService] Sanitizing for referenceId: ${payload.referenceId}`);
-      delete payload.locationId;
-      delete payload.eventId;
+  async addItem(req: AddPlanItemRequest): Promise<ItineraryItemResponse | null> {
+    if (!req.itineraryId) throw new Error("itineraryId is required");
+
+    // 🔄 AUTO-SYNC LOGIC:
+    let locationId = req.locationId;
+    if (req.type === 'LOCATION' && !locationId && req.locationData) {
+      const synced = await locationService.syncLocation(req.locationData);
+      if (synced && synced.id) {
+        locationId = synced.id;
+      } else {
+        throw new Error("Failed to synchronize external location");
+      }
+    }
+
+    // 🧱 Build simplified payload
+    const payload: any = {
+      type: req.type,
+      date: req.date,
+      startTime: req.startTime,
+      endTime: req.endTime,
+      note: req.note,
+      overrideConflict: req.overrideConflict
+    };
+
+    if (req.type === 'LOCATION') {
+      payload.locationId = locationId;
+    } else {
+      payload.eventId = req.eventId;
     }
 
     const res = await apiRequest.addItineraryItem(req.itineraryId, payload);

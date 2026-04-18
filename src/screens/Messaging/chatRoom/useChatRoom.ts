@@ -6,6 +6,7 @@ import { Client } from "@stomp/stompjs";
 import { useAuth } from "@clerk/clerk-expo";
 import * as Location from 'expo-location';
 import { Alert } from "react-native";
+import { MessageType } from "../../../constants/messageTypes";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
 const WS_URL = BASE_URL.replace(/^http/, "ws") + "/ws";
@@ -117,7 +118,7 @@ export function useChatRoom(navigation: any, chatRoomId: number) {
       const sent = await messagingService.sendMessage({
         chatRoomId: chatRoomId,
         content: text,
-        type: "TEXT",
+        type: MessageType.TEXT,
       });
       if (sent) {
         // Will be added twice if broadcast comes through? No, wait. 
@@ -179,7 +180,7 @@ export function useChatRoom(navigation: any, chatRoomId: number) {
       const sent = await messagingService.sendMessage({
         chatRoomId: chatRoomId,
         content: "Shared a location",
-        type: "LOCATION",
+        type: MessageType.LOCATION,
         latitude,
         longitude,
         placeName: addressStr

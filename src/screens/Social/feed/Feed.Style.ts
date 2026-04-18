@@ -59,9 +59,9 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.primary + "44",
   },
-  userAvatarText: { ...FONTS.h3, color: COLORS.primary },
+  userAvatarText: { ...FONTS.h2, color: COLORS.primary },
   userInfo: { flex: 1, marginLeft: 16 },
-  userName: { ...FONTS.h3, color: COLORS.text, fontWeight: "700" },
+  userName: { ...FONTS.h2, color: COLORS.text, fontWeight: "700" },
   userEmail: { ...FONTS.body2, color: COLORS.muted, fontSize: 12, marginTop: 2 },
   followButton: {
     paddingHorizontal: 16,
@@ -97,6 +97,14 @@ export const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     marginTop: 6,
   },
+  itemFollowButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    marginTop: 6,
+  },
+  itemFollowText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
 
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 80 },
   emptyText: { ...FONTS.body1, color: COLORS.muted, marginTop: 10 },

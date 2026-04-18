@@ -19,8 +19,12 @@ export function useAdminDashboard() {
   });
 
   const [activeTab, setActiveTab] = useState<AdminTab>("events");
+  const [filters, setFilters] = useState({
+    events: "PENDING",
+    reports: "PENDING",
+  });
 
-  const fetchSection = useCallback(async (tab: AdminTab) => {
+  const fetchSection = useCallback(async (tab: AdminTab, forceStatus?: string) => {
     setData((prev) => ({
       ...prev,
       [tab]: { ...prev[tab], loading: true, error: null },
@@ -31,8 +35,7 @@ export function useAdminDashboard() {
       try {
         switch (tab) {
           case "events":
-            result = await apiRequest.getEvents("PENDING");
-            console.log("[ADMIN DEBUG] Events result:", JSON.stringify(result, null, 2));
+            result = await apiRequest.getEvents(forceStatus || filters.events);
             setData((prev) => ({
               ...prev,
               events: { 
@@ -43,7 +46,6 @@ export function useAdminDashboard() {
             break;
           case "users":
             result = await apiRequest.getUsers();
-            console.log("[ADMIN DEBUG] Users result:", JSON.stringify(result, null, 2));
             setData((prev) => ({
               ...prev,
               users: { 
@@ -53,8 +55,7 @@ export function useAdminDashboard() {
             }));
             break;
           case "reports":
-            result = await apiRequest.getReports("PENDING");
-            console.log("[ADMIN DEBUG] Reports result:", JSON.stringify(result, null, 2));
+            result = await apiRequest.getReports(forceStatus || filters.reports);
             setData((prev) => ({
               ...prev,
               reports: { 
@@ -65,7 +66,6 @@ export function useAdminDashboard() {
             break;
           case "analytics":
             result = await apiRequest.getAnalytics();
-            console.log("[ADMIN DEBUG] Analytics result:", JSON.stringify(result, null, 2));
             setData((prev) => ({
               ...prev,
               analytics: { data: result || null, loading: false, error: null, errorStatus: null },
@@ -78,31 +78,17 @@ export function useAdminDashboard() {
         const message = e?.response?.data?.message || e?.message || `Failed to load ${tab}`;
         setData((prev) => ({
           ...prev,
-          [tab]: { 
-              ...prev[tab], 
-              loading: false, 
-              error: message,
-              errorStatus: status
-          },
+          [tab]: { ...prev[tab], loading: false, error: message, errorStatus: status },
         }));
       }
     };
 
     executeFetch();
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
-    // Only fetch if we don't have data yet
-    if (activeTab === "analytics" && !data.analytics.data) {
-        fetchSection("analytics");
-    } else if (activeTab === "events" && data.events.data.length === 0) {
-        fetchSection("events");
-    } else if (activeTab === "users" && data.users.data.length === 0) {
-        fetchSection("users");
-    } else if (activeTab === "reports" && data.reports.data.length === 0) {
-        fetchSection("reports");
-    }
-  }, [activeTab, fetchSection]);
+    fetchSection(activeTab);
+  }, [activeTab, fetchSection, filters.events, filters.reports]);
 
   const handleApprove = async (eventId: number) => {
     try {
@@ -111,6 +97,8 @@ export function useAdminDashboard() {
         ...prev,
         events: { ...prev.events, data: prev.events.data.filter((e: any) => e.id !== eventId) },
       }));
+      // Background refresh analytics to update pending count
+      fetchSection("analytics");
     } catch (e: any) {
       throw e;
     }
@@ -123,6 +111,7 @@ export function useAdminDashboard() {
           ...prev,
           events: { ...prev.events, data: prev.events.data.filter((e: any) => e.id !== eventId) },
         }));
+        fetchSection("analytics");
       } catch (e: any) {
         throw e;
       }
@@ -135,6 +124,7 @@ export function useAdminDashboard() {
           ...prev,
           reports: { ...prev.reports, data: prev.reports.data.filter((r: any) => r.id !== reportId) },
         }));
+        fetchSection("analytics");
     } catch (e: any) {
         throw e;
     }
@@ -144,6 +134,8 @@ export function useAdminDashboard() {
     sections: data,
     activeTab,
     setActiveTab,
+    filters,
+    setFilters,
     fetchSection,
     handleApprove,
     handleReject,

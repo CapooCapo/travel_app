@@ -106,7 +106,11 @@ const FeedScreen = ({ navigation }: any) => {
           renderItem={({ item }) => 
             isSearchActive 
               ? <UserSearchItem item={item as UserDTO} onPress={navigateToUser} />
-              : <FeedItem item={item as FeedItemDTO} onPress={navigateToTarget} />
+              : <FeedItem 
+                  item={item as FeedItemDTO} 
+                  onPress={navigateToTarget}
+                  onFollow={navigateToUser} 
+                />
           }
           keyExtractor={(item) => `social-${item.id}`}
           contentContainerStyle={styles.listContent}

@@ -315,7 +315,17 @@ const PlaceDetailScreen = ({ navigation, route }: any) => {
       {/* Add To Itinerary Modal */}
       <AddToItineraryModal
         visible={modalVisible}
-        item={{ id: place.id, name: place.name, type: "place" }}
+        item={{ 
+          id: place.id, 
+          name: place.name, 
+          type: "place",
+          latitude: place.latitude,
+          longitude: place.longitude,
+          address: place.address,
+          // If the place came from an external source (OSM/AI), these might be relevant
+          externalId: (place as any).externalId,
+          source: (place as any).source
+        }}
         onClose={() => setModalVisible(false)}
         onSuccess={() => {
           setModalVisible(false);

@@ -82,10 +82,9 @@ export function useCreatePlan(navigation: any, route: any) {
         await itineraryService.addItem({
           itineraryId: newItin.id,
           date: startDate,
-          startDate: startDate,
-          endDate: endDate || startDate,
-          type: autoAddPlace.type === "place" ? "PLACE" : "EVENT",
-          referenceId: autoAddPlace.id,
+          type: autoAddPlace.type === "place" ? "LOCATION" : "EVENT",
+          locationId: autoAddPlace.type === "place" ? autoAddPlace.id : undefined,
+          eventId: autoAddPlace.type === "event" ? autoAddPlace.id : undefined,
           note: "Automatically added"
         });
         Alert.alert("Success!", `${autoAddPlace.name} added to your new trip.`);

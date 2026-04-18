@@ -17,6 +17,12 @@ export type ItemToAdd = {
   id: number;
   name: string;
   type: "place" | "event";
+  // Metadata for external locations
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  externalId?: string;
+  source?: string;
 };
 
 interface AddToItineraryModalProps {
@@ -117,12 +123,19 @@ export default function AddToItineraryModal({
     try {
       await itineraryService.addItem({
         itineraryId: selectedItinId,
-        startDate: startDate,
-        endDate: endDate || startDate,
         date: startDate,
         type: item.type === "place" ? "LOCATION" : "EVENT",
-        // Backend only accepts referenceId — map the item's id here directly
-        referenceId: item.id,
+        locationId: item.type === "place" ? item.id : undefined,
+        eventId: item.type === "event" ? item.id : undefined,
+        locationData: item.type === "place" ? {
+          name: item.name,
+          address: item.address || "",
+          latitude: item.latitude || 0,
+          longitude: item.longitude || 0,
+          externalId: item.externalId,
+          source: item.source,
+          description: ""
+        } : undefined,
         startTime: startTime || undefined,
         note: ""
       });

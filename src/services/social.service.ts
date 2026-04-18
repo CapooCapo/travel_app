@@ -3,7 +3,7 @@ import { unwrapResponse } from "../utils/responseHandler";
 import { FollowRequest } from "../dto/social/social.DTO";
 
 export const socialService = {
-  async getFeed(page: number = 1, types?: string[]) {
+  async getFeed(page: number = 0, types?: string[]) {
     const res = await apiRequest.getFeed(page, types);
     return unwrapResponse(res) || { content: [] }; 
   },

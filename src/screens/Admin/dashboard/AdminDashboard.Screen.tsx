@@ -127,8 +127,37 @@ const AdminDashboardScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const {
     sections, activeTab, setActiveTab,
+    filters, setFilters,
     fetchSection, handleApprove, handleReject, handleResolveReport,
   } = useAdminDashboard();
+
+  const renderStatusFilter = (tab: "events" | "reports") => {
+    const currentStatus = filters[tab];
+    const options = tab === "events" 
+        ? [{ label: "Pending", value: "PENDING" }, { label: "Approved", value: "APPROVED" }, { label: "Rejected", value: "REJECTED" }]
+        : [{ label: "Pending", value: "PENDING" }, { label: "Resolved", value: "RESOLVED" }, { label: "Dismissed", value: "DISMISSED" }];
+
+    return (
+        <View style={{ flexDirection: 'row', paddingHorizontal: SIZES.padding, paddingVertical: 10, gap: 8 }}>
+            {options.map(opt => (
+                <TouchableOpacity 
+                    key={opt.value}
+                    style={{
+                        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+                        backgroundColor: currentStatus === opt.value ? COLORS.primary : COLORS.card,
+                        borderWidth: 1, borderColor: currentStatus === opt.value ? COLORS.primary : COLORS.border
+                    }}
+                    onPress={() => setFilters(prev => ({ ...prev, [tab]: opt.value }))}
+                >
+                    <Text style={{ 
+                        fontSize: 12, fontWeight: '700', 
+                        color: currentStatus === opt.value ? '#fff' : COLORS.muted 
+                    }}>{opt.label}</Text>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
+  };
 
   const renderSectionContent = () => {
     const section = sections[activeTab];
@@ -172,59 +201,67 @@ const AdminDashboardScreen = ({ navigation }: any) => {
     }
 
     return (
-      <FlatList
-        data={Array.isArray(section.data) ? section.data : []}
-        renderItem={activeTab === "events" ? renderEventCard : activeTab === "users" ? renderUserCard : renderReportCard}
-        keyExtractor={(item) => `admin-${activeTab}-${item.id}`}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-            <RefreshControl refreshing={section.loading} onRefresh={() => fetchSection(activeTab)} tintColor={COLORS.primary} />
-        }
-        ListEmptyComponent={
-            <View style={styles.centerView}>
-                <Ionicons name="documents-outline" size={48} color={COLORS.muted} />
-                <Text style={styles.headerSub}>No {
-                    activeTab === "events" ? "events" : 
-                    activeTab === "users" ? "users" : 
-                    "reports"
-                } found.</Text>
-            </View>
-        }
-      />
+      <View style={{ flex: 1 }}>
+        {(activeTab === "events" || activeTab === "reports") && renderStatusFilter(activeTab as any)}
+        <FlatList
+            data={Array.isArray(section.data) ? section.data : []}
+            renderItem={activeTab === "events" ? renderEventCard : activeTab === "users" ? renderUserCard : renderReportCard}
+            keyExtractor={(item) => `admin-${activeTab}-${item.id}`}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl refreshing={section.loading} onRefresh={() => fetchSection(activeTab)} tintColor={COLORS.primary} />
+            }
+            ListEmptyComponent={
+                <View style={styles.centerView}>
+                    <Ionicons name="documents-outline" size={48} color={COLORS.muted} />
+                    <Text style={styles.headerSub}>No {
+                        activeTab === "events" ? "events" : 
+                        activeTab === "users" ? "users" : 
+                        "reports"
+                    } found.</Text>
+                </View>
+            }
+        />
+      </View>
     );
   };
 
   const renderEventCard = ({ item }: { item: any }) => {
-    console.log("[ADMIN DEBUG] Rendering Event Card:", item?.id, item?.name);
+    const isPending = filters.events === "PENDING";
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item?.name || "Unnamed Event"}</Text>
-          <Text style={[styles.tag, styles.tagPending]}>{item?.status || "Pending"}</Text>
+          <Text style={[
+              styles.tag, 
+              item?.status === 'APPROVED' ? styles.tagSuccess : styles.tagPending
+          ]}>{item?.status || "Pending"}</Text>
         </View>
         <Text style={styles.cardMeta}>📍 {item?.locationId ? "Location Set" : "No Location"}</Text>
         <Text style={styles.cardMeta} numberOfLines={2}>📝 {item?.description || "No description provided."}</Text>
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => {
-              handleApprove(item?.id).catch(err => Alert.alert("Error", err.message));
-          }}>
-            <Ionicons name="checkmark" size={18} color="#fff" />
-            <Text style={styles.btnText}>Approve</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dangerBtn} onPress={() => {
-              handleReject(item?.id).catch(err => Alert.alert("Error", err.message));
-          }}>
-            <Ionicons name="close" size={18} color={COLORS.danger} />
-            <Text style={styles.btnTextDanger}>Reject</Text>
-          </TouchableOpacity>
-        </View>
+        
+        {isPending && (
+            <View style={styles.actionRow}>
+                <TouchableOpacity style={styles.primaryBtn} onPress={() => {
+                    handleApprove(item?.id).catch(err => Alert.alert("Error", err.message));
+                }}>
+                    <Ionicons name="checkmark" size={18} color="#fff" />
+                    <Text style={styles.btnText}>Approve</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.dangerBtn} onPress={() => {
+                    handleReject(item?.id).catch(err => Alert.alert("Error", err.message));
+                }}>
+                    <Ionicons name="close" size={18} color={COLORS.danger} />
+                    <Text style={styles.btnTextDanger}>Reject</Text>
+                </TouchableOpacity>
+            </View>
+        )}
       </View>
     );
   };
 
   const renderUserCard = ({ item }: { item: any }) => {
-    console.log("[ADMIN DEBUG] Rendering User Card:", item?.id, item?.email);
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -238,27 +275,33 @@ const AdminDashboardScreen = ({ navigation }: any) => {
   };
 
   const renderReportCard = ({ item }: { item: any }) => {
-    console.log("[ADMIN DEBUG] Rendering Report Card:", item?.id, item?.reportedType);
+    const isPending = filters.reports === "PENDING";
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Report: {item?.reportedType || "N/A"}</Text>
-          <Text style={[styles.tag, styles.tagPending]}>{item?.status || "PENDING"}</Text>
+          <Text style={[
+              styles.tag, 
+              item?.status === 'RESOLVED' ? styles.tagSuccess : styles.tagPending
+          ]}>{item?.status || "PENDING"}</Text>
         </View>
         <Text style={styles.cardMeta}>⚠️ Reason: {item?.reason || "No reason given"}</Text>
         <Text style={styles.cardMeta}>👤 Reporter: {item?.reporterName || "Anonymous"}</Text>
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.secondaryBtn} onPress={() => {
-              handleResolveReport(item?.id, "RESOLVED").catch(err => Alert.alert("Error", err.message));
-          }}>
-            <Text style={styles.btnTextOutline}>Resolve</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dangerBtn} onPress={() => {
-              handleResolveReport(item?.id, "DISMISSED").catch(err => Alert.alert("Error", err.message));
-          }}>
-            <Text style={styles.btnTextDanger}>Dismiss</Text>
-          </TouchableOpacity>
-        </View>
+        
+        {isPending && (
+            <View style={styles.actionRow}>
+                <TouchableOpacity style={styles.secondaryBtn} onPress={() => {
+                    handleResolveReport(item?.id, "RESOLVED").catch(err => Alert.alert("Error", err.message));
+                }}>
+                    <Text style={styles.btnTextOutline}>Resolve</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.dangerBtn} onPress={() => {
+                    handleResolveReport(item?.id, "DISMISSED").catch(err => Alert.alert("Error", err.message));
+                }}>
+                    <Text style={styles.btnTextDanger}>Dismiss</Text>
+                </TouchableOpacity>
+            </View>
+        )}
       </View>
     );
   };

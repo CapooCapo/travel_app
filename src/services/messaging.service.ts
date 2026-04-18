@@ -59,6 +59,11 @@ export const messagingService = {
       payload.latitude = locReq.latitude;
       payload.longitude = locReq.longitude;
       payload.placeName = locReq.placeName;
+
+      // 🛡️ Safety check before dispatching
+      if (payload.latitude == null || payload.longitude == null) {
+        throw new Error("Cannot share location without valid coordinates.");
+      }
       
       // 🛡️ Remove any stringified nesting or legacy 'location' objects
       if (typeof payload.content === 'string' && payload.content.startsWith('{')) {

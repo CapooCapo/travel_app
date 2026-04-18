@@ -6,7 +6,9 @@ import { UserDTO } from "../../../dto/auth/user.DTO";
 export function useUserProfile(userId: number, navigation: any) {
   const [user, setUser] = useState<UserDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
+
+  // Derive isFollowing from user object for single source of truth
+  const isFollowing = !!user?.isFollowing;
 
   useEffect(() => {
     if (userId) {
@@ -16,13 +18,10 @@ export function useUserProfile(userId: number, navigation: any) {
 
   const loadProfile = async () => {
     setIsLoading(true);
-    console.log(`[UserProfileScreen] Fetching profile for userId: ${userId}`);
+    console.log(`[useUserProfile] Fetching profile ground-truth for userId: ${userId}`);
     try {
       const data = await socialService.getUserProfile(userId);
       setUser(data);
-      if (data?.isFollowing !== undefined) {
-        setIsFollowing(data.isFollowing);
-      }
     } catch (error: any) {
       console.error("[useUserProfile] Error loading profile:", error);
     } finally {
@@ -31,16 +30,36 @@ export function useUserProfile(userId: number, navigation: any) {
   };
 
   const handleFollowChange = async () => {
+    if (!user) return;
+
+    // 1. Optimistic UI Update
+    const previousUser = { ...user };
+    const nextFollowing = !isFollowing;
+    const nextFollowerCount = (user.followersCount || 0) + (nextFollowing ? 1 : -1);
+    
+    // [FE DEBUG] Optimistic Update: nextFollowerCount
+    console.log(`[useUserProfile] Optimistic Update: nextFollowerCount=${nextFollowerCount}`);
+
+    setUser({
+      ...user,
+      isFollowing: nextFollowing,
+      followersCount: nextFollowerCount >= 0 ? nextFollowerCount : 0,
+    });
+
     try {
+      // 2. API Call
       if (isFollowing) {
         await socialService.unfollowUser({ targetUserId: userId });
-        setIsFollowing(false);
       } else {
         await socialService.followUser({ targetUserId: userId });
-        setIsFollowing(true);
       }
+      
+      // 3. Final Sync with Backend to ensure all counts (including side-effects) are correct
+      await loadProfile();
     } catch (error) {
-      console.error("[useUserProfile] Follow/Unfollow error:", error);
+      console.error("[useUserProfile] Follow/Unfollow error, reverting state:", error);
+      // Revert if API fails
+      setUser(previousUser);
     }
   };
 

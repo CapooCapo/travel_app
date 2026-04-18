@@ -3,8 +3,8 @@ import { Res } from "../dto/format";
 import {
   ItineraryDTO,
   CreateItineraryRequest,
+  AddPlanItemRequest,
 } from "../dto/travel/travel.DTO";
-import { AddItineraryItemRequest } from "../dto/itinerary.dto";
 import {
   TravelScheduleDTO,
   CreateTravelScheduleRequest,
@@ -20,7 +20,7 @@ export const travelApi = {
   createItinerary(req: CreateItineraryRequest) {
     return http.post<Res<ItineraryDTO>>("/api/itineraries", req).then(res => res.data);
   },
-  addItineraryItem(itineraryId: number, req: AddItineraryItemRequest) {
+  addItineraryItem(itineraryId: number, req: AddPlanItemRequest) {
     return http.post<Res<null>>(`/api/itineraries/${itineraryId}/items`, req).then(res => res.data);
   },
   deleteItineraryItem(itineraryId: number, itemId: number) {

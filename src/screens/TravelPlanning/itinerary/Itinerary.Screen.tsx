@@ -16,6 +16,7 @@ const ItineraryScreen = ({ navigation }: any) => {
   const {
     itineraries, isLoading,
     handleShare, navigateToDetail, navigateToCreate, loadItineraries,
+    deleteItinerary,
   } = useItinerary(navigation);
 
   useFocusEffect(
@@ -34,9 +35,17 @@ const ItineraryScreen = ({ navigation }: any) => {
       >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-          <TouchableOpacity style={styles.shareBtn} onPress={() => handleShare(item.id)}>
-            <Ionicons name="share-outline" size={20} color={COLORS.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row' }}>
+            <TouchableOpacity style={styles.shareBtn} onPress={() => handleShare(item.id)}>
+              <Ionicons name="share-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.shareBtn, { marginLeft: 10 }]} 
+              onPress={() => deleteItinerary(item.id)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FF4D4D" />
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.cardDates}>
           <Ionicons name="calendar-outline" size={14} color={COLORS.muted} />

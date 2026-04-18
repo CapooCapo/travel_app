@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  ActivityIndicator, StatusBar, Image,
+  ActivityIndicator, StatusBar, Image, Alert, Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -64,9 +64,26 @@ const ExploreScreen = ({ navigation, route }: any) => {
             <Ionicons name="arrow-back" size={24} color={COLORS.text} />
           </TouchableOpacity>
         )}
-        <Text style={styles.headerTitle}>
-          {isBookmarksMode ? "Saved Places" : "Explore"}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>
+            {isBookmarksMode ? "Saved Places" : "Explore"}
+          </Text>
+          <TouchableOpacity 
+            onPress={() => {
+              Alert.prompt(
+                "Scan Recommendation",
+                "Enter code from QR (e.g. app://location/1)",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Go", onPress: (url) => url && Linking.openURL(url) }
+                ]
+              );
+            }}
+            style={{ marginLeft: 12 }}
+          >
+            <Ionicons name="qr-code-outline" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Bar & Filter Button - Only show in normal mode */}

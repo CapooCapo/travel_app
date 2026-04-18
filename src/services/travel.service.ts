@@ -79,6 +79,10 @@ export const travelService = {
     }
   },
 
+  loadItineraries: async function(): Promise<ItineraryDTO[]> {
+    return this.getItineraries();
+  },
+
   // 🔹 Lấy chi tiết một lịch trình
   getItineraryById: async (id: number): Promise<ItineraryDTO | null> => {
     try {
@@ -109,14 +113,11 @@ export const travelService = {
     try {
       // 🛡️ Pre-flight Payload Sanitization
       // The database enforces a strict XOR constraint (only ONE type of ID allowed).
-      // If we have a system locationId, we MUST NOT send referenceId.
       const sanitizedReq = { ...req };
       if (sanitizedReq.locationId) {
-        delete sanitizedReq.referenceId;
-        delete sanitizedReq.eventId;
+        delete (sanitizedReq as any).eventId;
       } else if (sanitizedReq.eventId) {
-        delete sanitizedReq.locationId;
-        delete sanitizedReq.referenceId;
+        delete (sanitizedReq as any).locationId;
       }
 
       const res = await apiRequest.addItineraryItem(itineraryId, sanitizedReq);

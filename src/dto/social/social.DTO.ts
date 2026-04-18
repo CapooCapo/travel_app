@@ -1,13 +1,22 @@
 export type FeedItemDTO = {
   id: number;
-  userId: number;
+  actorId: number;
   userName: string;
   userAvatar?: string;
-  type: 'rating' | 'event_join' | 'bookmark' | 'review';
+  type: 
+    | 'REVIEW_CREATED' 
+    | 'ITINERARY_CREATED' 
+    | 'EVENT_JOINED' 
+    | 'LOCATION_SHARED' 
+    | 'USER_FOLLOWED' 
+    | 'LOCATION_ADDED'
+    | 'SYSTEM';
   message: string;
+  content?: string;
   targetName: string;
   targetId: number;
-  targetType: 'place' | 'event';
+  targetType: 'LOCATION' | 'EVENT' | 'USER' | 'OTHER';
+  isFollowing?: boolean;
   createdAt: string;
 };
 

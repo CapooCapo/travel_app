@@ -32,7 +32,10 @@ export const shareService = {
       await messagingService.sendMessage({
         chatRoomId: chatId,
         content: JSON.stringify(shareData),
-        type: 'LOCATION'
+        type: 'LOCATION',
+        latitude: item.latitude,
+        longitude: item.longitude,
+        placeName: item.name
       });
 
       return true;

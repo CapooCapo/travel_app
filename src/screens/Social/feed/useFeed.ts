@@ -1,13 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import { socialService } from "../../../services/social.service";
 import { debugService } from "../../../services/debug.service";
 import { FeedItemDTO } from "../../../dto/social/social.DTO";
 import { UserDTO } from "../../../dto/auth/user.DTO";
+import { Client } from "@stomp/stompjs";
+import { useAuth } from "@clerk/clerk-expo";
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
+const WS_URL = BASE_URL.replace(/^http/, "ws") + "/ws";
 
 export function useFeed(navigation: any) {
   const [feedItems, setFeedItems] = useState<FeedItemDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
   // Search state
@@ -15,6 +21,18 @@ export function useFeed(navigation: any) {
   const [searchResults, setSearchResults] = useState<UserDTO[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [stompClient, setStompClient] = useState<Client | null>(null);
+
+  const { getToken } = useAuth();
+  const isFocused = useIsFocused();
+
+  // 🔄 Deep Refresh on Focus
+  useEffect(() => {
+    if (isFocused) {
+      console.log("[useFeed] Screen focused, triggering refresh...");
+      loadFeed(true);
+    }
+  }, [isFocused]);
 
   useEffect(() => {
     if (searchKeyword.trim().length > 1) {
@@ -51,16 +69,54 @@ export function useFeed(navigation: any) {
     return () => clearTimeout(timer);
   }, []);
 
+  // 🔔 Real-time Feed Updates via WebSocket
+  useEffect(() => {
+    let client: Client;
+    
+    const connectStomp = async () => {
+      const token = await getToken({ template: 'jwt-template-account' });
+      if (!token) return;
+
+      client = new Client({
+        brokerURL: WS_URL,
+        connectHeaders: { Authorization: `Bearer ${token}` },
+        reconnectDelay: 5000,
+        onConnect: () => {
+          console.log("[STOMP-FEED] Connected");
+          client.subscribe("/user/queue/activities", (msg) => {
+            console.log("[STOMP-FEED] Received update, refreshing feed...");
+            // We could parse the payload to add the item directly,
+            // but for data consistency and simplicity, we trigger a refresh.
+            loadFeed(true); 
+          });
+        },
+        onStompError: (frame) => console.error("[STOMP-FEED] Error:", frame.body),
+      });
+
+      client.activate();
+      setStompClient(client);
+    };
+
+    connectStomp();
+
+    return () => {
+      if (client) client.deactivate();
+    };
+  }, []);
+
   useEffect(() => { loadFeed(true); }, [selectedTypes]);
 
   const loadFeed = useCallback(async (reset = false) => {
     if (isLoading && !reset) return;
     setIsLoading(true);
     try {
-      const currentPage = reset ? 1 : page;
+      const currentPage = reset ? 0 : page;
       console.log(`[useFeed] Loading feed page: ${currentPage}, types: ${selectedTypes}`);
+      console.log(`[FEED] Requesting page: ${currentPage}`);
       const data = await socialService.getFeed(currentPage, selectedTypes.length > 0 ? selectedTypes : undefined);
       
+      console.log("[FEED DEBUG] API Response Data:", data);
+
       // Handle both array and PageRes object
       const items = (data as any)?.content ?? (Array.isArray(data) ? data : []);
       
@@ -79,10 +135,13 @@ export function useFeed(navigation: any) {
   };
 
   const navigateToTarget = (item: FeedItemDTO) => {
-    if (item.targetType === "place")
+    const type = item.targetType;
+    if (type === "LOCATION")
       navigation.navigate("PlaceDetail", { placeId: item.targetId });
-    else
+    else if (type === "EVENT")
       navigation.navigate("EventDetail", { eventId: item.targetId });
+    else if (type === "USER")
+      navigation.navigate("UserProfile", { userId: item.targetId });
   };
 
   const navigateToUser = (userId: number) => {

@@ -21,8 +21,8 @@ export const setOnUnauthorized = (fn: () => Promise<void>) => {
   onUnauthorizedCallback = fn;
 };
 
-// const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.202.49.66:8080";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.72:8080";
+// const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://10.202.49.66:8080";
 
 const http = axios.create({
   baseURL: BASE_URL,
@@ -70,6 +70,11 @@ const showErrorAlert = (error: any) => {
 
   let title = "Error";
   let displayMessage = backendMessage || error.message || "An unexpected error occurred.";
+
+  if (status === 409) {
+    // ✋ Conflict (Likely already performed action) - handled by screen logic
+    return;
+  }
 
   if (!error.response) {
     title = "Network Error";

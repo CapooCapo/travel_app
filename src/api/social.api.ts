@@ -3,7 +3,7 @@ import { Res } from "../dto/format";
 import { UserDTO } from "../dto/auth/user.DTO";
 
 export const socialApi = {
-  getFeed(page = 1, types?: string[]) {
+  getFeed(page = 0, types?: string[]) {
     return http.get<Res<any>>("/api/social/feed", {
       params: { page, types }
     }).then(res => res.data);

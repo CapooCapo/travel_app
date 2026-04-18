@@ -100,7 +100,7 @@ const UserProfileScreen = ({ navigation }: any) => {
             <Text style={styles.statLabel}>Trips</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.followerCount || 0}</Text>
+            <Text style={styles.statNumber}>{user.followersCount || 0}</Text>
             <Text style={styles.statLabel}>Followers</Text>
           </View>
           <View style={styles.statItem}>

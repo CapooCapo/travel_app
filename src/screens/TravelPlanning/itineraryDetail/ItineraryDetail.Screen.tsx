@@ -56,7 +56,7 @@ const ItineraryDetailScreen = ({ navigation, route }: any) => {
 
           <View style={styles.cardIconBox}>
             <Ionicons
-              name={item.type === "PLACE" ? "map-outline" : "calendar-outline"}
+              name={item.type === "LOCATION" ? "map-outline" : "calendar-outline"}
               size={20}
               color={COLORS.primary}
             />
