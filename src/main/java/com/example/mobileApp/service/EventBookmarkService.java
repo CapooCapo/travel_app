@@ -9,12 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.mobileApp.dto.response.EventResponse;
 import com.example.mobileApp.entity.Event;
+import com.example.mobileApp.entity.TargetType;
 import com.example.mobileApp.entity.EventBookmark;
 import com.example.mobileApp.entity.User;
 import com.example.mobileApp.mapper.EventMapper;
 import com.example.mobileApp.repository.EventBookmarkRepository;
 import com.example.mobileApp.repository.EventRepository;
 import com.example.mobileApp.repository.UserRepository;
+import com.example.mobileApp.entity.ActivityType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,6 +29,7 @@ public class EventBookmarkService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
+    private final ActivityService activityService;
 
     @Transactional
     public void bookmarkEvent(Long userId, Long eventId) {
@@ -43,6 +46,18 @@ public class EventBookmarkService {
                 .build();
 
         eventBookmarkRepository.save(bookmark);
+
+        // 📝 Record Activity (Resilient)
+        try {
+            activityService.recordActivity(
+                userId,
+                ActivityType.EVENT_JOINED,
+                TargetType.EVENT,
+                event.getId(),
+                event.getTitle());
+        } catch (Exception e) {
+            // Non-blocking: we continue even if logging fails
+        }
     }
 
     @Transactional

@@ -36,14 +36,14 @@ public class CalendarService {
             String title = "Unknown";
             String locationName = "";
 
-            if (item.getType() == ItemType.LOCATION) {
-                Location location = locationRepository.findById(item.getReferenceId()).orElse(null);
+            if (item.getType() == ItemType.LOCATION && item.getLocationId() != null) {
+                Location location = locationRepository.findById(item.getLocationId()).orElse(null);
                 if (location != null) {
                     title = location.getName();
                     locationName = location.getName();
                 }
-            } else if (item.getType() == ItemType.EVENT) {
-                Event event = eventRepository.findById(item.getReferenceId()).orElse(null);
+            } else if (item.getType() == ItemType.EVENT && item.getEventId() != null) {
+                Event event = eventRepository.findById(item.getEventId()).orElse(null);
                 if (event != null) {
                     title = event.getTitle();
                     if (event.getLocation() != null) {

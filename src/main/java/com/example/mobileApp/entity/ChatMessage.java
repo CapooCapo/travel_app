@@ -22,8 +22,20 @@ public class ChatMessage {
     @JoinColumn(name = "chat_room_id", nullable = false)
     private ChatRoom chatRoom;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "place_name")
+    private String placeName;
+
+    @Column(name = "location_id")
+    private Long locationId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -1,8 +1,10 @@
 package com.example.mobileApp.service;
 
+import com.example.mobileApp.entity.TargetType;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -32,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ActivityService activityService;
     private final InterestRepository interestRepository;
     private final ReviewRepository reviewRepository;
     private final BookmarkRepository bookmarkRepository;
@@ -45,29 +48,71 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         boolean isFollowing = false;
         if (currentUserId != null && !currentUserId.equals(id)) {
-            User currentUser = userRepository.findById(currentUserId).orElse(null);
-            if (currentUser != null && currentUser.getFollowing() != null) {
-                isFollowing = currentUser.getFollowing().contains(user);
-            }
+            isFollowing = userRepository.isFollowing(currentUserId, id);
         }
-        return userMapper.toUserProfileDTO(user, isFollowing);
+        long followerCount = userRepository.countFollowers(id);
+        long followingCount = userRepository.countFollowing(id);
+        
+        return userMapper.toUserProfileDTO(user, isFollowing, followerCount, followingCount);
     }
 
     @Transactional
     public void followUser(Long followerId, Long followingId) {
-        if (followerId.equals(followingId)) throw new ApiException(400, "Cannot follow yourself");
-        User follower = userRepository.findById(followerId).orElseThrow(() -> new ResourceNotFoundException("Follower not found"));
-        User following = userRepository.findById(followingId).orElseThrow(() -> new ResourceNotFoundException("Following not found"));
-        follower.addFollowing(following);
-        userRepository.save(follower);
+        if (followerId.equals(followingId)) return;
+        
+        User follower = userRepository.findById(followerId).orElseThrow();
+        User following = userRepository.findById(followingId).orElseThrow();
+
+        if (!follower.getFollowing().contains(following)) {
+            follower.getFollowing().add(following);
+            userRepository.save(follower);
+            
+            // 📝 Record Activity (Resilient)
+            try {
+                activityService.recordActivity(
+                    followerId, 
+                    com.example.mobileApp.entity.ActivityType.USER_FOLLOWED, 
+                    TargetType.USER,
+                    followingId, 
+                    following.getFullName()
+                );
+            } catch (Exception e) {
+                log.error("[ACTIVITY ERROR] Failed to record USER_FOLLOWED activity for follower={}: {}", followerId, e.getMessage());
+                // Non-blocking: we continue even if logging fails
+            }
+        }
     }
 
     @Transactional
     public void unfollowUser(Long followerId, Long followingId) {
-        User follower = userRepository.findById(followerId).orElseThrow(() -> new ResourceNotFoundException("Follower not found"));
-        User following = userRepository.findById(followingId).orElseThrow(() -> new ResourceNotFoundException("Following not found"));
-        follower.removeFollowing(following);
-        userRepository.save(follower);
+        User follower = userRepository.findById(followerId).orElseThrow();
+        User following = userRepository.findById(followingId).orElseThrow();
+
+        if (follower.getFollowing().contains(following)) {
+            follower.getFollowing().remove(following);
+            userRepository.save(follower);
+            
+            // 🗑️ Cleanup activity (Optional but recommended for consistency)
+            // Note: If we want to keep history, don't delete. 
+            // But usually, unfollow should remove the feed item if it's "Started following".
+            // For now, let's keep it simple and just remove the relationship.
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.example.mobileApp.dto.UserDTO> getFollowers(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow();
+        return user.getFollowers().stream()
+                .map(userMapper::toUserDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.example.mobileApp.dto.UserDTO> getFollowing(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow();
+        return user.getFollowing().stream()
+                .map(userMapper::toUserDTO)
+                .toList();
     }
 
     @Transactional
@@ -183,7 +228,9 @@ public class UserService {
                     updateUserFromClaims(user, finalEmail, finalFullName, finalImageUrl, finalGender, finalTravelStyle,
                             rawInterests);
                     User savedUser = userRepository.save(user);
-                    return new com.example.mobileApp.dto.response.SyncResult(userMapper.toUserProfileDTO(savedUser, false), false);
+                    long fers = userRepository.countFollowers(savedUser.getId());
+                    long fing = userRepository.countFollowing(savedUser.getId());
+                    return new com.example.mobileApp.dto.response.SyncResult(userMapper.toUserProfileDTO(savedUser, false, fers, fing), false);
                 })
                 .orElseGet(() -> {
                     // 2. Not found by Clerk ID, try finding by Email
@@ -196,8 +243,10 @@ public class UserService {
                                 updateUserFromClaims(existingUser, finalEmail, finalFullName, finalImageUrl,
                                         finalGender, finalTravelStyle, rawInterests);
                                 User savedUser = userRepository.save(existingUser);
+                                long fers = userRepository.countFollowers(savedUser.getId());
+                                long fing = userRepository.countFollowing(savedUser.getId());
                                 return new com.example.mobileApp.dto.response.SyncResult(
-                                        userMapper.toUserProfileDTO(savedUser, false), false);
+                                        userMapper.toUserProfileDTO(savedUser, false, fers, fing), false);
                             })
                             .orElseGet(() -> {
                                 // 3. New user entirely
@@ -210,7 +259,9 @@ public class UserService {
                                 updateUserFromClaims(newUser, finalEmail, finalFullName, finalImageUrl, finalGender,
                                         finalTravelStyle, rawInterests);
                                 User savedUser = userRepository.save(newUser);
-                                return new com.example.mobileApp.dto.response.SyncResult(userMapper.toUserProfileDTO(savedUser, false),
+                                long fers = userRepository.countFollowers(savedUser.getId());
+                                long fing = userRepository.countFollowing(savedUser.getId());
+                                return new com.example.mobileApp.dto.response.SyncResult(userMapper.toUserProfileDTO(savedUser, false, fers, fing),
                                         true);
                             });
                 });

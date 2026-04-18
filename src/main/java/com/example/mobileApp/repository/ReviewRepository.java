@@ -1,6 +1,7 @@
 package com.example.mobileApp.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findAllByUserId(Long userId);
 
     boolean existsByUserIdAndLocationId(Long userId, Long locationId);
+
+    Optional<Review> findByUserIdAndLocationId(Long userId, Long locationId);
 
     Integer countByLocationId(Long locationId);
 

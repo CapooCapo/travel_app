@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -80,16 +81,41 @@ public class LocationService {
 
     @Transactional
     public LocationResponse createLocation(CreateLocationRequest request) {
+        // 🛡️ IDEMPOTENCY CHECK:
+        // 1. Check by External Identifier (e.g. Google Place ID)
+        if (request.getExternalId() != null && request.getSource() != null) {
+            Optional<Location> existingByExt = locationRepository.findByExternalIdAndSource(
+                request.getExternalId(), request.getSource());
+            if (existingByExt.isPresent()) {
+                log.info("Found existing location by External ID: {}", request.getExternalId());
+                return mapper.toResponse(existingByExt.get());
+            }
+        }
+
+        // 2. Check by Name and Address fallback
+        Optional<Location> existingByNameAddr = locationRepository.findByName(request.getName())
+            .filter(l -> l.getAddress() != null && l.getAddress().equals(request.getAddress()));
+        if (existingByNameAddr.isPresent()) {
+            log.info("Found existing location by Name and Address: {}", request.getName());
+            return mapper.toResponse(existingByNameAddr.get());
+        }
+
+        // 3. Create new if not found
         Location location = new Location();
         location.setName(request.getName());
         location.setAddress(request.getAddress());
         location.setDescription(request.getDescription());
         location.setLatitude(request.getLatitude());
         location.setLongitude(request.getLongitude());
+        location.setExternalId(request.getExternalId());
+        location.setSource(request.getSource());
+        location.setPhone(request.getPhone());
+        location.setWebsite(request.getWebsite());
         location.setRatingAverage(0.0);
         location.setReviewCount(0);
 
         locationRepository.save(location);
+        log.info("Created new location: {} (Source: {})", request.getName(), request.getSource());
 
         return mapper.toResponse(location);
     }

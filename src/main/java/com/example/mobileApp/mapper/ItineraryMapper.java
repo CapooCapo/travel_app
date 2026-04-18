@@ -1,11 +1,13 @@
 package com.example.mobileApp.mapper;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.example.mobileApp.dto.response.DayPlanResponse;
 import com.example.mobileApp.dto.response.ItineraryItemResponse;
 import com.example.mobileApp.dto.response.ItineraryResponse;
 import com.example.mobileApp.entity.Location;
@@ -30,16 +32,18 @@ public class ItineraryMapper {
         ItineraryItemResponse.ItineraryItemResponseBuilder builder = ItineraryItemResponse.builder()
                 .id(item.getId())
                 .type(item.getType())
-                .referenceId(item.getReferenceId())
+                .locationId(item.getLocationId())
+                .eventId(item.getEventId())
                 .date(item.getDate())
                 .startTime(item.getStartTime())
                 .endTime(item.getEndTime())
                 .note(item.getNote())
+                .order(item.getOrderIndex())
                 .orderIndex(item.getOrderIndex());
 
-        if (item.getType() == ItemType.LOCATION) {
+        if (item.getType() == ItemType.LOCATION && item.getLocationId() != null) {
             Location location = locationRepository
-                    .findById(item.getReferenceId())
+                    .findById(item.getLocationId())
                     .orElse(null);
 
             if (location != null) {
@@ -51,9 +55,9 @@ public class ItineraryMapper {
                 builder.name("Unknown Place");
             }
 
-        } else if (item.getType() == ItemType.EVENT) {
+        } else if (item.getType() == ItemType.EVENT && item.getEventId() != null) {
             Event event = eventRepository
-                    .findById(item.getReferenceId())
+                    .findById(item.getEventId())
                     .orElse(null);
 
             if (event != null) {
@@ -76,6 +80,17 @@ public class ItineraryMapper {
             Itinerary itinerary,
             Map<LocalDate, List<ItineraryItemResponse>> itemsByDate) {
 
+        List<DayPlanResponse> days = new ArrayList<>();
+        
+        if (itemsByDate != null) {
+            itemsByDate.forEach((date, items) -> {
+                days.add(DayPlanResponse.builder()
+                        .date(date)
+                        .items(items)
+                        .build());
+            });
+        }
+
         return ItineraryResponse.builder()
                 .id(itinerary.getId())
                 .title(itinerary.getTitle())
@@ -83,7 +98,7 @@ public class ItineraryMapper {
                 .endDate(itinerary.getEndDate())
                 .publicFlag(itinerary.getPublicFlag())
                 .notes(itinerary.getNotes())
-                .itemsByDate(itemsByDate != null ? itemsByDate : Map.of())
+                .days(days)
                 .build();
     }
 }

@@ -71,6 +71,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    @ExceptionHandler(AlreadyReviewedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAlreadyReviewedException(AlreadyReviewedException ex, WebRequest request) {
+        logError(ex, request);
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Object>> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         logError(ex, request);

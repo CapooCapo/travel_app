@@ -12,4 +12,10 @@ public class SendMessageRequest {
     // Let's check the MessagingController to see how it's used.
     private String content;
     private MessageType type = MessageType.TEXT;
+
+    // Location fields
+    private Double latitude;
+    private Double longitude;
+    private String placeName;
+    private Long locationId;
 }

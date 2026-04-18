@@ -168,4 +168,14 @@ public class UserController extends BaseController {
         userService.unfollowUser(currentUserId, userId);
         return ok(null, "Successfully unfollowed user");
     }
+
+    @GetMapping("/{userId:[0-9]+}/followers")
+    public ApiResponse<List<UserDTO>> getFollowers(@PathVariable Long userId) {
+        return ok(userService.getFollowers(userId));
+    }
+
+    @GetMapping("/{userId:[0-9]+}/following")
+    public ApiResponse<List<UserDTO>> getFollowing(@PathVariable Long userId) {
+        return ok(userService.getFollowing(userId));
+    }
 }

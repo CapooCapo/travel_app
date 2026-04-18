@@ -13,8 +13,10 @@ import com.example.mobileApp.dto.request.AddItineraryItemRequest;
 import com.example.mobileApp.dto.request.CreateItineraryRequest;
 import com.example.mobileApp.dto.response.ItineraryItemResponse;
 import com.example.mobileApp.dto.response.ItineraryResponse;
+import com.example.mobileApp.entity.ItemType;
 import com.example.mobileApp.entity.Itinerary;
 import com.example.mobileApp.entity.ItineraryItem;
+import com.example.mobileApp.entity.TargetType;
 import com.example.mobileApp.entity.User;
 import com.example.mobileApp.exception.ForbiddenException;
 import com.example.mobileApp.exception.ResourceNotFoundException;
@@ -24,7 +26,7 @@ import com.example.mobileApp.repository.EventRepository;
 import com.example.mobileApp.repository.ItineraryItemRepository;
 import com.example.mobileApp.repository.ItineraryRepository;
 import com.example.mobileApp.repository.UserRepository;
-import java.time.LocalTime;
+import com.example.mobileApp.entity.ActivityType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +42,7 @@ public class ItineraryService {
     private final LocationRepository locationRepository;
     private final EventRepository eventRepository;
     private final ItineraryMapper itineraryMapper;
+    private final ActivityService activityService;
 
     // ================= CREATE =================
     @Transactional
@@ -62,6 +65,18 @@ public class ItineraryService {
                 .build();
 
         itineraryRepository.save(itinerary);
+
+        // 📝 Record Activity (Resilient)
+        try {
+            activityService.recordActivity(
+                userId,
+                ActivityType.ITINERARY_CREATED,
+                TargetType.ITINERARY,
+                itinerary.getId(),
+                itinerary.getTitle());
+        } catch (Exception e) {
+            // Non-blocking: we continue even if logging fails
+        }
 
         return itineraryMapper.toResponse(itinerary, Map.of());
     }
@@ -129,7 +144,8 @@ public class ItineraryService {
         ItineraryItem item = ItineraryItem.builder()
                 .itinerary(itinerary)
                 .type(req.getType())
-                .referenceId(req.getReferenceId())
+                .locationId(req.getLocationId())
+                .eventId(req.getEventId())
                 .date(req.getDate())
                 .startTime(req.getStartTime())
                 .endTime(req.getEndTime())
@@ -138,6 +154,29 @@ public class ItineraryService {
                 .build();
 
         itemRepository.save(item);
+
+        // 📝 Record Activity for adding item (Resilient)
+        try {
+            if (item.getType() == ItemType.LOCATION) {
+                activityService.recordActivity(
+                    userId,
+                    ActivityType.LOCATION_ADDED,
+                    TargetType.LOCATION,
+                    item.getLocationId(),
+                    itinerary.getTitle() // Context: added to which itinerary
+                );
+            } else if (item.getType() == ItemType.EVENT) {
+                activityService.recordActivity(
+                    userId,
+                    ActivityType.EVENT_JOINED,
+                    TargetType.EVENT,
+                    item.getEventId(),
+                    itinerary.getTitle()
+                );
+            }
+        } catch (Exception e) {
+            log.error("[ACTIVITY ERROR] Failed to record itinerary item activity: {}", e.getMessage());
+        }
 
         return itineraryMapper.toResponse(item);
     }
@@ -204,20 +243,34 @@ public class ItineraryService {
     // ================= PRIVATE =================
 
     private void validateReference(AddItineraryItemRequest req) {
-    switch (req.getType()) {
-        case LOCATION -> {
-            if (!locationRepository.existsById(req.getReferenceId())) {
-                throw new ResourceNotFoundException("Location not found");
-            }
+        // Strict XOR check at service level
+        if (req.getLocationId() != null && req.getEventId() != null) {
+            throw new IllegalArgumentException("An item cannot be both a location and an event");
         }
-        case EVENT -> {
-            if (!eventRepository.existsById(req.getReferenceId())) {
-                throw new ResourceNotFoundException("Event not found");
-            }
+        if (req.getLocationId() == null && req.getEventId() == null) {
+            throw new IllegalArgumentException("Either locationId or eventId must be provided");
         }
-        default -> throw new IllegalArgumentException("Invalid item type");
+
+        switch (req.getType()) {
+            case LOCATION -> {
+                if (req.getLocationId() == null) {
+                    throw new IllegalArgumentException("locationId is required for type LOCATION");
+                }
+                if (!locationRepository.existsById(req.getLocationId())) {
+                    throw new ResourceNotFoundException("Location not found: " + req.getLocationId());
+                }
+            }
+            case EVENT -> {
+                if (req.getEventId() == null) {
+                    throw new IllegalArgumentException("eventId is required for type EVENT");
+                }
+                if (!eventRepository.existsById(req.getEventId())) {
+                    throw new ResourceNotFoundException("Event not found with ID: " + req.getEventId());
+                }
+            }
+            default -> throw new IllegalArgumentException("Invalid item type: " + req.getType());
+        }
     }
-}
 
     private Integer generateOrderIndex(Long itineraryId, LocalDate date) {
         Integer max = itemRepository.findMaxOrderIndex(itineraryId, date).orElse(0);

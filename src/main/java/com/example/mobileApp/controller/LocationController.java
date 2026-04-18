@@ -112,4 +112,9 @@ public class LocationController extends BaseController {
     public ApiResponse<LocationResponse> getLocation(@PathVariable Long id) {
         return ok(locationService.getLocation(id));
     }
+
+    @GetMapping("/{id:[0-9]+}/qr")
+    public ApiResponse<String> getQrCode(@PathVariable Long id) {
+        return ok("app://location/" + id);
+    }
 }

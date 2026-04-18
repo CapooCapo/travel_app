@@ -26,8 +26,11 @@ public class ItineraryItem {
     @Column(nullable = false)
     private ItemType type;
 
-    @Column(name = "reference_id", nullable = false)
-    private Long referenceId;
+    @Column(name = "location_id")
+    private Long locationId;
+
+    @Column(name = "event_id")
+    private Long eventId;
 
     @Column(name = "item_date", nullable = false)
     private LocalDate date;

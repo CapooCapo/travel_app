@@ -24,6 +24,9 @@ public class MessagingMapper {
         dto.setType(message.getType());
         dto.setStatus(message.getStatus());
         dto.setCreatedAt(message.getCreatedAt());
+        dto.setLatitude(message.getLatitude());
+        dto.setLongitude(message.getLongitude());
+        dto.setPlaceName(message.getPlaceName());
         return dto;
     }
 

@@ -14,8 +14,8 @@ public class AddItineraryItemRequest {
     @NotNull(message = "Type is required")
     private ItemType type;
 
-    @NotNull(message = "Reference ID is required")
-    private Long referenceId;
+    private Long locationId;
+    private Long eventId;
 
     @NotNull(message = "Date is required")
     private LocalDate date;

@@ -45,6 +45,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
             """)
     Optional<User> findByIdWithInterests(@Param("id") Long id);
 
+    @Query(value = "SELECT COUNT(*) FROM user_follows WHERE following_id = :userId", nativeQuery = true)
+    long countFollowers(@Param("userId") Long userId);
+
+    @Query(value = "SELECT COUNT(*) FROM user_follows WHERE follower_id = :userId", nativeQuery = true)
+    long countFollowing(@Param("userId") Long userId);
+
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM user_follows WHERE follower_id = :userId AND following_id = :targetId)", nativeQuery = true)
+    boolean isFollowing(@Param("userId") Long userId, @Param("targetId") Long targetId);
+
     @Query("""
                 SELECT new com.example.mobileApp.dto.UserDTO(
                     u.id,
@@ -65,4 +74,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Override
     @EntityGraph(attributePaths = {"interests"})
     org.springframework.data.domain.Page<User> findAll(org.springframework.data.domain.Pageable pageable);
+    @Query(value = "SELECT following_id FROM user_follows WHERE follower_id = :userId", nativeQuery = true)
+    List<Long> findFollowingIdsByUserId(@Param("userId") Long userId);
+
+    @Query(value = "SELECT follower_id FROM user_follows WHERE following_id = :userId", nativeQuery = true)
+    List<Long> findFollowerIdsByFollowingId(@Param("userId") Long userId);
 }

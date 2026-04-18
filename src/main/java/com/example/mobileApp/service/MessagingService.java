@@ -14,6 +14,8 @@ import com.example.mobileApp.repository.ChatRoomRepository;
 import com.example.mobileApp.repository.ChatMessageRepository;
 import com.example.mobileApp.repository.ChatRoomMemberRepository;
 import com.example.mobileApp.repository.UserRepository;
+import com.example.mobileApp.entity.ActivityType;
+import com.example.mobileApp.entity.TargetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -39,6 +41,7 @@ public class MessagingService {
     private final UserRepository userRepository;
     private final MessagingMapper messagingMapper;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ActivityService activityService;
 
     @Transactional
     public List<ChatDTO> getChats(Long userId) {
@@ -134,13 +137,48 @@ public class MessagingService {
         message.setContent(request.getContent());
         message.setType(request.getType());
         message.setStatus(ChatMessage.MessageStatus.SENT);
-        
+
+        // Map location fields (Resilient & Validated)
+        if (message.getType() == ChatMessage.MessageType.LOCATION) {
+            // 🛡️ Strict validation BEFORE any DB action or logging
+            if (request.getLatitude() == null || request.getLongitude() == null) {
+                log.error("[BAD REQUEST] Attempted to share location without coordinates: senderId={}, chatRoomId={}", senderId, request.getChatRoomId());
+                throw new com.example.mobileApp.exception.ApiException(400, "Invalid location: Coordinates (latitude/longitude) are required.");
+            }
+            
+            message.setLatitude(request.getLatitude());
+            message.setLongitude(request.getLongitude());
+            message.setPlaceName(request.getPlaceName());
+            message.setLocationId(request.getLocationId());
+            
+            ChatMessage savedMessage = chatMessageRepository.save(message);
+
+            // Record activity if it's a location message (Resilient)
+            try {
+                activityService.recordActivity(
+                    senderId,
+                    ActivityType.LOCATION_SHARED,
+                    TargetType.LOCATION,
+                    message.getLocationId(), 
+                    message.getPlaceName() != null ? message.getPlaceName() : "Unknown Location"
+                );
+            } catch (Exception e) {
+                log.error("[ACTIVITY ERROR] Failed to record LOCATION_SHARED activity for sender={}: {}", senderId, e.getMessage());
+                // Non-blocking: we continue even if logging fails
+            }
+            
+            chatRoom.setLastMessage(savedMessage);
+            chatRoomRepository.save(chatRoom);
+            MessageDTO dto = messagingMapper.toMessageDTO(savedMessage);
+            broadcastMessage(chatRoom, dto);
+            return dto;
+        }
+
         ChatMessage savedMessage = chatMessageRepository.save(message);
         chatRoom.setLastMessage(savedMessage);
         chatRoomRepository.save(chatRoom);
 
         MessageDTO dto = messagingMapper.toMessageDTO(savedMessage);
-
         broadcastMessage(chatRoom, dto);
 
         return dto;

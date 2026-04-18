@@ -42,7 +42,7 @@ public class UserMapper {
                 user.getVerified() != null ? user.getVerified() : false);
     }
 
-    public UserProfileDTO toUserProfileDTO(User user, boolean isFollowing) {
+    public UserProfileDTO toUserProfileDTO(User user, boolean isFollowing, long followerCount, long followingCount) {
         return UserProfileDTO.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
@@ -60,8 +60,8 @@ public class UserMapper {
                                         .build())
                                 .toList()
                         : List.of())
-                .followerCount(user.getFollowers() != null ? user.getFollowers().size() : 0)
-                .followingCount(user.getFollowing() != null ? user.getFollowing().size() : 0)
+                .followersCount((int) followerCount)
+                .followingCount((int) followingCount)
                 .isFollowing(isFollowing)
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .verified(user.getVerified() != null ? user.getVerified() : false)

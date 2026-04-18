@@ -11,4 +11,8 @@ public class CreateLocationRequest {
     private String description;
     private Double latitude;
     private Double longitude;
+    private String externalId;
+    private String source;
+    private String phone;
+    private String website;
 }

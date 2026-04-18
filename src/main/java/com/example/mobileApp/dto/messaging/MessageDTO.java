@@ -16,4 +16,10 @@ public class MessageDTO {
     private MessageType type;
     private MessageStatus status;
     private LocalDateTime createdAt;
+
+    // Location fields
+    private Double latitude;
+    private Double longitude;
+    private String placeName;
+    private Long locationId;
 }

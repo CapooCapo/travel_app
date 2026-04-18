@@ -1,5 +1,7 @@
 package com.example.mobileApp.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import com.example.mobileApp.exception.ResourceNotFoundException;
 import com.example.mobileApp.mapper.EventMapper;
 import com.example.mobileApp.mapper.ReviewMapper;
 import com.example.mobileApp.mapper.UserMapper;
+import com.example.mobileApp.repository.ActivityRepository;
 import com.example.mobileApp.repository.EventRepository;
 import com.example.mobileApp.repository.ReportRepository;
 import com.example.mobileApp.repository.ReviewRepository;
@@ -37,6 +40,8 @@ public class AdminService {
     private final UserMapper userMapper;
     private final ReviewMapper reviewMapper;
     private final EventMapper eventMapper;
+
+    private final ActivityRepository activityRepository;
 
     public Page<UserDTO> getAllUsers(int page, int size) {
         return userRepository.findAll(PageRequest.of(page, size))
@@ -84,24 +89,27 @@ public class AdminService {
 
     @Transactional
     public void moderateReview(Long reviewId, Report.ReportStatus action) {
-        Page<Report> reports = reportRepository.findByReportedTypeAndStatus(
+        java.util.List<Report> reports = reportRepository.findByReportedIdAndReportedTypeAndStatus(
+                reviewId, 
                 Report.ReportedType.REVIEW, 
-                Report.ReportStatus.PENDING, 
-                PageRequest.of(0, 100));
+                Report.ReportStatus.PENDING);
         
-        reports.stream()
-                .filter(r -> r.getReportedId().equals(reviewId))
-                .forEach(r -> {
-                    r.setStatus(action);
-                    reportRepository.save(r);
-                });
+        reports.forEach(r -> {
+            r.setStatus(action);
+            reportRepository.save(r);
+        });
         
-        log.info("Review {} moderated with action: {}", reviewId, action);
+        log.info("Review {} moderated with action: {} (Affected {} reports)", reviewId, action, reports.size());
     }
 
     public DashboardStatsDTO getAnalytics() {
         DashboardStatsDTO stats = new DashboardStatsDTO();
         stats.setTotalUsers(userRepository.count());
+        
+        // Active users = unique users with activity in the last 7 days
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        stats.setActiveUsers(activityRepository.countActiveUsers(sevenDaysAgo));
+        
         stats.setTotalEvents(eventRepository.count());
         stats.setPendingEvents(eventRepository.findByStatus(Event.EventStatus.PENDING, PageRequest.of(0, 1)).getTotalElements());
         stats.setTotalReviews(reviewRepository.count());

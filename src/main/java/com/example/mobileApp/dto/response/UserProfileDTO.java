@@ -1,5 +1,6 @@
 package com.example.mobileApp.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -16,8 +17,10 @@ public class UserProfileDTO {
     private String avatarUrl;
     private String travelStyle;
     private List<InterestDTO> interests;
-    private int followerCount;
+    private int followersCount;
     private int followingCount;
+    
+    @JsonProperty("isFollowing")
     private boolean isFollowing;
     private String role;
     private boolean verified;

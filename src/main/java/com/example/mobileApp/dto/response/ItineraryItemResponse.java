@@ -13,7 +13,8 @@ import lombok.Data;
 public class ItineraryItemResponse {
     private Long id;
     private ItemType type;
-    private Long referenceId;
+    private Long locationId;
+    private Long eventId;
     
     // Extracted details for UI display so frontend doesn't need N+1 calls
     private String name; 
@@ -25,5 +26,6 @@ public class ItineraryItemResponse {
     private LocalTime startTime;
     private LocalTime endTime;
     private String note;
+    private Integer order;
     private Integer orderIndex;
 }

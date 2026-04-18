@@ -17,5 +17,5 @@ public class ItineraryResponse {
     private LocalDate endDate;
     private Boolean publicFlag; 
     private String notes;
-    private Map<LocalDate, List<ItineraryItemResponse>> itemsByDate;
+    private List<DayPlanResponse> days;
 }
